@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+/* Cores e fontes da identidade visual NAXXO */
+@theme {
+  --color-rosa: #ff4ed8;
+  --color-roxo: #8b5cf6;
+  --color-azul: #3b82f6;
+  --color-fundo: #0b0f1a;
+  --color-superficie: #121729;
+  --color-superficie-2: #1b2138;
+  --color-suave: #9aa3b8;
+  --color-entrada: #34d399;
+  --color-saida: #fb7185;
+  --color-texto: #f4f5fb;
+
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-montserrat);
+}
+
+/*
+ * Tema claro (escolhido em Configurações). As mesmas classes de sempre, com outras cores:
+ * "white" vira a cor do texto escuro, e as superfícies ficam claras.
+ */
+:root[data-tema="claro"] {
+  --color-white: #151a2d;
+  --color-texto: #151a2d;
+  --color-fundo: #f4f3fa;
+  --color-superficie: #ffffff;
+  --color-superficie-2: #ece9f6;
+  --color-suave: #545d72;
+  --color-rosa: #b5179e;
+  --color-roxo: #6d28d9;
+  --color-azul: #1d4ed8;
+  --color-entrada: #047857;
+  --color-saida: #be123c;
+  --color-amber-300: #b45309;
+  --color-red-200: #9f1239;
+}
+
+/* Sobre um fundo colorido (cartão da conta), o texto é sempre branco, nos dois temas */
+.sobre-cor {
+  --color-white: #ffffff;
+  color: #ffffff;
+}
+
+body {
+  background:
+    radial-gradient(50rem 28rem at 110% -10%, rgb(139 92 246 / 0.2), transparent 60%),
+    radial-gradient(40rem 26rem at -15% 5%, rgb(255 78 216 / 0.12), transparent 60%),
+    var(--color-fundo);
+  background-attachment: fixed;
+  color: var(--color-texto);
+  color-scheme: dark;
+}
+
+:root[data-tema="claro"] body {
+  color-scheme: light;
+  background:
+    radial-gradient(50rem 28rem at 110% -10%, rgb(139 92 246 / 0.1), transparent 60%),
+    radial-gradient(40rem 26rem at -15% 5%, rgb(255 78 216 / 0.07), transparent 60%),
+    var(--color-fundo);
+}
+
+/* Quem pediu menos movimento no celular/computador: sem animações */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer components {
+  .cartao {
+    border-radius: 1.5rem;
+    border: 1px solid color-mix(in srgb, var(--color-roxo) 20%, transparent);
+    background: color-mix(in srgb, var(--color-superficie) 88%, transparent);
+  }
+
+  /* Degradê um pouco mais escuro que a marca, para o texto branco ter contraste (mínimo 4,5:1) */
+  .botao-gradiente {
+    background-image: linear-gradient(135deg, #d4239f, #7c3aed 55%, #2563eb);
+    color: #ffffff;
+    box-shadow: 0 0 24px rgb(255 78 216 / 0.3);
+    --color-white: #ffffff;
+  }
+
+  .gradiente-texto {
+    background-image: linear-gradient(90deg, var(--color-rosa), var(--color-roxo), var(--color-azul));
+    background-clip: text;
+    color: transparent;
+  }
+
+  .titulo-secao {
+    margin-bottom: 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--color-suave);
+  }
+
+  .campo {
+    width: 100%;
+    border-radius: 0.9rem;
+    border: 1px solid color-mix(in srgb, var(--color-white) 12%, transparent);
+    background: var(--color-fundo);
+    padding: 0.7rem 0.9rem;
+    outline: none;
+  }
+
+  .campo::placeholder,
+  .campo input::placeholder {
+    color: color-mix(in srgb, var(--color-white) 45%, transparent);
+  }
+
+  .campo:focus,
+  .campo:focus-within {
+    border-color: var(--color-rosa);
+  }
+
+  /* Campo com erro (destacado quando falta preencher) */
+  .campo-erro {
+    border-color: var(--color-saida) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-saida) 25%, transparent);
+  }
+}
