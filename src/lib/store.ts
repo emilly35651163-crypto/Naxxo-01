@@ -1224,6 +1224,16 @@ export function atualizarCompra(id: string, mudancas: Partial<CompraCartao>) {
   compras.gravar(compras.ler().map((c) => (c.id === id ? { ...c, ...mudancas } : c)));
 }
 
+/** O que veio do extrato e ficou "já estava no saldo" passa a contar no saldo da conta. Devolve quantos. */
+export function contarExtratoNoSaldo(contaId: string, ids: string[]) {
+  const alvo = lancamentos.ler().filter((l) => l.contaId === contaId && ids.includes(l.id));
+  const marcados = new Set(alvo.map((l) => l.id));
+  // criadoEm = agora: conta mesmo se o saldo foi informado depois de importar
+  const agora = agoraLocal();
+  lancamentos.gravar(lancamentos.ler().map((l) => (marcados.has(l.id) ? { ...l, jaNoSaldo: undefined, criadoEm: agora } : l)));
+  return alvo.length;
+}
+
 /**
  * Zerar o cartão: tira todas as compras dele (para importar de novo do extrato, por exemplo).
  * Ficam as compras ligadas a uma dívida da Trilha. Devolve quantas saíram.

@@ -19,7 +19,7 @@ import { previstosDoMes, type Previsto } from "@/lib/previstos";
 import { useDados } from "@/lib/dados";
 import { confirmarPrevisto } from "./ConfirmarPrevisto";
 import { PainelFrequente, PainelLigar, previstoParecido, type Frequente, type Ligacao } from "./LigarOuFrequente";
-import { cartoesDeCredito, marcoDoSaldo } from "@/lib/contas";
+import { cartoesDeCredito, marcoDoSaldo, saldoDaConta } from "@/lib/contas";
 import { faturaAberta, faturaDaData } from "@/lib/cartoes";
 import { jaExiste, lerExtrato, type Existente, type LinhaExtrato } from "@/lib/extrato";
 import { comDesfazer } from "@/lib/avisos";
@@ -91,6 +91,8 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
   const [erro, setErro] = useState("");
   const [nomeArquivo, setNomeArquivo] = useState("");
   const [arrastando, setArrastando] = useState(false);
+  // O que veio antes de o saldo ser informado: soma no saldo ou já estava nele? (null = o app decide)
+  const [modoSaldo, setModoSaldo] = useState<"somar" | "ja" | null>(null);
 
   const opcoes = ehCartao ? cartoesDeCredito(contas) : contas;
   const conta = opcoes.find((c) => c.id === contaId);
@@ -189,6 +191,17 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
   const semDuvida = linhas?.filter((l) => !l.conflito && !l.sugestao && !resolvida(l)) ?? [];
   const todasMarcadas = semDuvida.length > 0 && semDuvida.every((l) => l.marcada);
 
+  // Conta: tem movimentação de antes do momento em que o saldo foi informado?
+  const diaDoSaldo = !ehCartao && conta ? marcoDoSaldo(conta).slice(0, 10) : "";
+  const antesDoSaldo = !ehCartao && conta ? [...marcadas, ...frequentes, ...ligadas].filter((l) => l.data <= diaDoSaldo) : [];
+  // Sem escolha: conta zerada (ou sem saldo) → soma; com saldo → já estava nele
+  const somarNoSaldo = modoSaldo ? modoSaldo === "somar" : !conta?.saldo;
+  const saldoHoje = conta && !ehCartao ? saldoDaConta(conta, lancamentos) : 0;
+  const efeitoNoSaldo = [...marcadas, ...frequentes, ...ligadas]
+    .filter((l) => somarNoSaldo || l.data > diaDoSaldo)
+    .filter((l) => !l.ligado || l.ligado.tipo === "previsto")
+    .reduce((t, l) => t + (l.tipo === "entrada" ? l.valor : -l.valor), 0);
+
   function importar() {
     if (!conta) return setErro(ehCartao ? "Escolha o cartão." : "Escolha a conta.");
     if (semResposta > 0)
@@ -235,7 +248,7 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
       });
     } else {
       // O que aconteceu até o dia em que o saldo foi informado já está nele: não muda o saldo
-      const diaDoMarco = marcoDoSaldo(conta).slice(0, 10);
+      const diaDoMarco = somarNoSaldo ? "" : marcoDoSaldo(conta).slice(0, 10);
       comDesfazer(`${texto || "Pronto"} ✓`, () => {
         corrigir.forEach((l) =>
           atualizarLancamento(l.conflito!.id, {
@@ -622,8 +635,43 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
                   Entradas: <b className="text-entrada">{brl(totalEntra)}</b>
                 </>
               )}
-              {!ehCartao && " · O que aconteceu antes de você informar o saldo da conta não muda o saldo."}
             </p>
+
+            {!ehCartao && conta && antesDoSaldo.length > 0 && (
+              <div className="space-y-2 rounded-2xl border border-white/10 bg-fundo/60 p-3 text-xs">
+                <p className="font-medium">
+                  💰 {antesDoSaldo.length} movimentaç{antesDoSaldo.length > 1 ? "ões são" : "ão é"} de antes de você informar o
+                  saldo de {conta.nome} ({brl(conta.saldo ?? 0)} em {formatarData(diaDoSaldo)}). Como fica o saldo?
+                </p>
+                <div className="grid gap-1.5 sm:grid-cols-2">
+                  {(
+                    [
+                      ["somar", "Somar ao saldo", "Ex.: zerei a conta para montar o saldo pelo extrato"],
+                      ["ja", "Já estão no saldo", "O saldo que informei já tinha essas movimentações"],
+                    ] as const
+                  ).map(([valor, nome, ajuda]) => (
+                    <button
+                      key={valor}
+                      type="button"
+                      onClick={() => setModoSaldo(valor)}
+                      className={`rounded-xl border px-3 py-2 text-left ${
+                        (valor === "somar") === somarNoSaldo ? "border-rosa bg-rosa/15 text-white" : "border-white/10 text-suave"
+                      }`}
+                    >
+                      <span className="block font-semibold">{nome}</span>
+                      <span className="block text-[0.65rem] text-suave">{ajuda}</span>
+                    </button>
+                  ))}
+                </div>
+                <p>
+                  Saldo de {conta.nome}: {brl(saldoHoje)} →{" "}
+                  <b className={saldoHoje + efeitoNoSaldo < 0 ? "text-saida" : "text-entrada"}>
+                    {brl(saldoHoje + efeitoNoSaldo)}
+                  </b>{" "}
+                  depois de importar
+                </p>
+              </div>
+            )}
           </>
         )}
 

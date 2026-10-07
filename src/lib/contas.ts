@@ -49,17 +49,15 @@ export function marcoDoSaldo(conta: Conta) {
  * Saldo da conta hoje: o que a pessoa informou + tudo o que entrou e saiu da conta depois disso.
  * O que foi lançado antes de informar o saldo já estava nele (não conta de novo).
  */
-export function saldoDaConta(conta: Conta, lancamentos: Lancamento[], ate = hojeISO()) {
+/** Este lançamento mexe no saldo da conta? (os de antes do saldo informado já estavam nele) */
+export function contaNoSaldo(l: Lancamento, conta: Conta) {
   const marco = marcoDoSaldo(conta);
-  const diaDoMarco = marco.slice(0, 10);
+  return !l.jaNoSaldo && (l.data > marco.slice(0, 10) || (paraHoraLocal(l.criadoEm) ?? "") >= marco);
+}
+
+export function saldoDaConta(conta: Conta, lancamentos: Lancamento[], ate = hojeISO()) {
   return lancamentos
-    .filter(
-      (l) =>
-        l.contaId === conta.id &&
-        !l.jaNoSaldo &&
-        jaAconteceu(l, ate) &&
-        (l.data > diaDoMarco || (paraHoraLocal(l.criadoEm) ?? "") >= marco),
-    )
+    .filter((l) => l.contaId === conta.id && jaAconteceu(l, ate) && contaNoSaldo(l, conta))
     .reduce((saldo, l) => saldo + (l.tipo === "entrada" ? l.valor : -l.valor), conta.saldo ?? 0);
 }
 

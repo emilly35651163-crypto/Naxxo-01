@@ -16,6 +16,7 @@ import {
   type GastoFixo,
   type Lancamento,
   type Meta,
+  contarExtratoNoSaldo,
   tirarDoExtrato,
   zerarCartao,
 } from "@/lib/store";
@@ -32,9 +33,9 @@ import EstadoVazio from "@/components/EstadoVazio";
 import BotaoImportarExtrato from "@/components/BotaoImportarExtrato";
 import { ativoNoMes, descreverCobranca, situacaoDoFixo } from "@/lib/fixos";
 import { faturaAberta, faturasAtrasadas, limiteUsado, resumoDaFatura, type ItemFatura, type SituacaoFatura } from "@/lib/cartoes";
-import { cartoesDeCredito, ehVale, iconeDaConta, saldoDaConta, temCredito } from "@/lib/contas";
+import { cartoesDeCredito, contaNoSaldo, ehVale, iconeDaConta, saldoDaConta, temCredito } from "@/lib/contas";
 import { calcularMeta } from "@/lib/metas";
-import { brl, diasAte, formatarData, nomeMes } from "@/lib/formato";
+import { brl, diasAte, formatarData, hojeISO, nomeMes } from "@/lib/formato";
 import { comDesfazer } from "@/lib/avisos";
 
 const ROTULO_SITUACAO: Record<SituacaoFatura, { texto: string; cor: string }> = {
@@ -436,6 +437,11 @@ function CartaoConta({
   const doExtrato =
     lancamentos.filter((l) => l.contaId === conta.id && l.importado).length +
     compras.filter((c) => c.cartaoId === conta.id && c.importado).length;
+  // Veio do extrato mas não mexe no saldo ("já estava no saldo")
+  const foraDoSaldo = lancamentos.filter(
+    (l) => l.contaId === conta.id && l.extratoId && l.pago && l.data <= hojeISO() && !contaNoSaldo(l, conta),
+  );
+  const efeitoForaDoSaldo = foraDoSaldo.reduce((t, l) => t + (l.tipo === "entrada" ? l.valor : -l.valor), 0);
   const uso = conta.limite > 0 ? Math.min(usado / conta.limite, 1) : 0;
 
   // Tudo o que mexeu nesta conta no mês, numa lista só: débito/Pix/transferências + o que está na fatura do cartão
@@ -619,6 +625,29 @@ function CartaoConta({
             </ul>
           )}
         </div>
+
+        {foraDoSaldo.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-amber-300/40 bg-amber-300/10 p-3 text-xs">
+            <span className="min-w-0 flex-1">
+              ⚠️ {foraDoSaldo.length} movimentaç{foraDoSaldo.length > 1 ? "ões" : "ão"} do extrato não mexe
+              {foraDoSaldo.length > 1 ? "m" : ""} no saldo (ficaram como &quot;já estavam no saldo&quot;). Contando, o saldo vai
+              para <b>{brl(saldo + efeitoForaDoSaldo)}</b>.
+            </span>
+            <button
+              onClick={() =>
+                comDesfazer(`Extrato contado no saldo de ${conta.nome}`, () =>
+                  contarExtratoNoSaldo(
+                    conta.id,
+                    foraDoSaldo.map((l) => l.id),
+                  ),
+                )
+              }
+              className="botao-gradiente rounded-full px-3 py-1.5 font-semibold"
+            >
+              Contar no saldo
+            </button>
+          </div>
+        )}
 
         {(comprasDoCartao > 0 || doExtrato > 0) && (
           <div className="flex flex-wrap gap-x-4 gap-y-1 border-t border-white/5 pt-3 text-xs">
