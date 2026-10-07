@@ -72,7 +72,7 @@ const PALAVRAS: [string, Tipo, RegExp][] = [
   [
     "Assinaturas",
     "saida",
-    /netflix|spotify|disney|hbo|max\.com|prime video|amazon prime|youtube|deezer|globoplay|apple\.com|icloud|google one|chatgpt|openai/,
+    /netflix|spotify|disney|hbo|max\.com|prime video|amazon prime|youtube|deezer|globoplay|apple\.com|icloud|google one|chatgpt|openai|anthropic|claude/,
   ],
   ["Moradia", "saida", /aluguel|condominio|iptu|imobili/],
   [
@@ -89,7 +89,7 @@ const PALAVRAS: [string, Tipo, RegExp][] = [
   ],
 ];
 
-function categoriaPelaDescricao(descricao: string, tipo: Tipo) {
+export function categoriaPelaDescricao(descricao: string, tipo: Tipo) {
   const t = semAcento(descricao);
   return PALAVRAS.find(([, tipoDa, re]) => tipoDa === tipo && re.test(t))?.[0] ?? "Outros";
 }

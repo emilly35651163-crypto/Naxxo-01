@@ -101,8 +101,17 @@ const TIPOS_FREQUENTE = [
     intervaloDias: 0,
   },
   {
+    id: "assinatura",
+    nome: "📺 Assinatura",
+    icone: "📺",
+    categoria: "assinaturas",
+    categoriaLancamento: "Assinaturas",
+    varia: false,
+    intervaloDias: 0,
+  },
+  {
     id: "outro",
-    nome: "🔁 Outro",
+    nome: "〰️ Se repete, valor varia",
     icone: "🔁",
     categoria: "outros",
     categoriaLancamento: "Outros",
@@ -179,7 +188,11 @@ export function PainelFrequente({
   onSalvar: (f: Frequente) => void;
   onFechar: () => void;
 }) {
-  const sugerido = /posto|combust|gasolina|shell|ipiranga|petrobras/.test(semAcento(l.descricao)) ? "gasolina" : "divida";
+  const sugerido = /posto|combust|gasolina|shell|ipiranga|petrobras/.test(semAcento(l.descricao))
+    ? "gasolina"
+    : l.categoria === "Assinaturas"
+      ? "assinatura"
+      : "divida";
   const [tipo, setTipo] = useState<(typeof TIPOS_FREQUENTE)[number]["id"]>(sugerido);
   const base = TIPOS_FREQUENTE.find((t) => t.id === tipo)!;
   const [nome, setNome] = useState(sugerido === "gasolina" ? "Gasolina" : l.descricao);

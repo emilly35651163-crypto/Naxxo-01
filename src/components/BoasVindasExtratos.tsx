@@ -1,31 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import {
-  adicionarCartao,
-  adicionarCompras,
-  adicionarLancamentos,
-  agoraLocal,
-  CORES_CARTAO,
-  semAcento,
-  SUGESTOES_CARTAO,
-  type Cartao,
-} from "@/lib/store";
+import { adicionarCartao, agoraLocal, CORES_CARTAO, semAcento, SUGESTOES_CARTAO, type Cartao } from "@/lib/store";
 import { brl, formatarData, hojeISO, lerValor, valorParaCampo } from "@/lib/formato";
-import {
-  bancoDoArquivo,
-  comoCartao,
-  compraDoExtrato,
-  detectarSalario,
-  lerExtrato,
-  parcelaRepetida,
-  type Extrato,
-} from "@/lib/extrato";
+import { bancoDoArquivo, comoCartao, detectarSalario, lerExtrato, type Extrato } from "@/lib/extrato";
 import { Campo, CampoSelect, CampoValor, Chip, DIAS_DO_MES } from "./Campos";
 import ComprasManuais, {
   comprasDosPrints,
-  comprasManuaisParaCartao,
-  type CompraManual,
+  criarItensDaConta,
+  criarItensDoCartao,
+  itensDoExtrato,
+  type ItemRevisao,
   type StatusDoPrint,
 } from "./ComprasManuais";
 import { ehImagem } from "@/lib/ocr";
@@ -43,7 +28,8 @@ export type BancoExtrato = {
   temCartao: boolean;
   conta: ArquivoLido | null; // extrato da conta
   cartao: ArquivoLido | null; // extrato / fatura do cartão de crédito
-  comprasManuais: CompraManual[]; // cartão sem extrato: à mão ou lidas de prints
+  itensConta: ItemRevisao[]; // o que entrou e saiu da conta (do extrato ou à mão), para conferir
+  comprasManuais: ItemRevisao[]; // compras do cartão (do extrato, de prints ou à mão), para conferir
   saldo: string; // quanto tem na conta hoje (vem do arquivo quando ele traz)
   limite: string;
   fechamento: string;
@@ -60,6 +46,7 @@ export function bancoVazio(): BancoExtrato {
     temCartao: false,
     conta: null,
     cartao: null,
+    itensConta: [],
     comprasManuais: [],
     saldo: "",
     limite: "",
@@ -70,7 +57,7 @@ export function bancoVazio(): BancoExtrato {
 
 /** Os bancos preenchidos (o cartão em branco do começo não conta). */
 export function bancosPreenchidos(bancos: BancoExtrato[]) {
-  return bancos.filter((b) => b.banco.trim() || b.conta || b.cartao || b.comprasManuais.length);
+  return bancos.filter((b) => b.banco.trim() || b.conta || b.cartao || b.itensConta.length || b.comprasManuais.length);
 }
 
 async function lerArquivo(arquivo: File) {
@@ -104,8 +91,7 @@ export function salarioDosExtratos(bancos: BancoExtrato[]) {
 
 export function totalDeMovimentacoes(bancos: BancoExtrato[]) {
   return bancosPreenchidos(bancos).reduce(
-    (t, b) =>
-      t + (b.temConta ? (b.conta?.extrato.linhas.length ?? 0) : 0) + (b.temCartao ? (b.cartao?.extrato.linhas.length ?? 0) : 0),
+    (t, b) => t + (b.temConta ? b.itensConta.length : 0) + (b.temCartao ? b.comprasManuais.length : 0),
     0,
   );
 }
@@ -133,34 +119,10 @@ export function criarTudoDosExtratos(bancos: BancoExtrato[]) {
     const id = adicionarCartao(dados);
     ids.set(semAcento(dados.nome), id);
 
-    if (b.temConta && b.conta)
-      adicionarLancamentos(
-        b.conta.extrato.linhas
-          // Pagamento de fatura: as compras já entram pelo cartão (senão o gasto contaria duas vezes)
-          .filter((l) => l.categoria !== "Fatura do cartão")
-          .map((l) => ({
-            tipo: l.tipo,
-            valor: l.valor,
-            descricao: l.descricao,
-            categoria: l.categoria,
-            data: l.data,
-            pago: l.data <= hoje,
-            contaId: id,
-            jaNoSaldo: true, // já está no saldo de hoje
-            extratoId: l.id,
-            importado: true,
-          })),
-      );
-    if (b.temCartao && b.cartao) {
-      const linhas = b.cartao.extrato.linhas;
-      const repetida = parcelaRepetida(linhas);
-      adicionarCompras(
-        linhas
-          .filter((l) => l.tipo === "saida" && !repetida(l))
-          .map((l) => compraDoExtrato(l, { id, diaFechamento: dados.diaFechamento, diaVencimento: dados.diaVencimento })),
-      );
-    }
-    if (b.temCartao && b.comprasManuais.length) adicionarCompras(comprasManuaisParaCartao(b.comprasManuais, id));
+    // Como a pessoa conferiu: nomes, valores, categorias, parcelas e o que se repete
+    if (b.temConta && b.itensConta.length) criarItensDaConta(b.itensConta, id);
+    if (b.temCartao && b.comprasManuais.length)
+      criarItensDoCartao(b.comprasManuais, { id, diaFechamento: dados.diaFechamento, diaVencimento: dados.diaVencimento });
   });
   return ids;
 }
@@ -310,13 +272,20 @@ export default function BoasVindasExtratos({
       lidoDoArquivo.ehCartao && onde === "conta" ? "Esse arquivo é do cartão de crédito: coloquei no espaço do cartão." : "",
     );
     const nome = b.banco.trim() || bancoDoArquivo(arquivo.name, texto);
-    if (destino === "cartao") mudar(b.id, { cartao: lido, temCartao: true, banco: nome });
+    if (destino === "cartao")
+      mudar(b.id, {
+        cartao: lido,
+        temCartao: true,
+        banco: nome,
+        comprasManuais: [...b.comprasManuais.filter((c) => c.origem !== "arquivo"), ...itensDoExtrato(extrato, "cartao")],
+      });
     else
       mudar(b.id, {
         conta: lido,
         temConta: true,
         banco: nome,
         saldo: extrato.saldo !== undefined ? valorParaCampo(extrato.saldo) : b.saldo,
+        itensConta: [...b.itensConta.filter((c) => c.origem !== "arquivo"), ...itensDoExtrato(extrato, "conta")],
       });
   }
 
@@ -372,7 +341,7 @@ export default function BoasVindasExtratos({
                 ajuda="OFX ou CSV · escolha ou arraste aqui"
                 arquivo={b.conta}
                 onArquivo={(f) => void receber(b, "conta", f)}
-                onTirar={() => mudar(b.id, { conta: null })}
+                onTirar={() => mudar(b.id, { conta: null, itensConta: b.itensConta.filter((c) => c.origem !== "arquivo") })}
               />
               <Campo rotulo="Quanto tem nessa conta hoje?">
                 <CampoValor valor={b.saldo} onChange={(saldo) => mudar(b.id, { saldo })} negativo />
@@ -382,6 +351,7 @@ export default function BoasVindasExtratos({
                     : "Olhe no app do banco. Em branco = R$ 0,00."}
                 </span>
               </Campo>
+              <ComprasManuais modo="conta" lista={b.itensConta} onChange={(itensConta) => mudar(b.id, { itensConta })} />
             </div>
           )}
 
@@ -394,17 +364,17 @@ export default function BoasVindasExtratos({
                 aceitaPrints
                 arquivo={b.cartao}
                 onArquivo={(f) => void receber(b, "cartao", f)}
-                onTirar={() => mudar(b.id, { cartao: null })}
+                onTirar={() =>
+                  mudar(b.id, { cartao: null, comprasManuais: b.comprasManuais.filter((c) => c.origem !== "arquivo") })
+                }
                 onPrints={(imagens) => void lerPrints(b.id, imagens)}
               />
-              {!b.cartao && (
-                <ComprasManuais
-                  lista={b.comprasManuais}
-                  onChange={(comprasManuais) => mudar(b.id, { comprasManuais })}
-                  onPrints={(imagens) => void lerPrints(b.id, imagens)}
-                  status={prints[b.id] ?? { lendo: "", aviso: "", texto: "" }}
-                />
-              )}
+              <ComprasManuais
+                lista={b.comprasManuais}
+                onChange={(comprasManuais) => mudar(b.id, { comprasManuais })}
+                onPrints={(imagens) => void lerPrints(b.id, imagens)}
+                status={prints[b.id] ?? { lendo: "", aviso: "", texto: "" }}
+              />
               <div className="grid gap-3 sm:grid-cols-3">
                 <Campo rotulo="Limite do cartão">
                   <CampoValor valor={b.limite} onChange={(limite) => mudar(b.id, { limite })} />
