@@ -172,8 +172,8 @@ export default function Mercado() {
         </section>
       )}
 
-      {/* Pós-compra: o que tem em casa e quando acaba */}
-      {emCasa.length > 0 && (
+      {/* Pós-compra: o que tem em casa e quando acaba (sempre aparece, para dar para adicionar o que já tem) */}
+      {(emCasa.length > 0 || lista.length > 0) && (
         <section className="cartao p-4">
           <div className="mb-3 flex items-center justify-between gap-2">
             <h2 className="font-display font-semibold">🏠 Em casa</h2>
@@ -184,6 +184,11 @@ export default function Mercado() {
               + Já tenho em casa
             </button>
           </div>
+          {emCasa.length === 0 && (
+            <p className="text-sm text-suave">
+              Nada por aqui ainda. O que você comprar (ou já tiver) aparece aqui, com quando vai acabar.
+            </p>
+          )}
           <ul className="divide-y divide-white/5">
             {emCasa.map(({ item, s }) => (
               <li key={item.id} className="flex items-center gap-3 py-2.5">
