@@ -37,6 +37,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const perfil = usePerfil();
   const emBoasVindas = caminho === "/boas-vindas";
   const emEntrar = caminho === "/entrar";
+  // Painel de controle (localhost): tela própria, sem o app em volta
+  const emPainel = caminho === "/painel";
   // Com a nuvem ligada: primeiro entrar e trazer os dados; só depois decidir se vai para o questionário
   const nuvem = useEstadoNuvem();
   const dadosProntos = nuvem === "pronto";
@@ -68,6 +70,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (pronto) registrarRendaQueJaCaiu();
   }, [pronto, fontes, contas]);
+
+  if (emPainel) return <>{children}</>;
 
   // Entrar e o questionário ocupam a tela inteira, sem menu
   if (emEntrar || (emBoasVindas && dadosProntos))
