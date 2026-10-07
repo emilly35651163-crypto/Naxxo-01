@@ -47,7 +47,8 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
     return lidas
       .filter((l) => !cartao || l.tipo === "saida") // no cartão, pagamento e estorno não são compras
       .map((l) => {
-        if (id && jaExiste(l, id, lancamentos, compras, cartao)) return { ...l, marcada: false, aviso: "já está no app" };
+        const existente = jaExiste(l, id, lancamentos, compras, cartao);
+        if (existente) return { ...l, marcada: false, aviso: `já está no app: “${existente}”` };
         if (l.categoria === "Fatura do cartão")
           return { ...l, marcada: false, aviso: "pagamento de fatura: registre em Contas → Pagar fatura" };
         return { ...l, marcada: true };
@@ -232,7 +233,12 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline justify-between gap-2">
-                        <span className="truncate text-sm">{l.descricao}</span>
+                        <input
+                          value={l.descricao}
+                          onChange={(e) => mudarLinha(i, { descricao: e.target.value })}
+                          aria-label="Título"
+                          className="min-w-0 flex-1 rounded-lg border border-transparent bg-transparent px-1 py-0.5 text-sm hover:border-white/15 focus:border-rosa focus:outline-none"
+                        />
                         <span
                           className={`shrink-0 text-sm font-semibold ${l.tipo === "entrada" ? "text-entrada" : "text-saida"}`}
                         >

@@ -92,6 +92,30 @@ function categoriaPelaDescricao(descricao: string, tipo: Tipo) {
 /** Linhas que não são movimento (saldo do dia, saldo anterior…) */
 const NAO_E_MOVIMENTO = /^saldo|saldo do dia|saldo anterior|saldo final|s a l d o|total/;
 
+const MINUSCULAS = new Set(["de", "da", "do", "das", "dos", "e"]);
+
+/** "MERCADO VIOLETA LTDA" → "Mercado Violeta Ltda" (só quando está tudo em maiúsculas) */
+function capitalizar(texto: string) {
+  if (texto !== texto.toUpperCase()) return texto;
+  return texto
+    .toLowerCase()
+    .split(" ")
+    .map((p, i) => (i > 0 && MINUSCULAS.has(p) ? p : p.charAt(0).toUpperCase() + p.slice(1)))
+    .join(" ");
+}
+
+/** Deixa o título do jeito que a pessoa escreveria: tira "Compra no débito -", CPF mascarado, agência… */
+export function limparDescricao(descricao: string) {
+  const partes = descricao.split(/\s+-\s+/).map((p) => p.trim());
+  const [inicio, nome] = [semAcento(partes[0] ?? ""), partes[1] ?? ""];
+  if (nome) {
+    if (/transferencia enviada|pix enviado|transferencia pix enviada/.test(inicio)) return `Pix para ${capitalizar(nome)}`;
+    if (/transferencia recebida|pix recebido/.test(inicio)) return `Pix de ${capitalizar(nome)}`;
+    if (/^compra (no|com) (debito|cartao)|^compra$/.test(inicio)) return capitalizar(nome);
+  }
+  return capitalizar(descricao);
+}
+
 function linha(
   dataTexto: string,
   descricao: string,
@@ -108,7 +132,7 @@ function linha(
   return {
     id: idBanco ? `b:${idBanco}` : `${data}|${valor}|${semAcento(desc).slice(0, 40)}`,
     data,
-    descricao: desc || "Sem descrição",
+    descricao: limparDescricao(desc) || "Sem descrição",
     valor,
     tipo,
     categoria: categoriaPelaDescricao(desc, tipo),
@@ -213,9 +237,17 @@ export function lerExtrato(texto: string): Extrato {
 const diasEntre = (a: string, b: string) =>
   Math.abs(new Date(`${a}T12:00:00`).getTime() - new Date(`${b}T12:00:00`).getTime()) / 864e5;
 
+/** Valores "iguais": exatos, ou bem perto (até 2%) quando é da mesma categoria (ex.: mercado lançado com centavos de diferença). */
+function valorParecido(a: number, b: number, mesmaCategoria: boolean) {
+  const diferenca = Math.abs(a - b);
+  return diferenca < 0.01 || (mesmaCategoria && diferenca <= Math.max(a, b) * 0.02);
+}
+
 /**
- * Já está no app? Mesmo id de extrato, ou mesmo valor e tipo na mesma conta com até 2 dias de diferença
- * (para não duplicar o que a pessoa já tinha lançado à mão).
+ * O que já está no app e parece ser esta linha do extrato (para não duplicar o que a pessoa já tinha lançado).
+ * Vale: o mesmo id de extrato; ou mesmo tipo e valor parecido com até 3 dias de diferença,
+ * em qualquer conta (lançamentos antigos podem estar sem conta ou na conta errada).
+ * Devolve a descrição do que já existe, ou null.
  */
 export function jaExiste(
   l: LinhaExtrato,
@@ -223,16 +255,20 @@ export function jaExiste(
   lancamentos: Lancamento[],
   compras: CompraCartao[],
   ehCartao: boolean,
-) {
-  if (ehCartao)
-    return compras.some(
+): string | null {
+  const perto = (data: string) => diasEntre(data, l.data) <= 3;
+  if (ehCartao) {
+    const c = compras.find(
       (c) =>
-        c.cartaoId === contaId &&
-        (c.extratoId === l.id || (Math.abs(c.valorTotal - l.valor) < 0.01 && diasEntre(c.data, l.data) <= 2)),
+        c.extratoId === l.id ||
+        (c.cartaoId === contaId && perto(c.data) && valorParecido(c.valorTotal, l.valor, c.categoria === l.categoria)),
     );
-  return lancamentos.some(
+    return c ? c.descricao : null;
+  }
+  const x = lancamentos.find(
     (x) =>
-      x.contaId === contaId &&
-      (x.extratoId === l.id || (x.tipo === l.tipo && Math.abs(x.valor - l.valor) < 0.01 && diasEntre(x.data, l.data) <= 2)),
+      x.extratoId === l.id ||
+      (x.tipo === l.tipo && perto(x.data) && valorParecido(x.valor, l.valor, x.categoria === l.categoria)),
   );
+  return x ? x.descricao : null;
 }
