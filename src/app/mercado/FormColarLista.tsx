@@ -22,8 +22,15 @@ export default function FormColarLista({ onFechar }: { onFechar: () => void }) {
   const prefs = usePreferencias();
   const [texto, setTexto] = useState("");
   const [comprei, setComprei] = useState(true);
+  const [precoDaLinha, setPrecoDaLinha] = useState(true);
   const [contaId, setContaId] = useState(contas.find((c) => c.id === prefs.ultimaConta)?.id ?? contas[0]?.id ?? "");
-  const itens = lerListaColada(texto);
+  const itens = lerListaColada(texto, precoDaLinha);
+  // Itens que aparecem duas vezes no texto (pode ter sido sem querer)
+  const linhas = texto
+    .split(/\r?\n/)
+    .map((l) => l.trim().toLowerCase())
+    .filter(Boolean);
+  const repetidas = [...new Set(linhas.filter((l, i) => linhas.indexOf(l) !== i))];
   const total = itens.reduce((t, i) => t + i.total, 0);
 
   function salvar() {
@@ -66,6 +73,31 @@ export default function FormColarLista({ onFechar }: { onFechar: () => void }) {
 
         {itens.length > 0 && (
           <>
+            <div className="space-y-1">
+              <span className="text-xs text-suave">Os preços são…</span>
+              <div
+                className="grid grid-cols-2 gap-1 rounded-full bg-fundo p-1 text-sm"
+                role="radiogroup"
+                aria-label="Os preços são"
+              >
+                {[true, false].map((v) => (
+                  <button
+                    key={String(v)}
+                    role="radio"
+                    aria-checked={precoDaLinha === v}
+                    onClick={() => setPrecoDaLinha(v)}
+                    className={`rounded-full py-2 ${precoDaLinha === v ? "bg-white font-semibold text-fundo" : "text-suave"}`}
+                  >
+                    {v ? "Total da linha (nota)" : "De cada unidade"}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {repetidas.length > 0 && (
+              <p className="rounded-2xl border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-xs">
+                ⚠️ Aparece duas vezes: <b>{repetidas.join(", ")}</b>. Se foi sem querer, apague uma das linhas.
+              </p>
+            )}
             <ul className="max-h-56 divide-y divide-white/5 overflow-y-auto rounded-2xl bg-fundo/50 px-3 text-sm">
               {itens.map((i) => (
                 <li key={i.nome} className="flex items-center gap-2 py-1.5">

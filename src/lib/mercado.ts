@@ -180,11 +180,11 @@ const texto = (n: number) => String(Math.round(n * 1000) / 1000).replace(".", ",
 
 /**
  * Lê linhas como "5kg Arroz 24,99", "4 Sabonete de 5,88", "2 pacotinhos Bacon 14,99 cada", "1,5kg de sobrecoxa 25,48".
- * - "de 5,88" / "cada": preço de cada unidade; sem isso, o preço é o total.
+ * - `precoDaLinha` (padrão, como na nota): o número é o total da linha. Sem ele, "de 5,88" / "cada" é o preço de cada unidade.
  * - Peso em carnes e hortifrúti vira preço por kg; nos outros (pacote de 5 kg de arroz), o peso vai no nome.
  * Itens repetidos são somados.
  */
-export function lerListaColada(textoColado: string): ItemColado[] {
+export function lerListaColada(textoColado: string, precoDaLinha = true): ItemColado[] {
   const itens: ItemColado[] = [];
   for (const bruta of textoColado.split(/\r?\n/)) {
     let linha = bruta.trim();
@@ -192,10 +192,11 @@ export function lerListaColada(textoColado: string): ItemColado[] {
     const preco = linha.match(/(\d{1,3}(?:\.\d{3})*,\d{2}|\d+[.,]\d{2})\s*(cada|und|un)?\s*$/i);
     if (!preco) continue;
     let valor = num(preco[1].includes(",") ? preco[1] : preco[1].replace(".", ","));
-    let porUnidade = !!preco[2] && /cada/i.test(preco[2]);
+    // Na nota do mercado, o número já é o total da linha; "de cada unidade" multiplica pela quantidade
+    let porUnidade = !precoDaLinha && !!preco[2] && /cada/i.test(preco[2]);
     linha = linha.slice(0, preco.index).trim();
     if (/\sde$/i.test(linha)) {
-      porUnidade = true;
+      porUnidade = !precoDaLinha;
       linha = linha.replace(/\s+de$/i, "").trim();
     }
     // Quantidade e medida no começo: "5kg", "300g", "2 und", "2 pacotinhos", "pote de", "1,5kg de"
