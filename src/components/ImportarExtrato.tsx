@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import {
   adicionarCompras,
   adicionarLancamentos,
+  atualizarCompra,
+  atualizarLancamento,
   categoriasDe,
   useCartoes,
   useCategoriasPersonalizadas,
@@ -13,7 +15,7 @@ import {
 import { brl, formatarData, hojeISO } from "@/lib/formato";
 import { cartoesDeCredito, marcoDoSaldo } from "@/lib/contas";
 import { faturaAberta, faturaDaData } from "@/lib/cartoes";
-import { jaExiste, lerExtrato, type LinhaExtrato } from "@/lib/extrato";
+import { jaExiste, lerExtrato, type Existente, type LinhaExtrato } from "@/lib/extrato";
 import { comDesfazer } from "@/lib/avisos";
 import Modal from "./Modal";
 
@@ -24,7 +26,13 @@ async function lerArquivo(arquivo: File) {
   return utf8.includes("�") ? new TextDecoder("windows-1252").decode(bytes) : utf8;
 }
 
-type Linha = LinhaExtrato & { marcada: boolean; aviso?: string };
+/**
+ * Linha do extrato na lista. Com `conflito`, já existe algo parecido (data, valor ou conta diferente)
+ * e a pessoa precisa dizer qual está certo:
+ * - "app": o que já estava fica como está;  - "extrato": corrige o que estava com os dados do extrato;
+ * - "ambos": são duas coisas diferentes, inclui a do extrato também.
+ */
+type Linha = LinhaExtrato & { marcada: boolean; aviso?: string; conflito?: Existente; escolha?: "app" | "extrato" | "ambos" };
 
 // Importar o extrato do banco (OFX ou CSV): mostra tudo antes, a pessoa desmarca o que não quer e importa.
 export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar: () => void; arquivoInicial?: File | null }) {
@@ -48,7 +56,8 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
       .filter((l) => !cartao || l.tipo === "saida") // no cartão, pagamento e estorno não são compras
       .map((l) => {
         const existente = jaExiste(l, id, lancamentos, compras, cartao);
-        if (existente) return { ...l, marcada: false, aviso: `já está no app: “${existente}”` };
+        if (existente?.exato) return { ...l, marcada: false, aviso: `já está no app: “${existente.descricao}”` };
+        if (existente) return { ...l, marcada: false, conflito: existente };
         if (l.categoria === "Fatura do cartão")
           return { ...l, marcada: false, aviso: "pagamento de fatura: registre em Contas → Pagar fatura" };
         return { ...l, marcada: true };
@@ -93,17 +102,34 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
     setLinhas((atual) => atual && atual.map((l, j) => (j === i ? { ...l, ...mudancas } : l)));
   }
 
-  const marcadas = linhas?.filter((l) => l.marcada) ?? [];
+  const marcadas = linhas?.filter((l) => (l.conflito ? l.escolha === "ambos" : l.marcada)) ?? [];
+  const corrigir = linhas?.filter((l) => l.conflito && l.escolha === "extrato") ?? [];
+  const manter = linhas?.filter((l) => l.conflito && l.escolha === "app") ?? [];
+  const semResposta = linhas?.filter((l) => l.conflito && !l.escolha).length ?? 0;
+  const nomeConta = (id?: string) => contas.find((x) => x.id === id)?.nome ?? "sem conta";
   const totalSai = marcadas.filter((l) => l.tipo === "saida").reduce((t, l) => t + l.valor, 0);
   const totalEntra = marcadas.filter((l) => l.tipo === "entrada").reduce((t, l) => t + l.valor, 0);
 
+  const semDuvida = linhas?.filter((l) => !l.conflito) ?? [];
+  const todasMarcadas = semDuvida.length > 0 && semDuvida.every((l) => l.marcada);
+
   function importar() {
     if (!conta) return setErro(ehCartao ? "Escolha o cartão." : "Escolha a conta.");
-    if (marcadas.length === 0) return setErro("Marque pelo menos uma movimentação.");
+    if (semResposta > 0)
+      return setErro(`Falta dizer qual está certo em ${semResposta} ${semResposta > 1 ? "itens" : "item"} (marcados com ⚖️).`);
+    if (marcadas.length + corrigir.length + manter.length === 0) return setErro("Marque pelo menos uma movimentação.");
     const hoje = hojeISO();
+    const texto = [marcadas.length && `${marcadas.length} importados`, corrigir.length && `${corrigir.length} corrigidos`]
+      .filter(Boolean)
+      .join(", ");
     if (ehCartao) {
       const aberta = faturaAberta(conta);
-      comDesfazer(`${marcadas.length} compras importadas ✓`, () =>
+      comDesfazer(`${texto || "Pronto"} ✓`, () => {
+        // Corrige com os dados do extrato; o que ficou como no app só ganha a marca (para não perguntar de novo)
+        corrigir.forEach((l) =>
+          atualizarCompra(l.conflito!.id, { data: l.data, valorTotal: l.valor, cartaoId: conta.id, extratoId: l.id }),
+        );
+        manter.forEach((l) => atualizarCompra(l.conflito!.id, { extratoId: l.id }));
         adicionarCompras(
           marcadas.map((l) => ({
             cartaoId: conta.id,
@@ -116,12 +142,22 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
             data: l.data,
             extratoId: l.id,
           })),
-        ),
-      );
+        );
+      });
     } else {
       // O que aconteceu até o dia em que o saldo foi informado já está nele: não muda o saldo
       const diaDoMarco = marcoDoSaldo(conta).slice(0, 10);
-      comDesfazer(`${marcadas.length} lançamentos importados ✓`, () =>
+      comDesfazer(`${texto || "Pronto"} ✓`, () => {
+        corrigir.forEach((l) =>
+          atualizarLancamento(l.conflito!.id, {
+            data: l.data,
+            valor: l.valor,
+            contaId: conta.id,
+            pago: l.data <= hoje,
+            extratoId: l.id,
+          }),
+        );
+        manter.forEach((l) => atualizarLancamento(l.conflito!.id, { extratoId: l.id }));
         adicionarLancamentos(
           marcadas.map((l) => ({
             tipo: l.tipo,
@@ -134,8 +170,8 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
             jaNoSaldo: l.data <= diaDoMarco || undefined,
             extratoId: l.id,
           })),
-        ),
-      );
+        );
+      });
     }
     onFechar();
   }
@@ -207,13 +243,14 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
             <div className="flex items-center justify-between text-sm">
               <span>
                 <b>{marcadas.length}</b> de {linhas.length} marcadas
+                {semResposta > 0 && <span className="text-amber-300"> · {semResposta} para conferir ⚖️</span>}
               </span>
               <button
                 type="button"
-                onClick={() => setLinhas(linhas.map((l) => ({ ...l, marcada: marcadas.length < linhas.length })))}
+                onClick={() => setLinhas(linhas.map((l) => (l.conflito ? l : { ...l, marcada: !todasMarcadas })))}
                 className="text-rosa"
               >
-                {marcadas.length < linhas.length ? "Marcar todas" : "Desmarcar todas"}
+                {todasMarcadas ? "Desmarcar todas" : "Marcar todas"}
               </button>
             </div>
 
@@ -226,7 +263,8 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
                   <div className="flex items-start gap-3">
                     <input
                       type="checkbox"
-                      checked={l.marcada}
+                      disabled={!!l.conflito}
+                      checked={l.conflito ? l.escolha === "ambos" : l.marcada}
                       onChange={(e) => mudarLinha(i, { marcada: e.target.checked })}
                       aria-label={`Importar ${l.descricao}`}
                       className="mt-1 size-4 accent-[#FF4ED8]"
@@ -264,6 +302,52 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
                         </select>
                       </div>
                       {l.aviso && <p className="mt-1 text-[0.7rem] text-amber-300">⚠️ {l.aviso}</p>}
+                      {l.conflito && (
+                        <div className="mt-2 space-y-2 rounded-xl border border-amber-300/40 bg-amber-300/10 p-2 text-xs">
+                          <p>
+                            ⚖️ Parecido com o que já está no app: <b>“{l.conflito.descricao}”</b>
+                          </p>
+                          <div className="grid grid-cols-[auto_1fr_1fr] gap-x-3 gap-y-0.5">
+                            <span />
+                            <span className="text-suave">No app</span>
+                            <span className="text-suave">No extrato</span>
+                            {[
+                              ["Data", formatarData(l.conflito.data), formatarData(l.data)],
+                              ["Valor", brl(l.conflito.valor), brl(l.valor)],
+                              ["Conta", nomeConta(l.conflito.contaId), conta?.nome ?? ""],
+                            ].map(([rotulo, app, extrato]) => (
+                              <div key={rotulo} className="contents">
+                                <span className="text-suave">{rotulo}</span>
+                                <span>{app}</span>
+                                <span className={app !== extrato ? "font-semibold text-amber-300" : ""}>{extrato}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <p className="font-medium">O que está certo?</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {(
+                              [
+                                ["app", "O do app"],
+                                ["extrato", "O do extrato (corrigir)"],
+                                ["ambos", "São diferentes: incluir"],
+                              ] as const
+                            ).map(([valor, nome]) => (
+                              <button
+                                key={valor}
+                                type="button"
+                                onClick={() => mudarLinha(i, { escolha: valor })}
+                                className={`rounded-full border px-2.5 py-1 transition-colors ${
+                                  l.escolha === valor
+                                    ? "border-rosa bg-rosa/20 text-white"
+                                    : "border-white/15 text-suave hover:text-white"
+                                }`}
+                              >
+                                {nome}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </li>
@@ -291,7 +375,9 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
 
         {linhas && (
           <button type="button" onClick={importar} className="botao-gradiente w-full rounded-full py-3 font-semibold">
-            Importar {marcadas.length} {ehCartao ? "compras" : "lançamentos"}
+            {semResposta > 0
+              ? `Responda os ${semResposta} ⚖️ para continuar`
+              : `Importar ${marcadas.length} ${ehCartao ? "compras" : "lançamentos"}${corrigir.length ? ` e corrigir ${corrigir.length}` : ""}`}
           </button>
         )}
       </div>

@@ -243,11 +243,21 @@ function valorParecido(a: number, b: number, mesmaCategoria: boolean) {
   return diferenca < 0.01 || (mesmaCategoria && diferenca <= Math.max(a, b) * 0.02);
 }
 
+/** O que já está no app e parece ser a mesma movimentação. */
+export type Existente = {
+  id: string;
+  descricao: string;
+  data: string;
+  valor: number;
+  contaId?: string;
+  /** Igualzinho (mesmo dia, valor e conta, ou já veio deste extrato): não precisa perguntar */
+  exato: boolean;
+};
+
 /**
  * O que já está no app e parece ser esta linha do extrato (para não duplicar o que a pessoa já tinha lançado).
  * Vale: o mesmo id de extrato; ou mesmo tipo e valor parecido com até 3 dias de diferença,
  * em qualquer conta (lançamentos antigos podem estar sem conta ou na conta errada).
- * Devolve a descrição do que já existe, ou null.
  */
 export function jaExiste(
   l: LinhaExtrato,
@@ -255,20 +265,28 @@ export function jaExiste(
   lancamentos: Lancamento[],
   compras: CompraCartao[],
   ehCartao: boolean,
-): string | null {
+): Existente | null {
   const perto = (data: string) => diasEntre(data, l.data) <= 3;
+  const igual = (data: string, valor: number, conta?: string) =>
+    data === l.data && Math.abs(valor - l.valor) < 0.01 && conta === contaId;
   if (ehCartao) {
     const c = compras.find(
       (c) =>
         c.extratoId === l.id ||
         (c.cartaoId === contaId && perto(c.data) && valorParecido(c.valorTotal, l.valor, c.categoria === l.categoria)),
     );
-    return c ? c.descricao : null;
+    if (!c) return null;
+    const exato = c.extratoId === l.id || igual(c.data, c.valorTotal, c.cartaoId);
+    return { id: c.id, descricao: c.descricao, data: c.data, valor: c.valorTotal, contaId: c.cartaoId, exato };
   }
-  const x = lancamentos.find(
+  // Prefere o que é igualzinho; senão, o mais parecido
+  const candidatos = lancamentos.filter(
     (x) =>
       x.extratoId === l.id ||
       (x.tipo === l.tipo && perto(x.data) && valorParecido(x.valor, l.valor, x.categoria === l.categoria)),
   );
-  return x ? x.descricao : null;
+  const x = candidatos.find((x) => x.extratoId === l.id || igual(x.data, x.valor, x.contaId)) ?? candidatos[0];
+  if (!x) return null;
+  const exato = x.extratoId === l.id || igual(x.data, x.valor, x.contaId);
+  return { id: x.id, descricao: x.descricao, data: x.data, valor: x.valor, contaId: x.contaId, exato };
 }
