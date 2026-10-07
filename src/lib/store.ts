@@ -1724,10 +1724,12 @@ export function concluirBoasVindas(dados: {
   fontes: Omit<FonteRenda, "id">[];
   metas: Omit<Meta, "id">[];
 }) {
-  fontes.gravar(dados.fontes.map((f) => ({ ...f, id: novoId() })));
+  const criadas = dados.fontes.map((f) => ({ ...f, id: novoId() }));
+  fontes.gravar(criadas);
   // Meta sem valor não é salva (evita "R$ 0,00 de R$ 0,00")
   metas.gravar(dados.metas.filter((m) => m.alvo > 0).map((m) => ({ ...m, id: novoId() })));
   perfil.gravar({ ...dados.perfil, concluido: true });
+  return criadas;
 }
 
 /** Apaga as respostas, metas e fontes de renda (os lançamentos continuam). */

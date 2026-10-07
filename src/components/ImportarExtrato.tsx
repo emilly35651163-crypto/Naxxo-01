@@ -14,14 +14,13 @@ import {
   useCompras,
   useLancamentos,
 } from "@/lib/store";
-import { brl, dataDoRecebimento, formatarData, hojeISO, mesAtual, somarMeses } from "@/lib/formato";
+import { brl, formatarData, hojeISO, mesAtual, somarMeses } from "@/lib/formato";
 import { previstosDoMes, type Previsto } from "@/lib/previstos";
 import { useDados } from "@/lib/dados";
 import { confirmarPrevisto } from "./ConfirmarPrevisto";
 import { PainelFrequente, PainelLigar, previstoParecido, type Frequente, type Ligacao } from "./LigarOuFrequente";
 import { cartoesDeCredito, marcoDoSaldo, saldoDaConta } from "@/lib/contas";
-import { faturaAberta, faturaDaData } from "@/lib/cartoes";
-import { jaExiste, lerExtrato, type Existente, type LinhaExtrato } from "@/lib/extrato";
+import { compraDoExtrato, jaExiste, lerExtrato, parcelaRepetida, type Existente, type LinhaExtrato } from "@/lib/extrato";
 import { comDesfazer } from "@/lib/avisos";
 import Modal from "./Modal";
 
@@ -68,15 +67,6 @@ function semCalculo(l: LinhaExtrato | Linha): LinhaExtrato & Pick<Linha, "ligado
   return c as LinhaExtrato;
 }
 
-/** A mesma compra parcelada (mesmo nome, nº de parcelas e valor) */
-const chaveDaCompra = (l: LinhaExtrato) => `${l.descricao.toLowerCase()}|${l.parcela?.total}|${l.valor}`;
-
-/** Data da compra de uma parcela: a parcela N caiu N-1 meses depois da compra. */
-function dataDaCompra(l: LinhaExtrato) {
-  if (!l.parcela || l.parcela.numero <= 1) return l.data;
-  return dataDoRecebimento(String(Number(l.data.slice(8, 10))), somarMeses(l.data.slice(0, 7), -(l.parcela.numero - 1)));
-}
-
 // Importar o extrato do banco (OFX ou CSV): mostra tudo antes, a pessoa desmarca o que não quer e importa.
 export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar: () => void; arquivoInicial?: File | null }) {
   const contas = useCartoes();
@@ -102,14 +92,12 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
     const usados = new Set<string>(); // cada previsto é sugerido para uma linha só
     const usadosNoApp = new Set<string>(); // cada lançamento/compra do app vale para uma linha só
     // Parcelas da mesma compra no arquivo (ex.: 2/10 e 3/10 em faturas diferentes): fica uma só, a mais recente
-    const ultimaParcela = new Map<string, number>();
-    for (const l of lidas)
-      if (l.parcela) ultimaParcela.set(chaveDaCompra(l), Math.max(ultimaParcela.get(chaveDaCompra(l)) ?? 0, l.parcela.numero));
+    const repetida = parcelaRepetida(lidas);
     return lidas
       .map(semCalculo)
       .filter((l) => !cartao || l.tipo === "saida") // no cartão, pagamento e estorno não são compras
       .map((l): Linha => {
-        if (l.parcela && ultimaParcela.get(chaveDaCompra(l)) !== l.parcela.numero)
+        if (repetida(l))
           return { ...l, marcada: false, aviso: "outra parcela da mesma compra (ela entra uma vez só, pela mais recente)" };
         const existente = jaExiste(l, id, lancamentos, compras, cartao, usadosNoApp);
         if (existente?.exato) return { ...l, marcada: false, aviso: `já está no app: “${existente.descricao}”` };
@@ -218,33 +206,13 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
       .filter(Boolean)
       .join(", ");
     if (ehCartao) {
-      const aberta = faturaAberta(conta);
       comDesfazer(`${texto || "Pronto"} ✓`, () => {
         // Corrige com os dados do extrato; o que ficou como no app só ganha a marca (para não perguntar de novo)
         corrigir.forEach((l) =>
           atualizarCompra(l.conflito!.id, { data: l.data, valorTotal: l.valor, cartaoId: conta.id, extratoId: l.id }),
         );
         manter.forEach((l) => atualizarCompra(l.conflito!.id, { extratoId: l.id }));
-        adicionarCompras(
-          marcadas.map((l) => {
-            const parcelas = l.parcela?.total ?? 1;
-            const numero = l.parcela?.numero ?? 1;
-            // Faturas que já fecharam: a parcela entra no histórico, mas não volta a cobrar
-            const fechou = faturaDaData(l.data, conta) < aberta;
-            const pagas = numero - 1 + (fechou ? 1 : 0);
-            return {
-              cartaoId: conta.id,
-              descricao: l.descricao,
-              categoria: l.categoria,
-              valorTotal: Math.round(l.valor * parcelas * 100) / 100,
-              parcelas,
-              parcelasPagas: pagas || undefined,
-              data: dataDaCompra(l),
-              extratoId: l.id,
-              importado: true,
-            };
-          }),
-        );
+        adicionarCompras(marcadas.map((l) => compraDoExtrato(l, conta)));
       });
     } else {
       // O que aconteceu até o dia em que o saldo foi informado já está nele: não muda o saldo

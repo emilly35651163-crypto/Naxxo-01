@@ -1,6 +1,8 @@
 // Ler o extrato que a pessoa baixa no app do banco (OFX ou CSV) e transformar em lançamentos.
 
-import type { CompraCartao, Lancamento, Tipo } from "./store";
+import type { Cartao, CompraCartao, Lancamento, Tipo } from "./store";
+import { dataDoRecebimento, somarMeses } from "./formato";
+import { faturaAberta, faturaDaData } from "./cartoes";
 
 export type LinhaExtrato = {
   /** Identificador estável da linha (do banco, quando tem; senão data+valor+descrição) */
@@ -14,7 +16,8 @@ export type LinhaExtrato = {
   parcela?: { numero: number; total: number };
 };
 
-export type Extrato = { linhas: LinhaExtrato[]; ehCartao: boolean };
+/** `saldo`: o saldo da conta que veio no arquivo (OFX tem; alguns CSV têm "Saldo do dia"). */
+export type Extrato = { linhas: LinhaExtrato[]; ehCartao: boolean; saldo?: number };
 
 const semAcento = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
@@ -172,7 +175,10 @@ function lerOFX(texto: string): Extrato {
     const l = linha(campoOFX(b, "DTPOSTED"), descricao, ehCartao ? -valor : valor, campoOFX(b, "FITID") || undefined, ehCartao);
     return l ? [l] : [];
   });
-  return { linhas, ehCartao };
+  // Saldo da conta (no cartão, o BALAMT é a fatura: não serve)
+  const saldoTexto = ehCartao ? "" : campoOFX(texto.split(/<LEDGERBAL>/i)[1] ?? "", "BALAMT");
+  const saldo = saldoTexto ? lerNumero(saldoTexto) : NaN;
+  return { linhas, ehCartao, ...(Number.isFinite(saldo) ? { saldo } : {}) };
 }
 
 // ---------- CSV ----------
@@ -224,9 +230,15 @@ function lerCSV(texto: string): Extrato {
   }
   if (iData < 0 || iValor < 0) return { linhas: [], ehCartao };
 
+  let saldo: number | undefined;
   const linhas = linhasTexto.slice(inicio + 1).flatMap((texto) => {
     const c = separarCSV(texto, sep);
     let valor = lerNumero(c[iValor] ?? "");
+    // "Saldo do dia" / "Saldo": guarda o último (é o saldo da conta no fim do extrato)
+    if (/^s ?a ?l ?d ?o/.test(semAcento(c[iDesc] ?? "")) && Number.isFinite(valor)) {
+      saldo = valor;
+      return [];
+    }
     const tipoTexto = semAcento(c[iTipo] ?? "");
     // Banco que manda o valor sempre positivo e diz o tipo em outra coluna
     if (iTipo >= 0 && valor > 0 && /saida|debito|^d$/.test(tipoTexto)) valor = -valor;
@@ -234,7 +246,7 @@ function lerCSV(texto: string): Extrato {
     const l = linha(c[iData] ?? "", descricao, valor, iId >= 0 ? c[iId] || undefined : undefined, ehCartao);
     return l ? [l] : [];
   });
-  return { linhas, ehCartao };
+  return { linhas, ehCartao, ...(saldo !== undefined && !ehCartao ? { saldo } : {}) };
 }
 
 /** Lê um extrato (OFX ou CSV). Linhas repetidas no próprio arquivo ficam uma vez só. */
@@ -346,4 +358,82 @@ export function jaExiste(
   usados.add(x.id);
   const exato = x.extratoId === l.id || igual(x.data, x.valor, x.contaId);
   return { id: x.id, descricao: x.descricao, data: x.data, valor: x.valor, contaId: x.contaId, exato };
+}
+
+// ---------- Para montar o app a partir dos extratos ----------
+
+const BANCOS: [string, RegExp][] = [
+  ["Nubank", /nubank|nu pagamentos|^nu_|\b0?260\b/],
+  ["Banco do Brasil", /banco do brasil|\bbb\b|\b0?001\b/],
+  ["Itaú", /itau|\b341\b/],
+  ["Bradesco", /bradesco|\b237\b/],
+  ["Santander", /santander|\b0?33\b/],
+  ["Caixa", /caixa|\b104\b/],
+  ["Inter", /\binter\b|banco inter|\b0?77\b/],
+  ["C6 Bank", /\bc6\b|\b336\b/],
+  ["PicPay", /picpay|\b380\b/],
+  ["Mercado Pago", /mercado ?pago|\b323\b/],
+  ["PagBank", /pagbank|pagseguro|\b290\b/],
+  ["Neon", /\bneon\b|\b536\b/],
+  ["Sicoob", /sicoob|\b756\b/],
+  ["Sicredi", /sicredi|\b748\b/],
+];
+
+/** Qual banco é o arquivo: pelo nome do arquivo, pelo <ORG>/<BANKID> do OFX ou pelo texto. "" se não der para saber. */
+export function bancoDoArquivo(nomeArquivo: string, texto: string) {
+  const ofx = [campoOFX(texto, "ORG"), campoOFX(texto, "BANKID"), campoOFX(texto, "FID")].join(" ");
+  const onde = semAcento(`${nomeArquivo} ${ofx}`);
+  return (
+    BANCOS.find(([, re]) => re.test(onde))?.[0] ?? BANCOS.find(([, re]) => re.test(semAcento(texto.slice(0, 600))))?.[0] ?? ""
+  );
+}
+
+/** O salário (ou a maior entrada que se parece com renda) do extrato, a mais recente. */
+export function detectarSalario(linhas: LinhaExtrato[]) {
+  const entradas = linhas.filter((l) => l.tipo === "entrada");
+  const salario = entradas.filter((l) => l.categoria === "Salário");
+  const candidatas = salario.length ? salario : entradas.filter((l) => l.valor >= 300 && !/^pix de /i.test(l.descricao));
+  const lista = candidatas.length ? candidatas : entradas.filter((l) => l.valor >= 300);
+  if (!lista.length) return null;
+  const maior = Math.max(...lista.map((l) => l.valor));
+  // A mais recente entre as maiores (até 10% menor que a maior)
+  const l = lista.filter((x) => x.valor >= maior * 0.9).sort((a, b) => b.data.localeCompare(a.data))[0];
+  return { valor: l.valor, dia: Number(l.data.slice(8, 10)), descricao: l.descricao, data: l.data };
+}
+
+/** A mesma compra parcelada (mesmo nome, nº de parcelas e valor) */
+export const chaveDaCompra = (l: LinhaExtrato) => `${l.descricao.toLowerCase()}|${l.parcela?.total}|${l.valor}`;
+
+/** Parcelas da mesma compra no arquivo (2/10, 3/10…): só a mais recente vale (a compra entra uma vez só). */
+export function parcelaRepetida(linhas: LinhaExtrato[]) {
+  const ultima = new Map<string, number>();
+  for (const l of linhas)
+    if (l.parcela) ultima.set(chaveDaCompra(l), Math.max(ultima.get(chaveDaCompra(l)) ?? 0, l.parcela.numero));
+  return (l: LinhaExtrato) => !!l.parcela && ultima.get(chaveDaCompra(l)) !== l.parcela.numero;
+}
+
+/** Linha do extrato do cartão → compra (parcelada, se for "Parcela N/M"), com as parcelas que já passaram como pagas. */
+export function compraDoExtrato(
+  l: LinhaExtrato,
+  cartao: Pick<Cartao, "id" | "diaFechamento" | "diaVencimento">,
+): Omit<CompraCartao, "id"> {
+  const parcelas = l.parcela?.total ?? 1;
+  const numero = l.parcela?.numero ?? 1;
+  // A parcela N caiu N-1 meses depois da compra
+  const data =
+    numero > 1 ? dataDoRecebimento(String(Number(l.data.slice(8, 10))), somarMeses(l.data.slice(0, 7), -(numero - 1))) : l.data;
+  // Faturas que já fecharam: a parcela entra no histórico, mas não volta a cobrar
+  const fechou = faturaDaData(l.data, cartao) < faturaAberta(cartao);
+  const pagas = numero - 1 + (fechou ? 1 : 0);
+  return {
+    cartaoId: cartao.id,
+    descricao: l.descricao,
+    categoria: l.categoria,
+    valorTotal: Math.round(l.valor * parcelas * 100) / 100,
+    parcelas,
+    parcelasPagas: pagas || undefined,
+    data,
+    extratoId: l.id,
+    importado: true,
+  };
 }
