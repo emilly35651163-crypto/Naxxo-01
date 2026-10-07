@@ -23,6 +23,7 @@ import { brl, formatarData, nomeMes } from "@/lib/formato";
 import { DURACOES, previsaoDoMes, situacaoDoItem } from "@/lib/mercado";
 import { comDesfazer, mostrarAviso } from "@/lib/avisos";
 import FormItemLista from "./FormItemLista";
+import FormColarLista from "./FormColarLista";
 import { gastosDoMes } from "@/lib/analise";
 import { useDados } from "@/lib/dados";
 import CamposPreco from "./CamposPreco";
@@ -35,6 +36,7 @@ export default function Mercado() {
   const prefs = usePreferencias();
   const mes = useMes();
   const [adicionando, setAdicionando] = useState(false);
+  const [colando, setColando] = useState(false);
   const [editando, setEditando] = useState<ItemLista | null>(null);
   const [listaAberta, setListaAberta] = useState(true);
 
@@ -104,9 +106,17 @@ export default function Mercado() {
         </section>
       )}
 
-      <button onClick={() => setAdicionando(true)} className="botao-gradiente w-full rounded-2xl py-4 text-base font-semibold">
-        + Adicionar à lista de compras
-      </button>
+      <div className="grid grid-cols-[1fr_auto] gap-2">
+        <button onClick={() => setAdicionando(true)} className="botao-gradiente rounded-2xl py-4 text-base font-semibold">
+          + Adicionar à lista
+        </button>
+        <button
+          onClick={() => setColando(true)}
+          className="rounded-2xl border border-rosa/50 px-4 text-sm font-semibold text-rosa"
+        >
+          📋 Colar lista
+        </button>
+      </div>
 
       {/* Lista de compras, por categoria */}
       {lista.length > 0 && (
@@ -206,6 +216,7 @@ export default function Mercado() {
         <p className="cartao p-5 text-center text-sm text-suave">Comece adicionando o que você costuma comprar. 🛒</p>
       )}
 
+      {colando && <FormColarLista onFechar={() => setColando(false)} />}
       {(adicionando || editando) && (
         <FormItemLista
           inicial={editando ?? undefined}

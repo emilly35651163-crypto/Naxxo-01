@@ -141,3 +141,100 @@ export const DURACOES: { rotulo: string; duracao: string; unidade: UnidadeDuraca
   { rotulo: "2 meses", duracao: "2", unidade: "meses" },
   { rotulo: "3 meses", duracao: "3", unidade: "meses" },
 ];
+
+// ---------- Colar uma lista (ex.: a nota do mercado) ----------
+
+/** Adivinha a categoria pelo nome (dá para mudar depois). */
+const PALAVRAS: [CategoriaMercado, RegExp][] = [
+  [
+    "carnes",
+    /bacon|lingui[cç]a|calabresa|sobrecoxa|coxa|bisteca|frango|carne|alcatra|patinho|costela|picanha|peixe|til[aá]pia|hamb[uú]rguer|salsicha/i,
+  ],
+  ["laticinios", /queijo|presunto|peito de peru|mortadela|manteiga|margarina|leite|iogurte|requeij|nata|creme de leite/i],
+  [
+    "hortifruti",
+    /alface|tomat|alho|cebola|batata|banana|ma[cç][aã]|laranja|lim[aã]o|cenoura|fruta|verdura|couve|piment|mam[aã]o|uva|abacate/i,
+  ],
+  ["higiene", /sabonete|pasta de dente|creme dental|escova|shampoo|condicionador|desodorante|papel higi|absorvente|fio dental/i],
+  ["limpeza", /sab[aã]o|detergente|amaciante|desinfetante|[aá]gua sanit|esponja|saco de lixo|multiuso|lustra/i],
+  ["bebidas", /suco|refrigerante|refri|[aá]gua mineral|cerveja|vinho|ch[aá] gelado|energ[eé]tico/i],
+  ["pet", /ra[cç][aã]o|areia do gato|petisco/i],
+  ["beleza", /hidratante|protetor solar|maquiagem|perfume|esmalte/i],
+];
+
+export function categoriaPeloNome(nome: string): CategoriaMercado {
+  return PALAVRAS.find(([, re]) => re.test(nome))?.[0] ?? "alimentos";
+}
+
+export type ItemColado = {
+  nome: string;
+  categoria: CategoriaMercado;
+  qtd: string;
+  unidadeQtd: "un" | "kg";
+  precoUnidade: number;
+  total: number;
+};
+
+const num = (t: string) => Number(t.replace(/\./g, "").replace(",", "."));
+const texto = (n: number) => String(Math.round(n * 1000) / 1000).replace(".", ",");
+
+/**
+ * Lê linhas como "5kg Arroz 24,99", "4 Sabonete de 5,88", "2 pacotinhos Bacon 14,99 cada", "1,5kg de sobrecoxa 25,48".
+ * - "de 5,88" / "cada": preço de cada unidade; sem isso, o preço é o total.
+ * - Peso em carnes e hortifrúti vira preço por kg; nos outros (pacote de 5 kg de arroz), o peso vai no nome.
+ * Itens repetidos são somados.
+ */
+export function lerListaColada(textoColado: string): ItemColado[] {
+  const itens: ItemColado[] = [];
+  for (const bruta of textoColado.split(/\r?\n/)) {
+    let linha = bruta.trim();
+    if (!linha) continue;
+    const preco = linha.match(/(\d{1,3}(?:\.\d{3})*,\d{2}|\d+[.,]\d{2})\s*(cada|und|un)?\s*$/i);
+    if (!preco) continue;
+    let valor = num(preco[1].includes(",") ? preco[1] : preco[1].replace(".", ","));
+    let porUnidade = !!preco[2] && /cada/i.test(preco[2]);
+    linha = linha.slice(0, preco.index).trim();
+    if (/\sde$/i.test(linha)) {
+      porUnidade = true;
+      linha = linha.replace(/\s+de$/i, "").trim();
+    }
+    // Quantidade e medida no começo: "5kg", "300g", "2 und", "2 pacotinhos", "pote de", "1,5kg de"
+    const q = linha.match(
+      /^(\d+(?:[.,]\d+)?)?\s*(kg|g|ml|l|litros?|und|un|unid|pacotinhos?|pacotes?|potes?|bandejas?)?\.?\s+(?:de\s+)?/i,
+    );
+    let quantidade = 1;
+    let medida = "";
+    if (q && (q[1] || q[2])) {
+      quantidade = q[1] ? num(q[1]) : 1;
+      medida = (q[2] ?? "").toLowerCase();
+      linha = linha.slice(q[0].length).trim();
+    }
+    if (!linha) continue;
+    let nome = linha.charAt(0).toUpperCase() + linha.slice(1);
+    const categoria = categoriaPeloNome(nome);
+    let qtd = quantidade;
+    let unidadeQtd: "un" | "kg" = "un";
+    let total = porUnidade ? valor * quantidade : valor;
+    if (["kg", "g"].includes(medida) && (categoria === "carnes" || categoria === "hortifruti")) {
+      qtd = medida === "g" ? quantidade / 1000 : quantidade;
+      unidadeQtd = "kg";
+      total = valor;
+    } else if (["kg", "g", "ml", "l", "litro", "litros"].includes(medida)) {
+      // Pacote: o peso faz parte do produto ("Arroz 5kg"), comprado 1 vez
+      nome = `${nome} ${texto(quantidade)}${medida === "litro" || medida === "litros" ? "L" : medida}`;
+      qtd = 1;
+      total = valor;
+    }
+    valor = total / (qtd || 1);
+    const igual = itens.find((i) => semAcento(i.nome) === semAcento(nome));
+    if (igual) {
+      const novaQtd = num(igual.qtd) + qtd;
+      igual.total += total;
+      igual.qtd = texto(novaQtd);
+      igual.precoUnidade = igual.total / novaQtd;
+      continue;
+    }
+    itens.push({ nome, categoria, qtd: texto(qtd), unidadeQtd, precoUnidade: valor, total });
+  }
+  return itens;
+}

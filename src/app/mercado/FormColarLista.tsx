@@ -1,0 +1,129 @@
+"use client";
+
+import { useState } from "react";
+import {
+  adicionarNaLista,
+  CATEGORIAS_MERCADO,
+  comprarItemDaLista,
+  lerListaDeCompras,
+  mudarPreferencias,
+  semAcento,
+  useCartoes,
+  usePreferencias,
+} from "@/lib/store";
+import { brl, hojeISO, valorParaCampo } from "@/lib/formato";
+import { lerListaColada } from "@/lib/mercado";
+import { mostrarAviso } from "@/lib/avisos";
+import Modal from "@/components/Modal";
+
+// Colar uma lista (ou a nota do mercado) de uma vez: "5kg Arroz 24,99", "4 Sabonete de 5,88"…
+export default function FormColarLista({ onFechar }: { onFechar: () => void }) {
+  const contas = useCartoes();
+  const prefs = usePreferencias();
+  const [texto, setTexto] = useState("");
+  const [comprei, setComprei] = useState(true);
+  const [contaId, setContaId] = useState(contas.find((c) => c.id === prefs.ultimaConta)?.id ?? contas[0]?.id ?? "");
+  const itens = lerListaColada(texto);
+  const total = itens.reduce((t, i) => t + i.total, 0);
+
+  function salvar() {
+    if (itens.length === 0) return;
+    for (const i of itens) {
+      adicionarNaLista({
+        nome: i.nome,
+        icone: CATEGORIAS_MERCADO.find((c) => c.id === i.categoria)!.icone,
+        categoria: i.categoria,
+        qtd: i.qtd,
+        unidadeQtd: i.unidadeQtd,
+        valor: valorParaCampo(Math.round(i.precoUnidade * 100) / 100),
+      });
+    }
+    if (comprei) {
+      if (contaId) mudarPreferencias({ ultimaConta: contaId });
+      const nomes = new Set(itens.map((i) => semAcento(i.nome)));
+      for (const l of lerListaDeCompras().filter((x) => nomes.has(semAcento(x.nome))))
+        comprarItemDaLista(l.id, contaId || undefined, hojeISO());
+    }
+    mostrarAviso({
+      texto: comprei ? `${itens.length} itens comprados · ${brl(total)} no gasto de hoje` : `${itens.length} itens na lista ✓`,
+    });
+    onFechar();
+  }
+
+  return (
+    <Modal titulo="Colar uma lista" onFechar={onFechar}>
+      <div className="space-y-4">
+        <textarea
+          autoFocus
+          value={texto}
+          onChange={(e) => setTexto(e.target.value)}
+          rows={7}
+          placeholder={
+            "Um item por linha, com o preço no fim:\n5kg Arroz 24,99\n4 Sabonete de 5,88\n2 pacotinhos Bacon 14,99 cada"
+          }
+          className="campo resize-y"
+        />
+
+        {itens.length > 0 && (
+          <>
+            <ul className="max-h-56 divide-y divide-white/5 overflow-y-auto rounded-2xl bg-fundo/50 px-3 text-sm">
+              {itens.map((i) => (
+                <li key={i.nome} className="flex items-center gap-2 py-1.5">
+                  <span aria-hidden>{CATEGORIAS_MERCADO.find((c) => c.id === i.categoria)?.icone}</span>
+                  <span className="min-w-0 flex-1 truncate">
+                    {i.nome}{" "}
+                    <span className="text-xs text-suave">
+                      {i.qtd} {i.unidadeQtd}
+                    </span>
+                  </span>
+                  <span className="tabular-nums">{brl(i.total)}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="text-right text-sm">
+              {itens.length} itens · <b className="tabular-nums">{brl(total)}</b>
+            </p>
+
+            <div className="grid grid-cols-2 gap-1 rounded-full bg-fundo p-1 text-sm" role="radiogroup" aria-label="O que fazer">
+              {[true, false].map((v) => (
+                <button
+                  key={String(v)}
+                  role="radio"
+                  aria-checked={comprei === v}
+                  onClick={() => setComprei(v)}
+                  className={`rounded-full py-2 ${comprei === v ? "bg-white font-semibold text-fundo" : "text-suave"}`}
+                >
+                  {v ? "✓ Já comprei hoje" : "Só na lista"}
+                </button>
+              ))}
+            </div>
+            {comprei && contas.length > 0 && (
+              <label className="flex items-center gap-2 text-sm text-suave">
+                Pago com
+                <select value={contaId} onChange={(e) => setContaId(e.target.value)} className="campo w-auto cursor-pointer py-2">
+                  {contas.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nome}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+          </>
+        )}
+
+        <button
+          onClick={salvar}
+          disabled={itens.length === 0}
+          className="botao-gradiente w-full rounded-full py-3 font-semibold disabled:opacity-40"
+        >
+          {itens.length === 0
+            ? "Cole os itens acima"
+            : comprei
+              ? `Registrar compra de ${brl(total)}`
+              : `Pôr ${itens.length} itens na lista`}
+        </button>
+      </div>
+    </Modal>
+  );
+}

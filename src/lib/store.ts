@@ -1433,6 +1433,10 @@ export function salvarOpcaoMercado(opcao: OpcaoMercado) {
 const LISTA_VAZIA: ItemLista[] = [];
 const listaCompras = criarDado<ItemLista[]>("naxxo:mercado-lista", LISTA_VAZIA);
 
+export function lerListaDeCompras() {
+  return listaCompras.ler();
+}
+
 export function useListaCompras() {
   return useSyncExternalStore(inscrever, listaCompras.ler, () => LISTA_VAZIA);
 }
