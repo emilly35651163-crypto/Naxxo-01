@@ -26,6 +26,10 @@ export default function RecuperarDados() {
   const [backup] = useState(lerBackup);
   if (!backup) return null;
   const d = backup.dados;
+  const temAlgo = ["naxxo:lancamentos", "naxxo:cartoes", "naxxo:fontes", "naxxo:mercado-itens", "naxxo:mercado-lista"].some(
+    (c) => contar(d[c]) > 0,
+  );
+  if (!temAlgo) return null;
   const mercado = Object.fromEntries(Object.entries(d).filter(([chave]) => chave.startsWith("naxxo:mercado")));
   const quando = new Date(backup.guardadoEm).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
 

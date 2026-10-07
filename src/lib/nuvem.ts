@@ -81,11 +81,40 @@ definirOuvinteDeGravacao(
 
 // ---------- Trazer os dados da nuvem ----------
 
+/** Tem dados de verdade? (configurações padrão, como o tema, não contam) */
+function temConteudo(foto: Record<string, unknown>) {
+  const perfil = foto["naxxo:perfil"] as { concluido?: boolean } | undefined;
+  if (perfil?.concluido) return true;
+  const listas = [
+    "naxxo:lancamentos",
+    "naxxo:cartoes",
+    "naxxo:fontes",
+    "naxxo:metas",
+    "naxxo:fixos",
+    "naxxo:compras",
+    "naxxo:mercado-itens",
+    "naxxo:mercado-lista",
+    "naxxo:desejos",
+  ];
+  return listas.some((chave) => Array.isArray(foto[chave]) && (foto[chave] as unknown[]).length > 0);
+}
+
+const CHAVE_BACKUP = "naxxo-backup-antes-da-nuvem";
+let emAndamento: Promise<void> | null = null;
+
 /**
- * Ao entrar: se a nuvem ainda está vazia, sobe o que já existe neste aparelho (ninguém perde nada).
- * Se a nuvem já tem dados, eles valem (e o que estava aqui fica guardado num backup local, por segurança).
+ * Ao entrar:
+ * - nuvem sem dados de verdade → sobe o que existe neste aparelho (ninguém perde nada);
+ * - nuvem com dados → eles valem; se este aparelho também tinha dados de verdade, eles ficam guardados
+ *   numa cópia local (Configurações → "Dados de antes do login") — e uma cópia vazia nunca substitui uma cheia.
+ * Nunca roda duas vezes ao mesmo tempo.
  */
-async function sincronizar() {
+function sincronizar() {
+  if (!emAndamento) emAndamento = fazerSincronizacao().finally(() => (emAndamento = null));
+  return emAndamento;
+}
+
+async function fazerSincronizacao() {
   if (!supabase || !sessao) return;
   mudar("sincronizando");
   const { data, error } = await supabase.from("dados").select("chave, valor");
@@ -95,24 +124,19 @@ async function sincronizar() {
     return;
   }
   const local = fotografarDados();
-  const temAlgoAqui = Object.values(local).some((v) =>
-    Array.isArray(v) ? v.length > 0 : v && typeof v === "object" && Object.keys(v).length > 0,
-  );
-  if (!data || data.length === 0) {
-    if (temAlgoAqui) {
+  const nuvem = Object.fromEntries((data ?? []).map((l) => [l.chave, l.valor]));
+  if (!temConteudo(nuvem)) {
+    if (temConteudo(local)) {
       Object.entries(local).forEach(([chave, valor]) => pendentes.set(chave, valor));
       await enviarPendentes();
     }
   } else {
-    if (temAlgoAqui) {
+    if (temConteudo(local)) {
       try {
-        localStorage.setItem(
-          "naxxo-backup-antes-da-nuvem",
-          JSON.stringify({ guardadoEm: new Date().toISOString(), dados: local }),
-        );
+        localStorage.setItem(CHAVE_BACKUP, JSON.stringify({ guardadoEm: new Date().toISOString(), dados: local }));
       } catch {}
     }
-    gravarDaNuvem(Object.fromEntries(data.map((l) => [l.chave, l.valor])));
+    gravarDaNuvem(nuvem);
   }
   mudar("pronto");
 }
@@ -129,9 +153,9 @@ if (supabase && typeof window !== "undefined") {
     if (evento === "SIGNED_IN" && !antes) void sincronizar();
     if (evento === "SIGNED_OUT") mudar("fora");
   });
-  // Voltou para o app (outro aparelho pode ter mudado algo): traz a versão mais nova, se não houver nada para enviar
-  window.addEventListener("focus", () => {
-    if (sessao && estado === "pronto" && pendentes.size === 0 && !temporizador) void sincronizar();
+  // Ao fechar ou esconder o app, manda o que ainda não foi
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") void enviarPendentes();
   });
 }
 
