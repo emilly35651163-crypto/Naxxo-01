@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  useLancamentos,
   adicionarCartao,
   agoraLocal,
   atualizarCartao,
@@ -17,7 +18,7 @@ import {
   type Conta,
 } from "@/lib/store";
 import { brl, hojeISO, lerValor, valorParaCampo } from "@/lib/formato";
-import { temCredito } from "@/lib/contas";
+import { saldoDaConta, temCredito } from "@/lib/contas";
 import { limiteUsadoPelasCompras, parcelasPagasDaCompra } from "@/lib/cartoes";
 import { comDesfazer } from "@/lib/avisos";
 import Modal from "./Modal";
@@ -44,7 +45,10 @@ export default function FormConta({ conta, onFechar }: { conta?: Conta; onFechar
   const [tipo, setTipo] = useState<TipoConta>(conta?.tipo ?? "banco");
   const [nome, setNome] = useState(conta?.nome ?? "");
   const [cor, setCor] = useState(conta?.cor ?? CORES_CARTAO[0]);
-  const [saldo, setSaldo] = useState(conta?.saldo != null ? valorParaCampo(conta.saldo) : "");
+  const lancamentos = useLancamentos();
+  // O saldo de HOJE (o informado + o que entrou e saiu depois), não o que foi digitado no cadastro
+  const [saldoAtual] = useState(() => (conta ? Math.round(saldoDaConta(conta, lancamentos) * 100) / 100 : null));
+  const [saldo, setSaldo] = useState(saldoAtual != null ? valorParaCampo(saldoAtual) : "");
   const [credito, setCredito] = useState(conta ? temCredito(conta) : false);
   const [limite, setLimite] = useState(conta?.limite ? valorParaCampo(conta.limite) : "");
   const [fechamento, setFechamento] = useState(conta?.diaFechamento ? String(conta.diaFechamento) : "");
@@ -95,8 +99,8 @@ export default function FormConta({ conta, onFechar }: { conta?: Conta; onFechar
       diaFechamento: comCredito ? Number(fechamento) : 0,
       diaVencimento: comCredito ? Number(vencimento) : 0,
     };
-    // Mudou o saldo? Ele passa a valer a partir de agora
-    const saldoMudou = !conta || conta.saldo !== novoSaldo;
+    // Mudou o saldo (comparado com o de hoje)? Ele passa a valer a partir de agora
+    const saldoMudou = !conta || Math.abs((saldoAtual ?? 0) - novoSaldo) >= 0.005;
     const saldoNovo = saldoMudou ? { saldo: novoSaldo, saldoAtualizadoEm: agoraLocal() } : {};
     // "Disponível hoje no app do banco": ajusta o limite usado (compras que não foram cadastradas aqui)
     let ajuste = {};
@@ -193,7 +197,7 @@ export default function FormConta({ conta, onFechar }: { conta?: Conta; onFechar
           </div>
         )}
 
-        {tipo !== "vale" && (!conta || (lerValor(saldo) || 0) !== (conta.saldo ?? 0)) && (
+        {tipo !== "vale" && (!conta || Math.abs((lerValor(saldo) || 0) - (saldoAtual ?? 0)) >= 0.005) && (
           <RendaNoSaldo itens={jaCaiu} marcados={noSaldo} onChange={setNoSaldo} />
         )}
 
