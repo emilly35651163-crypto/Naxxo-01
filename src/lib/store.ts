@@ -4,7 +4,7 @@
 // Mais tarde trocamos isto pelo Supabase, sem precisar mexer nas telas.
 
 import { useSyncExternalStore } from "react";
-import { diasEntre, hojeISO, mesAtual, somarMeses } from "./formato";
+import { diasEntre, hojeISO, lerValor, mesAtual, somarMeses } from "./formato";
 import { melhorUnidade } from "./duracao";
 
 // ---------- Tipos ----------
@@ -37,6 +37,8 @@ export type Lancamento = {
   compraMercadoId?: string; // quando é uma ida ao mercado: os itens dessa compra
   subcategoria?: string;
   parteRenda?: ParteRenda; // recebimento de uma fonte: salário, adiantamento, 13º, férias ou benefício
+  // Já estava dentro do saldo informado da conta (ex.: criou a conta depois do salário cair): conta como recebido, não soma de novo
+  jaNoSaldo?: boolean;
 };
 
 /** As partes de uma renda que caem em datas diferentes. */
@@ -49,7 +51,8 @@ export function ehTransferencia(l: Pick<Lancamento, "transferenciaId">) {
 
 // ---------- Mercado ----------
 
-export type CategoriaMercado = "alimentos" | "bebidas" | "limpeza" | "higiene" | "beleza" | "pet" | "outros";
+export type CategoriaMercado =
+  "alimentos" | "carnes" | "hortifruti" | "laticinios" | "bebidas" | "limpeza" | "higiene" | "beleza" | "pet" | "outros";
 export type UnidadeDuracao = "dias" | "semanas" | "meses" | "anos";
 
 /** Um item da despensa: o que foi comprado, quanto custou e quanto tempo dura. */
@@ -403,14 +406,18 @@ export function nomeDaForma(forma: FormaRenda) {
  */
 export const TESTANDO_BOAS_VINDAS = process.env.NEXT_PUBLIC_TESTAR_BOAS_VINDAS === "1";
 
-export const CATEGORIAS_MERCADO: { id: CategoriaMercado; nome: string; icone: string }[] = [
-  { id: "alimentos", nome: "Alimentos", icone: "🍚" },
-  { id: "bebidas", nome: "Bebidas", icone: "🥤" },
-  { id: "limpeza", nome: "Limpeza", icone: "🧽" },
-  { id: "higiene", nome: "Higiene", icone: "🧴" },
-  { id: "beleza", nome: "Beleza", icone: "💄" },
-  { id: "pet", nome: "Pet", icone: "🐾" },
-  { id: "outros", nome: "Outros", icone: "🛍️" },
+// O emoji do item é sempre o da categoria (genéricos de propósito). `unidade`: como costuma ser vendido (dá para mudar).
+export const CATEGORIAS_MERCADO: { id: CategoriaMercado; nome: string; icone: string; unidade: UnidadeQtd }[] = [
+  { id: "alimentos", nome: "Mercearia", icone: "🥫", unidade: "un" },
+  { id: "carnes", nome: "Carnes", icone: "🥩", unidade: "kg" },
+  { id: "hortifruti", nome: "Frutas e verduras", icone: "🥦", unidade: "kg" },
+  { id: "laticinios", nome: "Frios e laticínios", icone: "🧀", unidade: "un" },
+  { id: "bebidas", nome: "Bebidas", icone: "🥤", unidade: "L" },
+  { id: "limpeza", nome: "Limpeza", icone: "🧽", unidade: "un" },
+  { id: "higiene", nome: "Higiene", icone: "🧴", unidade: "un" },
+  { id: "beleza", nome: "Beleza", icone: "💄", unidade: "un" },
+  { id: "pet", nome: "Pet", icone: "🐾", unidade: "un" },
+  { id: "outros", nome: "Outros", icone: "🛒", unidade: "un" },
 ];
 
 export const UNIDADES_DURACAO: { id: UnidadeDuracao; nome: string; singular: string; dias: number }[] = [
@@ -1053,7 +1060,9 @@ export function useCartoes() {
 }
 
 export function adicionarCartao(novo: Omit<Cartao, "id">) {
-  cartoes.gravar([...cartoes.ler(), { ...novo, id: novoId() }]);
+  const id = novoId();
+  cartoes.gravar([...cartoes.ler(), { ...novo, id }]);
+  return id;
 }
 
 export function atualizarCartao(id: string, mudancas: Partial<Cartao>) {
@@ -1405,11 +1414,110 @@ export function useListaCompras() {
   return useSyncExternalStore(inscrever, listaCompras.ler, () => LISTA_VAZIA);
 }
 
-/** Põe um item na lista. Com `jaPeguei`, entra já marcado (comprou algo que não estava na lista). */
-export function adicionarNaLista(item: Pick<ItemLista, "nome" | "icone" | "categoria">, jaPeguei = false) {
-  if (listaCompras.ler().some((l) => mesmoNome(l.nome, item.nome))) return;
-  salvarOpcaoMercado({ ...item, quantidade: "" });
-  listaCompras.gravar([...listaCompras.ler(), { ...item, nome: item.nome.trim(), id: novoId(), noCarrinho: jaPeguei }]);
+/** Põe um item na lista (ou atualiza, se já estiver lá). Itens novos viram sugestão para as próximas vezes. */
+export function adicionarNaLista(
+  item: Pick<ItemLista, "nome" | "icone" | "categoria"> & Partial<Omit<ItemLista, "id">>,
+  jaPeguei = false,
+) {
+  const nome = item.nome.trim();
+  if (!nome) return;
+  salvarOpcaoMercado({
+    nome,
+    icone: item.icone,
+    categoria: item.categoria,
+    quantidade: item.qtd ? `${item.qtd} ${item.unidadeQtd ?? "un"}` : "",
+  });
+  const existente = listaCompras.ler().find((l) => mesmoNome(l.nome, nome));
+  if (existente) return atualizarItemLista(existente.id, { ...item, nome });
+  listaCompras.gravar([...listaCompras.ler(), { noCarrinho: jaPeguei, ...item, nome, id: novoId() }]);
+}
+
+/** Total de um item da lista: preço (por unidade/kg/L) × quantidade. */
+export function totalDoItemLista(l: Pick<ItemLista, "valor" | "qtd">) {
+  const preco = lerValor(l.valor ?? "") || 0;
+  const qtd = lerValor(l.qtd ?? "") || 1;
+  return Math.round(preco * qtd * 100) / 100;
+}
+
+/**
+ * "Comprei": o item sai da lista, vai para a despensa e entra no gasto de hoje.
+ * Vários itens comprados no mesmo dia (na mesma conta) viram uma compra só nos lançamentos.
+ */
+export function comprarItemDaLista(id: string, contaId?: string, data = hojeISO()) {
+  const l = listaCompras.ler().find((x) => x.id === id);
+  if (!l) return;
+  const valor = totalDoItemLista(l);
+  const item: ItemDaCompra = {
+    nome: l.nome,
+    icone: l.icone,
+    categoria: l.categoria,
+    quantidade: l.qtd ? `${l.qtd} ${l.unidadeQtd ?? "un"}` : "",
+    valor,
+    duracao: Number(l.duracao) > 0 ? Number(l.duracao) : null,
+    unidade: l.unidadeDuracao ?? "meses",
+    repor: true,
+  };
+  const deHoje = comprasMercado.ler().find((c) => c.data === data && c.tipo === "avulsa" && !c.cartaoId && c.contaId === contaId);
+  const lancamento = deHoje && lancamentos.ler().find((x) => x.compraMercadoId === deHoje.id);
+  if (!deHoje || !lancamento) {
+    registrarCompraMercado({ data, tipo: "avulsa", itens: [item], contaId });
+    return;
+  }
+  // Junta na compra de hoje: atualiza a despensa, a compra e o lançamento
+  registrarItemNaDespensa(item, data);
+  const itens = [
+    ...deHoje.itens,
+    { itemId: itensMercado.ler().find((i) => mesmoNome(i.nome, item.nome))?.id ?? "", nome: item.nome, valor },
+  ];
+  const total = deHoje.total + valor;
+  comprasMercado.gravar(comprasMercado.ler().map((c) => (c.id === deHoje.id ? { ...c, itens, total } : c)));
+  lancamentos.gravar(
+    lancamentos
+      .ler()
+      .map((x) =>
+        x.id === lancamento.id ? { ...x, valor: Math.round(total * 100) / 100, descricao: `Mercado · ${itens.length} itens` } : x,
+      ),
+  );
+  listaCompras.gravar(listaCompras.ler().filter((x) => x.id !== id));
+}
+
+/** Atualiza (ou cria) um item na despensa com a compra de hoje. */
+function registrarItemNaDespensa(item: ItemDaCompra, data: string) {
+  salvarOpcaoMercado(item);
+  const existente = itensMercado.ler().find((i) => mesmoNome(i.nome, item.nome));
+  if (existente) {
+    const duracao =
+      item.duracao !== null ? { duracao: item.duracao, unidade: item.unidade, origemDuracao: "informada" as const } : {};
+    atualizarItemMercado(existente.id, {
+      ...item,
+      duracao: existente.duracao,
+      unidade: existente.unidade,
+      ...duracao,
+      ultimaCompra: data,
+    });
+  } else {
+    itensMercado.gravar([
+      ...itensMercado.ler(),
+      { ...item, id: novoId(), ultimaCompra: data, origemDuracao: item.duracao !== null ? "informada" : undefined },
+    ]);
+  }
+}
+
+/** "Acabou hoje": aprende quanto durou e o item volta para a lista de compras (com quantidade e preço da última vez). */
+export function acabouHoje(id: string) {
+  const item = itensMercado.ler().find((i) => i.id === id);
+  if (!item) return;
+  marcarItemAcabou(id, hojeISO());
+  const [qtd, unidade] = item.quantidade.split(" ");
+  const numero = lerValor(qtd ?? "") || 1;
+  adicionarNaLista({
+    nome: item.nome,
+    icone: item.icone,
+    categoria: item.categoria,
+    qtd: qtd && lerValor(qtd) ? qtd : undefined,
+    unidadeQtd: (UNIDADES_QTD as string[]).includes(unidade) ? (unidade as UnidadeQtd) : undefined,
+    valor: item.valor ? String(Math.round((item.valor / numero) * 100) / 100).replace(".", ",") : undefined,
+  });
 }
 
 export function alternarNoCarrinho(id: string) {

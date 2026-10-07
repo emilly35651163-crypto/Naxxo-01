@@ -54,7 +54,11 @@ export function saldoDaConta(conta: Conta, lancamentos: Lancamento[], ate = hoje
   const diaDoMarco = marco.slice(0, 10);
   return lancamentos
     .filter(
-      (l) => l.contaId === conta.id && jaAconteceu(l, ate) && (l.data > diaDoMarco || (paraHoraLocal(l.criadoEm) ?? "") > marco),
+      (l) =>
+        l.contaId === conta.id &&
+        !l.jaNoSaldo &&
+        jaAconteceu(l, ate) &&
+        (l.data > diaDoMarco || (paraHoraLocal(l.criadoEm) ?? "") >= marco),
     )
     .reduce((saldo, l) => saldo + (l.tipo === "entrada" ? l.valor : -l.valor), conta.saldo ?? 0);
 }

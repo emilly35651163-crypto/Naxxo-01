@@ -5,7 +5,14 @@ import { usePathname } from "next/navigation";
 
 const ICONE = "size-5 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round]";
 
-export type ItemMenu = { href: string; rotulo: string; usaMes: boolean; icone: React.ReactNode; descricao?: string };
+export type ItemMenu = {
+  href: string;
+  rotulo: string;
+  usaMes: boolean;
+  icone: React.ReactNode;
+  descricao?: string;
+  noMenu?: boolean;
+};
 
 // Todas as páginas. Usado na barra lateral (computador), na tela "Mais" e para o título de cada página.
 // "usaMes": a página muda conforme o mês escolhido no topo (‹ Outubro 2026 ›).
@@ -72,8 +79,8 @@ export const ITENS_MENU: ItemMenu[] = [
     // Moedas com seta entrando
     icone: (
       <svg viewBox="0 0 24 24" className={ICONE} aria-hidden>
-        <ellipse cx="9" cy="7" rx="5" ry="2.5" />
-        <path d="M4 7v4c0 1.4 2.2 2.5 5 2.5s5-1.1 5-2.5V7M4 11v4c0 1.4 2.2 2.5 5 2.5 1 0 1.9-.1 2.7-.4M19 10v8M16 15l3 3 3-3" />
+        <ellipse cx="12" cy="7" rx="7" ry="3" />
+        <path d="M5 7v5c0 1.7 3.1 3 7 3s7-1.3 7-3V7M5 12v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5" />
       </svg>
     ),
   },
@@ -115,33 +122,19 @@ export const ITENS_MENU: ItemMenu[] = [
   },
 ];
 
-/** Páginas que não estão no menu de baixo: ficam na tela "Mais". */
-export const ITENS_MAIS = ITENS_MENU.filter((i) =>
-  ["/fixos", "/renda", "/resumo", "/mercado", "/configuracoes"].includes(i.href),
-);
-
-const ICONE_MAIS = (
-  <svg viewBox="0 0 24 24" className={ICONE} aria-hidden>
-    <circle cx="5" cy="12" r="1.5" />
-    <circle cx="12" cy="12" r="1.5" />
-    <circle cx="19" cy="12" r="1.5" />
-  </svg>
-);
-
 /** Em qual item do menu a página está (o detalhe de uma categoria é do Resumo). */
 export function itemAtivo(caminho: string) {
   if (caminho.startsWith("/resumo")) return "/resumo";
   return caminho;
 }
 
-// Menu de baixo (celular): 5 itens, sempre com o nome. O resto fica em "Mais".
+/** As páginas que aparecem no menu da esquerda (computador). Renda fica no Início; os fixos, em Contas. */
+export const ITENS_LATERAL = ITENS_MENU.filter((i) => !["/fixos", "/renda"].includes(i.href));
+
+// Menu de baixo (celular): 5 itens, sempre com o nome. Configurações e Mercado ficam no topo.
 export default function NavInferior() {
   const caminho = itemAtivo(usePathname());
-  const noMais = caminho === "/mais" || ITENS_MAIS.some((i) => i.href === caminho);
-  const itens = [
-    ...ITENS_MENU.filter((i) => ["/", "/lancamentos", "/contas", "/trilha"].includes(i.href)),
-    { href: "/mais", rotulo: "Mais", usaMes: false, icone: ICONE_MAIS },
-  ];
+  const itens = ITENS_MENU.filter((i) => ["/", "/lancamentos", "/contas", "/trilha", "/resumo"].includes(i.href));
 
   return (
     <nav
@@ -150,7 +143,7 @@ export default function NavInferior() {
     >
       <div className="mx-auto flex max-w-lg gap-1 rounded-3xl border border-roxo/25 bg-superficie/95 p-1.5 backdrop-blur">
         {itens.map((item) => {
-          const ativo = item.href === "/mais" ? noMais : caminho === item.href;
+          const ativo = caminho === item.href;
           return (
             <Link
               key={item.href}

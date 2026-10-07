@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import {
   definirContaDosLancamentos,
   iconeDaCategoria,
@@ -24,20 +23,12 @@ import FormConta from "@/components/FormConta";
 import FormCompra from "@/components/FormCompra";
 import FormPagarFatura from "@/components/FormPagarFatura";
 import FormMeta from "@/components/FormMeta";
+import FormPagarFixo from "@/components/FormPagarFixo";
 import FormLancamento from "@/components/FormLancamento";
 import ItemLancamento from "@/components/ItemLancamento";
 import EstadoVazio from "@/components/EstadoVazio";
-import { descreverCobranca, mesesEntreCobrancas, valorPorMes } from "@/lib/fixos";
-import {
-  faturaAberta,
-  faturasAtrasadas,
-  limiteUsado,
-  parcelasPagasDaCompra,
-  resumoDaFatura,
-  valorDaParcela,
-  type ItemFatura,
-  type SituacaoFatura,
-} from "@/lib/cartoes";
+import { ativoNoMes, descreverCobranca, situacaoDoFixo } from "@/lib/fixos";
+import { faturaAberta, faturasAtrasadas, limiteUsado, resumoDaFatura, type ItemFatura, type SituacaoFatura } from "@/lib/cartoes";
 import { cartoesDeCredito, ehVale, iconeDaConta, saldoDaConta, temCredito } from "@/lib/contas";
 import { calcularMeta } from "@/lib/metas";
 import { brl, diasAte, formatarData, nomeMes } from "@/lib/formato";
@@ -63,9 +54,11 @@ export default function Contas() {
   const cartoes = cartoesDeCredito(contas);
 
   const [editando, setEditando] = useState<Conta | "nova" | null>(null);
+  const [aberta, setAberta] = useState<string | null>(null);
   const [comprando, setComprando] = useState<Conta | null>(null);
   const [pagando, setPagando] = useState<{ cartao: Conta; restante: number; fatura: string } | null>(null);
-  const [assinatura, setAssinatura] = useState<GastoFixo | "nova" | null>(null);
+  const [fixoAberto, setFixoAberto] = useState<GastoFixo | "nova" | "assinatura" | null>(null);
+  const [pagandoFixo, setPagandoFixo] = useState<{ fixo: GastoFixo; vencimento: string } | null>(null);
   const [divida, setDivida] = useState<Meta | "nova" | null>(null);
   const [contaDosAntigos, setContaDosAntigos] = useState("");
   const [transferindo, setTransferindo] = useState(false);
@@ -84,78 +77,39 @@ export default function Contas() {
   const idsDasContas = new Set(contas.map((c) => c.id));
   const semConta = lancamentos.filter((l) => !l.contaId || !idsDasContas.has(l.contaId));
 
-  // Saldo em dinheiro (os vales ficam à parte: só pagam comida)
+  // Os 4 números: saldo (sem vale), faturas do mês, limite disponível e limite usado
   const saldoTotal = contas.filter((c) => !ehVale(c)).reduce((t, c) => t + saldoDaConta(c, lancamentos), 0);
-  const saldoVales = contas.filter(ehVale).reduce((t, c) => t + saldoDaConta(c, lancamentos), 0);
   const resumos = cartoes.map((c) => ({ cartao: c, fatura: resumoDaFatura(c, mes, dados), usado: limiteUsado(c, dados) }));
   const totalFaturas = resumos.reduce((t, r) => t + r.fatura.valor, 0);
   const totalDisponivel = resumos.reduce((t, r) => t + Math.max(r.cartao.limite - r.usado, 0), 0);
+  const totalUsado = resumos.reduce((t, r) => t + r.usado, 0);
 
-  // Dívidas fora do cartão (as do cartão já estão na fatura): o que falta quitar
+  // Fora do cartão, tudo junto: contas fixas (aluguel, luz, transporte…) e dívidas (empréstimo, financiamento…)
+  const contasFixas = fixos.filter((f) => f.pagamento !== "cartao" && ativoNoMes(f, mes)).sort((a, b) => a.dia - b.dia);
+  const pagamentosDeFixos = [...lancamentos, ...compras.map((c) => ({ ...c, valor: c.valorTotal }))];
   const dividas = metas.filter(
     (m) => m.tipo === "quitar" && !compras.some((c) => c.metaId === m.id) && !calcularMeta(m).concluida,
   );
-  // + o que falta pagar das compras parceladas no cartão (parcelas que ainda vão vir)
-  const parceladoNoCartao = compras
-    .filter((c) => c.parcelas > 1)
-    .reduce((total, c) => {
-      const cartao = cartoes.find((x) => x.id === c.cartaoId);
-      if (!cartao) return total;
-      const pagas = parcelasPagasDaCompra(c, cartao, dados);
-      let falta = 0;
-      for (let i = pagas; i < c.parcelas; i++) falta += valorDaParcela(c, i);
-      return total + falta;
-    }, 0);
-  const totalDividas = dividas.reduce((t, m) => t + calcularMeta(m).falta, 0) + parceladoNoCartao;
-
-  // Assinaturas no cartão
   const assinaturas = fixos
     .filter((f) => f.pagamento === "cartao" && cartoes.some((c) => c.id === f.cartaoId))
     .sort((a, b) => a.dia - b.dia);
-  const totalAssinaturas = assinaturas.reduce((t, f) => t + valorPorMes(f), 0);
 
   return (
     <div className="space-y-6">
-      {/* Resumo */}
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="cartao p-4">
-          <p className="text-xs text-suave">Saldo nas contas</p>
-          <p className={`mt-1 font-display text-2xl font-bold tabular-nums ${saldoTotal < 0 ? "text-saida" : "gradiente-texto"}`}>
-            {brl(saldoTotal)}
-          </p>
-          {contas.some(ehVale) && <p className="text-xs text-suave">🍽️ + {brl(saldoVales)} em vale</p>}
-        </div>
-        <div className="cartao p-4">
-          <p className="text-xs text-suave">Faturas que vencem em {nomeMes(mes).toLowerCase()}</p>
-          <p className="mt-1 font-display text-xl font-bold tabular-nums">{brl(totalFaturas)}</p>
-        </div>
-        <div className="cartao p-4">
-          <p className="text-xs text-suave">Limite disponível</p>
-          <p className="mt-1 font-display text-xl font-bold tabular-nums">{brl(totalDisponivel)}</p>
-        </div>
-        <div className="cartao p-4">
-          <p className="text-xs text-suave">Dívidas a quitar</p>
-          <p className="mt-1 font-display text-xl font-bold tabular-nums">{brl(totalDividas)}</p>
-          {parceladoNoCartao > 0 && <p className="text-xs text-suave">inclui {brl(parceladoNoCartao)} parcelado no cartão</p>}
-        </div>
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Numero rotulo="Saldo em conta" valor={saldoTotal} destaque={saldoTotal >= 0} vermelho={saldoTotal < 0} />
+        <Numero rotulo={`Faturas de ${nomeMes(mes).split(" ")[0].toLowerCase()}`} valor={totalFaturas} />
+        <Numero rotulo="Limite disponível" valor={totalDisponivel} />
+        <Numero rotulo="Limite usado" valor={totalUsado} vermelho={totalUsado > 0} />
       </section>
 
-      {/* Lançamentos antigos sem conta */}
       {semConta.length > 0 && contas.length > 0 && (
-        <section className="flex flex-wrap items-center gap-3 rounded-2xl border border-amber-300/40 bg-amber-300/10 p-4 text-sm">
-          <span className="text-xl">⚠️</span>
-          <p className="min-w-0 flex-1">
-            <b>{semConta.length} lançamentos sem conta.</b>{" "}
-            <span className="text-suave">Escolha a conta de todos de uma vez, ou um por um em </span>
-            <Link href="/lancamentos" className="text-rosa">
-              Lançamentos
-            </Link>
-            .
-          </p>
+        <section className="flex flex-wrap items-center gap-2 rounded-2xl border border-amber-300/40 bg-amber-300/10 p-3 text-sm">
+          <span className="min-w-0 flex-1">⚠️ {semConta.length} lançamentos sem conta.</span>
           <select
             value={contaDosAntigos}
             onChange={(e) => setContaDosAntigos(e.target.value)}
-            className="campo w-auto cursor-pointer py-2 text-sm"
+            className="campo w-auto cursor-pointer py-1.5"
           >
             <option value="">Escolher conta…</option>
             {contas.map((c) => (
@@ -176,89 +130,201 @@ export default function Contas() {
               );
               setContaDosAntigos("");
             }}
-            className="botao-gradiente rounded-full px-4 py-2 text-sm font-semibold disabled:opacity-40"
+            className="botao-gradiente rounded-full px-4 py-1.5 font-semibold disabled:opacity-40"
           >
-            Aplicar a todos
+            Aplicar
           </button>
         </section>
       )}
 
-      {/* Contas */}
-      <div className="flex items-center justify-between">
-        <h2 className="titulo-secao mb-0">Suas contas</h2>
-        <div className="flex gap-2">
-          {contas.length >= 2 && (
+      {/* Suas contas: uma linha cada; tocando, abre tudo */}
+      <section>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <h2 className="titulo-secao mb-0">Suas contas</h2>
+          <div className="flex gap-2">
+            {contas.length >= 2 && (
+              <button
+                onClick={() => setTransferindo(true)}
+                className="rounded-full border border-azul/50 px-3 py-1.5 text-sm text-azul"
+              >
+                🔁 Transferir
+              </button>
+            )}
             <button
-              onClick={() => setTransferindo(true)}
-              className="rounded-full border border-azul/50 px-4 py-1.5 text-sm text-azul hover:bg-azul/10"
+              onClick={() => setEditando("nova")}
+              className="rounded-full border border-rosa/50 px-3 py-1.5 text-sm text-rosa"
             >
-              🔁 Transferir
+              + Conta
             </button>
-          )}
-          <button
-            onClick={() => setEditando("nova")}
-            className="rounded-full border border-rosa/50 px-4 py-1.5 text-sm text-rosa hover:bg-rosa/10"
-          >
-            + Nova conta
-          </button>
+          </div>
         </div>
-      </div>
+        {contas.length > 0 ? (
+          <ul className="cartao divide-y divide-white/5 px-4">
+            {contas.map((conta) => {
+              const resumo = resumos.find((r) => r.cartao.id === conta.id);
+              const saldo = saldoDaConta(conta, lancamentos);
+              const estaAberta = aberta === conta.id;
+              return (
+                <li key={conta.id} className="py-3">
+                  <button
+                    onClick={() => setAberta(estaAberta ? null : conta.id)}
+                    aria-expanded={estaAberta}
+                    className="flex w-full items-center gap-3 text-left"
+                  >
+                    <span
+                      className="sobre-cor grid size-10 shrink-0 place-items-center rounded-full text-lg"
+                      style={{ background: conta.cor }}
+                      aria-hidden
+                    >
+                      {iconeDaConta(conta)}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-medium">{conta.nome}</span>
+                      {resumo && (
+                        <span className="block text-xs text-suave">
+                          limite {brl(Math.max(conta.limite - resumo.usado, 0))} livre · fecha dia {conta.diaFechamento} · vence
+                          dia {conta.diaVencimento}
+                        </span>
+                      )}
+                    </span>
+                    <span className="shrink-0 text-right">
+                      <span className={`block font-display font-semibold tabular-nums ${saldo < 0 ? "text-saida" : ""}`}>
+                        {brl(saldo)}
+                      </span>
+                      {resumo && resumo.fatura.valor > 0 && (
+                        <span className="block text-xs text-suave">fatura {brl(resumo.fatura.valor)}</span>
+                      )}
+                    </span>
+                    <span className="text-suave" aria-hidden>
+                      {estaAberta ? "▴" : "▾"}
+                    </span>
+                  </button>
+                  {estaAberta && (
+                    <div className="mt-3">
+                      <CartaoConta
+                        conta={conta}
+                        saldo={saldo}
+                        mes={mes}
+                        fatura={resumo?.fatura}
+                        usado={resumo?.usado ?? 0}
+                        onEditar={() => setEditando(conta)}
+                        onComprar={() => setComprando(conta)}
+                        onPagar={(fatura, restante) => setPagando({ cartao: conta, restante, fatura })}
+                      />
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <div className="cartao">
+            <EstadoVazio icone="🏦" titulo="Cadastre suas contas" texto="Banco, carteira, vale… com o saldo de hoje." />
+          </div>
+        )}
+      </section>
 
-      {contas.length > 0 ? (
-        <div className="grid gap-6 lg:grid-cols-2">
-          {contas.map((conta) => {
-            const resumo = resumos.find((r) => r.cartao.id === conta.id);
-            return (
-              <CartaoConta
-                key={conta.id}
-                conta={conta}
-                saldo={saldoDaConta(conta, lancamentos)}
-                mes={mes}
-                fatura={resumo?.fatura}
-                usado={resumo?.usado ?? 0}
-                onEditar={() => setEditando(conta)}
-                onComprar={() => setComprando(conta)}
-                onPagar={(fatura, restante) => setPagando({ cartao: conta, restante, fatura })}
-              />
-            );
-          })}
-        </div>
-      ) : (
-        <div className="cartao">
-          <EstadoVazio
-            icone="🏦"
-            titulo="Cadastre suas contas"
-            texto="Banco, conta digital, dinheiro na carteira… Com o saldo de cada uma, tudo o que entra e sai vai direto para o lugar certo."
-          />
-        </div>
+      {/* Assinaturas no cartão */}
+      {cartoes.length > 0 && (
+        <section>
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="titulo-secao mb-0">Assinaturas no cartão</h2>
+            <button
+              onClick={() => setFixoAberto("assinatura")}
+              className="rounded-full border border-rosa/50 px-3 py-1.5 text-sm text-rosa"
+            >
+              + Assinatura
+            </button>
+          </div>
+          {assinaturas.length > 0 ? (
+            <ul className="cartao divide-y divide-white/5 px-4">
+              {assinaturas.map((f) => (
+                <li key={f.id}>
+                  <button onClick={() => setFixoAberto(f)} className="flex w-full items-center gap-3 py-3 text-left">
+                    <span className="text-lg" aria-hidden>
+                      {f.icone}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-medium">{f.nome}</span>
+                      <span className="block text-xs text-suave">
+                        💳 {contas.find((c) => c.id === f.cartaoId)?.nome} · {descreverCobranca(f)}
+                      </span>
+                    </span>
+                    <span className="font-display font-semibold tabular-nums">{brl(f.valor)}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="cartao p-4 text-sm text-suave">Netflix, Spotify… entram sozinhas na fatura.</p>
+          )}
+        </section>
       )}
 
-      {/* Dívidas */}
+      {/* Fora do cartão: contas fixas e dívidas, juntas */}
       <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="titulo-secao mb-0">Dívidas e parcelas (fora do cartão)</h2>
-          <button
-            onClick={() => setDivida("nova")}
-            className="rounded-full border border-rosa/50 px-4 py-1.5 text-sm text-rosa hover:bg-rosa/10"
-          >
-            + Nova dívida
-          </button>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="titulo-secao mb-0">Contas e dívidas fora do cartão</h2>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setFixoAberto("nova")}
+              className="rounded-full border border-rosa/50 px-3 py-1.5 text-sm text-rosa"
+            >
+              + Conta fixa
+            </button>
+            <button
+              onClick={() => setDivida("nova")}
+              className="rounded-full border border-rosa/50 px-3 py-1.5 text-sm text-rosa"
+            >
+              + Dívida
+            </button>
+          </div>
         </div>
-        {dividas.length > 0 ? (
+        {contasFixas.length + dividas.length > 0 ? (
           <ul className="cartao divide-y divide-white/5 px-4">
+            {contasFixas.map((f) => {
+              const s = situacaoDoFixo(f, mes, pagamentosDeFixos);
+              return (
+                <li key={f.id} className="flex items-center gap-3 py-3">
+                  <button onClick={() => setFixoAberto(f)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                    <span className="text-lg" aria-hidden>
+                      {f.icone}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-medium">{f.nome}</span>
+                      <span className={`block text-xs ${s.situacao === "atrasado" ? "text-saida" : "text-suave"}`}>
+                        {s.situacao === "pago"
+                          ? "pago ✓"
+                          : s.situacao === "atrasado"
+                            ? `atrasado (${formatarData(s.vencimento)})`
+                            : `vence ${formatarData(s.vencimento)}`}
+                      </span>
+                    </span>
+                    <span className="font-display font-semibold tabular-nums">{brl(f.valor)}</span>
+                  </button>
+                  {s.situacao !== "pago" && (
+                    <button
+                      onClick={() => setPagandoFixo({ fixo: f, vencimento: s.vencimento })}
+                      className="shrink-0 rounded-full bg-entrada/15 px-3 py-1 text-xs font-semibold text-entrada"
+                    >
+                      Paguei
+                    </button>
+                  )}
+                </li>
+              );
+            })}
             {dividas.map((m) => {
               const c = calcularMeta(m);
               return (
                 <li key={m.id}>
                   <button onClick={() => setDivida(m)} className="flex w-full items-center gap-3 py-3 text-left">
-                    <span className="grid size-10 shrink-0 place-items-center rounded-full bg-superficie-2 text-lg">
+                    <span className="text-lg" aria-hidden>
                       {m.icone}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-medium">{m.nome}</span>
                       <span className="block text-xs text-suave">
-                        {m.parcelasPagas ?? 0} de {m.parcelas} pagas · {brl(m.parcela ?? 0)} por mês
-                        {m.contaId && ` · sai de ${contas.find((x) => x.id === m.contaId)?.nome ?? "?"}`}
+                        {m.parcelasPagas ?? 0}/{m.parcelas} pagas · {brl(m.parcela ?? 0)}/mês
                       </span>
                     </span>
                     <span className="shrink-0 text-right">
@@ -271,77 +337,26 @@ export default function Contas() {
             })}
           </ul>
         ) : (
-          <p className="cartao p-4 text-sm text-suave">
-            Empréstimo, financiamento, algo parcelado no boleto… Compras parceladas no cartão ficam no próprio cartão.
-          </p>
+          <p className="cartao p-4 text-sm text-suave">Aluguel, luz, internet, transporte, empréstimo…</p>
         )}
       </section>
 
-      {/* Assinaturas */}
-      {cartoes.length > 0 && (
-        <section>
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="titulo-secao mb-0">Assinaturas no cartão</h2>
-            <button
-              onClick={() => setAssinatura("nova")}
-              className="rounded-full border border-rosa/50 px-4 py-1.5 text-sm text-rosa hover:bg-rosa/10"
-            >
-              + Nova assinatura
-            </button>
-          </div>
-
-          {assinaturas.length > 0 ? (
-            <div className="cartao p-4">
-              <div className="mb-2 flex flex-wrap items-baseline gap-x-6 gap-y-1 px-1">
-                <p>
-                  <span className="gradiente-texto font-display text-2xl font-bold tabular-nums">{brl(totalAssinaturas)}</span>
-                  <span className="text-sm text-suave">
-                    {" "}
-                    por mês{assinaturas.some((f) => mesesEntreCobrancas(f) > 1) ? " (média)" : ""}
-                  </span>
-                </p>
-                <p className="text-sm text-suave">
-                  = <b className="text-white">{brl(totalAssinaturas * 12)}</b> por ano
-                </p>
-              </div>
-              <ul className="divide-y divide-white/5">
-                {assinaturas.map((f) => (
-                  <li key={f.id}>
-                    <button onClick={() => setAssinatura(f)} className="flex w-full items-center gap-3 py-3 text-left">
-                      <span className="grid size-10 shrink-0 place-items-center rounded-full bg-superficie-2 text-lg">
-                        {f.icone}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate font-medium">{f.nome}</span>
-                        <span className="block truncate text-xs text-suave">
-                          💳 {contas.find((c) => c.id === f.cartaoId)?.nome ?? "Cartão"} · {descreverCobranca(f)}
-                        </span>
-                      </span>
-                      <span className="shrink-0 text-right">
-                        <span className="block font-display font-semibold tabular-nums">{brl(f.valor)}</span>
-                        {mesesEntreCobrancas(f) > 1 && (
-                          <span className="block text-xs text-suave">
-                            {f.frequencia === "anual" ? "por ano" : "por semestre"}
-                          </span>
-                        )}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : (
-            <p className="cartao p-4 text-sm text-suave">
-              Netflix, Spotify, Prime… cadastre aqui e elas entram sozinhas na fatura.
-            </p>
-          )}
-        </section>
-      )}
-
       {transferindo && <FormLancamento modoInicial="transferencia" onFechar={() => setTransferindo(false)} />}
       {editando && <FormConta conta={editando === "nova" ? undefined : editando} onFechar={() => setEditando(null)} />}
-      {assinatura === "nova" && <FormCompra cartoes={cartoes} tipoInicial="assinatura" onFechar={() => setAssinatura(null)} />}
-      {assinatura && assinatura !== "nova" && <FormGastoFixo fixo={assinatura} onFechar={() => setAssinatura(null)} />}
+      {fixoAberto === "assinatura" && (
+        <FormCompra cartoes={cartoes} tipoInicial="assinatura" onFechar={() => setFixoAberto(null)} />
+      )}
+      {fixoAberto && fixoAberto !== "assinatura" && (
+        <FormGastoFixo fixo={fixoAberto === "nova" ? undefined : fixoAberto} onFechar={() => setFixoAberto(null)} />
+      )}
+      {pagandoFixo && (
+        <FormPagarFixo
+          fixo={pagandoFixo.fixo}
+          mes={mes}
+          vencimento={pagandoFixo.vencimento}
+          onFechar={() => setPagandoFixo(null)}
+        />
+      )}
       {divida && <FormMeta meta={divida === "nova" ? undefined : divida} tipoInicial="quitar" onFechar={() => setDivida(null)} />}
       {comprando && <FormCompra cartoes={cartoes} cartaoInicial={comprando} onFechar={() => setComprando(null)} />}
       {pagando && (
@@ -352,6 +367,29 @@ export default function Contas() {
           onFechar={() => setPagando(null)}
         />
       )}
+    </div>
+  );
+}
+
+function Numero({
+  rotulo,
+  valor,
+  destaque,
+  vermelho,
+}: {
+  rotulo: string;
+  valor: number;
+  destaque?: boolean;
+  vermelho?: boolean;
+}) {
+  return (
+    <div className="cartao p-4">
+      <p className="text-xs text-suave">{rotulo}</p>
+      <p
+        className={`mt-1 font-display text-xl font-bold tabular-nums ${vermelho ? "text-saida" : destaque ? "gradiente-texto" : ""}`}
+      >
+        {brl(valor)}
+      </p>
     </div>
   );
 }

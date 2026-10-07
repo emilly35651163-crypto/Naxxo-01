@@ -6,7 +6,6 @@ import Image from "next/image";
 import simbolo from "@/assets/naxxo-simbolo.png";
 import { NomeNaxxo } from "@/components/Logo";
 import { Campo, CampoValor } from "@/components/Campos";
-import CampoMes from "@/components/CampoMes";
 import CamposFonte, {
   problemaDoRascunho,
   RASCUNHO_FONTE_VAZIO,
@@ -17,7 +16,6 @@ import {
   concluirBoasVindas,
   OBJETIVOS,
   semAcento,
-  SUGESTOES_QUITAR,
   SUGESTOES_SONHOS,
   type FormaRenda,
   type Meta,
@@ -27,7 +25,7 @@ import { metaDeQuitar } from "@/lib/metas";
 import { alvoDaReserva } from "@/lib/orientacoes";
 import { rendaMensal } from "@/lib/renda";
 import { brl, lerValor } from "@/lib/formato";
-import CamposQuitar, { lerRascunhoQuitar, RASCUNHO_QUITAR_VAZIO, type RascunhoQuitar } from "@/components/CamposQuitar";
+import { lerRascunhoQuitar, RASCUNHO_QUITAR_VAZIO, type RascunhoQuitar } from "@/components/CamposQuitar";
 
 type Etapa = "inicio" | "objetivos" | "situacao" | "renda" | "sonhos" | "reserva" | "pronto";
 type Reserva = "tenho" | "quero" | "nao";
@@ -126,21 +124,20 @@ export default function BoasVindas() {
 
   // A etapa "sonhos" só aparece para quem quer juntar dinheiro para algo ou quitar dívidas
   const querJuntar = objetivos.includes("juntar");
-  const querQuitar = objetivos.includes("dividas");
   const semRenda = situacoes.length === 1 && situacoes[0] === "sem-renda";
   const etapas: Etapa[] = [
     "inicio",
     "objetivos",
     "situacao",
     ...(semRenda ? [] : (["renda"] as const)),
-    ...(querJuntar || querQuitar ? (["sonhos"] as const) : []),
+    ...(querJuntar ? (["sonhos"] as const) : []),
     "reserva",
     "pronto",
   ];
   const indice = etapas.indexOf(etapa);
 
   // Só os sonhos dos objetivos que continuam marcados (desmarcou "Realizar um sonho"? os sonhos não são salvos)
-  const sonhosValidos = sonhos.filter((s) => (s.tipo === "juntar" ? querJuntar : querQuitar));
+  const sonhosValidos = sonhos.filter((s) => s.tipo === "juntar" && querJuntar);
   const fontesValidas = fontes.map(rascunhoParaFonte).filter((f) => f !== null);
   const rendaDinheiro = fontesValidas.reduce((total, f) => total + rendaMensal({ ...f, id: "" }, true), 0);
   const rendaVales = fontesValidas.reduce(
@@ -316,7 +313,7 @@ export default function BoasVindas() {
       metas,
     });
     // O próximo passo é cadastrar as contas e o saldo de cada uma
-    router.replace("/contas?nova=1");
+    router.replace("/");
   }
 
   const noCartaoQuitar = sonhosValidos.filter((s) => s.tipo === "quitar" && s.noCartao);
@@ -484,124 +481,49 @@ export default function BoasVindas() {
         {etapa === "sonhos" && (
           <>
             <Titulo
-              titulo={querJuntar ? "Para o que você está juntando?" : "O que você quer quitar?"}
-              texto="Toque para adicionar (tocar de novo tira). Cada um vira uma trilha que mostra quanto guardar e quando você chega lá."
+              titulo="Quanto quer guardar e pra quê?"
+              texto="Toque numa ideia ou escreva a sua. Cada uma vira uma trilha."
             />
-
-            {querJuntar && (
-              <div className="flex flex-wrap gap-2">
-                {SUGESTOES_SONHOS.map((s) => (
-                  <BotaoSugestao key={s.nome} ativo={escolhido("juntar", s.nome)} onClick={() => alternarSonho("juntar", s)}>
-                    {s.icone} {s.nome}
-                  </BotaoSugestao>
-                ))}
-                <BotaoSugestao tracejado onClick={() => alternarSonho("juntar", { nome: "", icone: "⭐" })}>
-                  + Outro
+            <div className="flex flex-wrap gap-2">
+              {SUGESTOES_SONHOS.map((s) => (
+                <BotaoSugestao key={s.nome} ativo={escolhido("juntar", s.nome)} onClick={() => alternarSonho("juntar", s)}>
+                  {s.icone} {s.nome}
                 </BotaoSugestao>
-              </div>
-            )}
+              ))}
+              <BotaoSugestao tracejado onClick={() => alternarSonho("juntar", { nome: "", icone: "⭐" })}>
+                + Outro
+              </BotaoSugestao>
+            </div>
 
-            {querQuitar && (
-              <div className={querJuntar ? "mt-8" : ""}>
-                {querJuntar && (
-                  <div className="mb-3">
-                    <p className="font-semibold">💸 O que você quer quitar?</p>
-                    <p className="text-sm text-suave">Empréstimo, financiamento, algo parcelado no boleto, conta atrasada…</p>
-                  </div>
-                )}
-                <div className="flex flex-wrap gap-2">
-                  {SUGESTOES_QUITAR.map((s) => (
-                    <BotaoSugestao key={s.nome} ativo={escolhido("quitar", s.nome)} onClick={() => alternarSonho("quitar", s)}>
-                      {s.icone} {s.nome}
-                    </BotaoSugestao>
-                  ))}
-                  <BotaoSugestao tracejado onClick={() => alternarSonho("quitar", { nome: "", icone: "🧾" })}>
-                    + Outra
-                  </BotaoSugestao>
-                </div>
-              </div>
-            )}
-
-            <div className="mt-6 space-y-4">
+            <div className="mt-6 space-y-3">
               {sonhosValidos.map((s) => (
                 <div
                   key={s.id}
                   id={`sonho-${s.id}`}
                   ref={s.id === rolarPara ? novoCartao : undefined}
-                  className={`cartao space-y-4 p-5 ${erro?.alvo === `sonho-${s.id}` ? "border-saida/70" : ""}`}
+                  className={`cartao flex items-center gap-3 p-4 ${erro?.alvo === `sonho-${s.id}` ? "border-saida/70" : ""}`}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="grid size-11 shrink-0 place-items-center rounded-full bg-superficie-2 text-xl" aria-hidden>
-                      {s.icone}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <input
-                        value={s.nome}
-                        onChange={(e) => mudarSonho(s.id, { nome: e.target.value })}
-                        placeholder={s.tipo === "quitar" ? "O que é?" : "Nome do sonho"}
-                        aria-label={s.tipo === "quitar" ? "O que é a dívida" : "Nome do sonho"}
-                        className="w-full bg-transparent font-display text-lg font-semibold outline-none placeholder:text-white/45"
-                      />
-                      <p className="text-xs text-suave">{s.tipo === "quitar" ? "Quitar" : "Juntar"}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setSonhos((atuais) => atuais.filter((x) => x.id !== s.id))}
-                      className="text-xs text-suave hover:text-saida"
-                    >
-                      remover
-                    </button>
+                  <span className="text-xl" aria-hidden>
+                    {s.icone}
+                  </span>
+                  <input
+                    value={s.nome}
+                    onChange={(e) => mudarSonho(s.id, { nome: e.target.value })}
+                    placeholder="Pra quê?"
+                    aria-label="Pra quê"
+                    className="campo min-w-0 flex-1"
+                  />
+                  <div className="w-36 shrink-0">
+                    <CampoValor valor={s.alvo} onChange={(alvo) => mudarSonho(s.id, { alvo })} rotulo="Quanto" />
                   </div>
-
-                  {s.tipo === "quitar" ? (
-                    <>
-                      {/* No cartão de crédito? Então não é trilha: é compra parcelada na fatura */}
-                      <div className="space-y-1.5">
-                        <span className="text-xs text-suave">Está no cartão de crédito?</span>
-                        <div
-                          className="grid grid-cols-2 gap-1 rounded-full bg-fundo p-1 text-sm"
-                          role="radiogroup"
-                          aria-label="Está no cartão de crédito?"
-                        >
-                          {[false, true].map((v) => (
-                            <button
-                              key={String(v)}
-                              type="button"
-                              role="radio"
-                              aria-checked={s.noCartao === v}
-                              onClick={() => mudarSonho(s.id, { noCartao: v })}
-                              className={`rounded-full py-2 transition-colors ${s.noCartao === v ? "bg-white font-semibold text-fundo" : "text-suave"}`}
-                            >
-                              {v ? "💳 Sim, no cartão" : "Não (boleto, banco…)"}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      {s.noCartao ? (
-                        <p className="rounded-2xl bg-roxo/10 px-4 py-3 text-sm text-suave">
-                          Então ela entra na <b className="text-white">fatura do cartão</b>, não numa trilha (assim não conta duas
-                          vezes). Logo depois daqui você cadastra suas contas; no cartão, toque em{" "}
-                          <b className="text-white">“+ Incluir no cartão”</b> e informe as parcelas.
-                        </p>
-                      ) : (
-                        <CamposQuitar rascunho={s.quitar} onChange={(quitar) => mudarSonho(s.id, { quitar })} />
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <div className="grid grid-cols-2 gap-3">
-                        <Campo rotulo="Quanto custa?">
-                          <CampoValor valor={s.alvo} onChange={(alvo) => mudarSonho(s.id, { alvo })} />
-                        </Campo>
-                        <Campo rotulo="Já tenho guardado">
-                          <CampoValor valor={s.guardado} onChange={(guardado) => mudarSonho(s.id, { guardado })} />
-                        </Campo>
-                      </div>
-                      <Campo rotulo="Até quando quer realizar? (opcional)">
-                        <CampoMes valor={s.prazo} onChange={(prazo) => mudarSonho(s.id, { prazo })} />
-                      </Campo>
-                    </>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => setSonhos((atuais) => atuais.filter((x) => x.id !== s.id))}
+                    aria-label="Remover"
+                    className="text-xl text-suave hover:text-saida"
+                  >
+                    ×
+                  </button>
                 </div>
               ))}
             </div>

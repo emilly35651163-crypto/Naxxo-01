@@ -384,7 +384,9 @@ export default function Configuracoes() {
             botao="Começar do zero"
             onCancelar={() => setConfirmar(null)}
             onConfirmar={() => {
-              comDesfazer("Tudo apagado (a lista do mercado ficou)", () => apagarTudo(["naxxo:mercado-lista", "naxxo:mercado-opcoes"]));
+              comDesfazer("Tudo apagado (a lista do mercado ficou)", () =>
+                apagarTudo(["naxxo:mercado-lista", "naxxo:mercado-opcoes"]),
+              );
               setConfirmar(null);
             }}
           />

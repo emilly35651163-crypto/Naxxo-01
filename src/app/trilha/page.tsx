@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import {
   adiarParcela,
   arquivarMeta,
@@ -48,7 +47,8 @@ export default function Trilha() {
     return { ...m, parcelasPagas: pagas, guardado: m.parcela * pagas };
   });
   // Concluídas e arquivadas vão para o histórico de conquistas
-  const metas = todas.filter((m) => !m.arquivada);
+  // Dívidas ficam em Contas: aqui só o que a pessoa quer juntar
+  const metas = todas.filter((m) => !m.arquivada && m.tipo !== "quitar");
   const conquistas = todas.filter((m) => m.arquivada);
 
   // O plano do mês: a sobra (o que entra menos o que sai) e a sugestão de quanto guardar
@@ -61,11 +61,8 @@ export default function Trilha() {
   const deJuntar = metas.filter((m) => m.tipo !== "quitar");
   const totalGuardado = deJuntar.reduce((t, m) => t + m.guardado, 0);
   const totalAlvo = deJuntar.reduce((t, m) => t + m.alvo, 0);
-  const guardarEsteMes = deJuntar.filter((m) => !calcularMeta(m).concluida).reduce((t, m) => t + valorDoMes(m), 0);
-  const parcelasEsteMes = metas
-    .filter((m) => m.tipo === "quitar" && !noCartao.has(m.id) && !calcularMeta(m).concluida)
-    .reduce((t, m) => t + valorDoMes(m), 0);
-  const algumaEmZero = deJuntar.some((m) => !calcularMeta(m).concluida && valorDoMes(m) === 0);
+  // Quanto guardar por mês para chegar em todas (pelo prazo, ou em 1 ano sem prazo)
+  const idealPorMes = deJuntar.reduce((t, m) => t + (plano.pede.get(m.id) ?? 0), 0);
 
   // Média do que saiu por mês nos meses que já fecharam (base da reserva de emergência), com a regra única
   const saidaMedia = (() => {
@@ -82,42 +79,14 @@ export default function Trilha() {
 
   return (
     <div className="space-y-6">
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Só os números: nada de textão */}
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <Numero rotulo="Guardado no total" valor={brl(totalGuardado)} destaque />
-        <Numero rotulo="Onde quero chegar" valor={brl(totalAlvo)} />
-        <Numero rotulo={`Guardar em ${nomeMes(mes).split(" ")[0].toLowerCase()}`} valor={brl(guardarEsteMes)} />
-        <Numero rotulo="Parcelas do mês" valor={brl(parcelasEsteMes)} />
+        <Numero rotulo="Quero chegar" valor={brl(totalAlvo)} />
+        <Numero rotulo="Guardado no mês" valor={brl(Math.max(resumoDoMes(mes, dados).guardado, 0))} />
+        <Numero rotulo="Ideal por mês" valor={brl(idealPorMes)} />
+        <Numero rotulo="Sobrando este mês" valor={brl(plano.sobra)} vermelho={plano.sobra < 0} />
       </section>
-
-      {/* Os avisos gerais ficam aqui, uma vez só (os cartões ficam limpos) */}
-      <div className="space-y-2 rounded-2xl border border-roxo/30 bg-roxo/5 px-4 py-3 text-sm text-suave">
-        {plano.sobra > 0 ? (
-          <p>
-            Este mês sobram <b className="text-white">{brl(plano.sobra)}</b> depois das contas (com o mercado). As metas de juntar
-            começam em <b className="text-white">R$ 0</b>: você vê o que sobra de verdade e decide quanto guardar. A sugestão
-            segue os especialistas: a reserva de emergência primeiro, depois as outras.
-          </p>
-        ) : (
-          <p>
-            Este mês as contas passam do que entra em <b className="text-saida">{brl(-plano.sobra)}</b>: não sobra para guardar
-            nas metas de juntar. As parcelas de quitar continuam, porque são obrigatórias.
-          </p>
-        )}
-        {algumaEmZero && (
-          <p>💡 Meta com R$ 0 no mês não entra na previsão e não anda — quando sobrar, defina um valor ou use a sugestão.</p>
-        )}
-        <p>
-          O que você define aqui aparece como previsto nos{" "}
-          <Link href="/lancamentos" className="text-rosa">
-            Lançamentos
-          </Link>{" "}
-          e em{" "}
-          <Link href="/resumo?aba=projecao" className="text-rosa">
-            Resumo → Projeção
-          </Link>
-          .
-        </p>
-      </div>
 
       <div className="flex items-center justify-between">
         <h2 className="titulo-secao mb-0">Suas trilhas</h2>
@@ -200,11 +169,25 @@ export default function Trilha() {
   );
 }
 
-function Numero({ rotulo, valor, destaque }: { rotulo: string; valor: string; destaque?: boolean }) {
+function Numero({
+  rotulo,
+  valor,
+  destaque,
+  vermelho,
+}: {
+  rotulo: string;
+  valor: string;
+  destaque?: boolean;
+  vermelho?: boolean;
+}) {
   return (
     <div className="cartao p-4">
       <p className="text-xs text-suave">{rotulo}</p>
-      <p className={`mt-1 font-display text-xl font-bold tabular-nums ${destaque ? "gradiente-texto" : ""}`}>{valor}</p>
+      <p
+        className={`mt-1 font-display text-xl font-bold tabular-nums ${vermelho ? "text-saida" : destaque ? "gradiente-texto" : ""}`}
+      >
+        {valor}
+      </p>
     </div>
   );
 }

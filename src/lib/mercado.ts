@@ -2,7 +2,6 @@
 
 import {
   CATEGORIAS_MERCADO,
-  SUGESTOES_MERCADO,
   UNIDADES_DURACAO,
   type CategoriaMercado,
   type ItemMercado,
@@ -117,7 +116,6 @@ export function todasAsOpcoes(despensa: ItemMercado[], criadas: OpcaoMercado[]):
   };
   despensa.forEach((i) => incluir({ ...i, preco: i.valor, daDespensa: true }));
   criadas.forEach((o) => incluir({ ...o, duracao: null, unidade: "meses", daDespensa: false }));
-  SUGESTOES_MERCADO.forEach((s) => incluir({ ...s, daDespensa: false }));
   return lista;
 }
 
@@ -135,3 +133,11 @@ export function filtrarOpcoes(opcoes: OpcaoProduto[], busca: string, categoria: 
 export function iconeDaCategoriaMercado(categoria: CategoriaMercado) {
   return CATEGORIAS_MERCADO.find((c) => c.id === categoria)?.icone ?? "🛍️";
 }
+
+// Quanto dura: as opções rápidas (o mesmo em todo o Mercado)
+export const DURACOES: { rotulo: string; duracao: string; unidade: UnidadeDuracao }[] = [
+  { rotulo: "15 dias", duracao: "15", unidade: "dias" },
+  { rotulo: "1 mês", duracao: "1", unidade: "meses" },
+  { rotulo: "2 meses", duracao: "2", unidade: "meses" },
+  { rotulo: "3 meses", duracao: "3", unidade: "meses" },
+];

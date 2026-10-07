@@ -411,7 +411,7 @@ function FormRecebimento({ fonte, mes, onFechar }: { fonte: FonteRenda; mes: str
   const partesPrincipais = pendentes.filter((p) => p.parte !== "beneficio");
   const beneficiosPendentes = pendentes.filter((p) => p.parte === "beneficio");
   const [parte, setParte] = useState<ParteDaRenda | null>(partesPrincipais[0] ?? null);
-  const [valor, setValor] = useState(rendaFixa(fonte.forma) && parte ? valorParaCampo(parte.valor) : "");
+  const [valor, setValor] = useState(rendaFixa(fonte.forma) ? valorParaCampo(parte?.valor ?? fonte.valor) : "");
   const [horas, setHoras] = useState("");
   const [valorHora, setValorHora] = useState(fonte.valorHora ? valorParaCampo(fonte.valorHora) : "");
   // A data já vem preenchida com o dia em que essa parte costuma entrar

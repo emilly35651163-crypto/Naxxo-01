@@ -10,7 +10,6 @@ import SeletorMes from "./SeletorMes";
 import NavInferior, { ITENS_MENU, itemAtivo } from "./NavInferior";
 import BarraLateral from "./BarraLateral";
 import FormLancamento from "./FormLancamento";
-import BotaoMercado from "./BotaoMercado";
 import Avisos from "./Avisos";
 
 /** O tema escolhido em Configurações ("auto" segue o celular/computador). */
@@ -35,9 +34,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const perfil = usePerfil();
   const emBoasVindas = caminho === "/boas-vindas";
-  const pagina =
-    ITENS_MENU.find((item) => item.href === itemAtivo(caminho)) ??
-    (caminho === "/mais" ? { rotulo: "Mais", usaMes: false } : undefined);
+  const pagina = ITENS_MENU.find((item) => item.href === itemAtivo(caminho)) ?? undefined;
   useTema();
   useLembretes(!!perfil?.concluido);
 
@@ -101,14 +98,20 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             )}
 
             <div className="flex shrink-0 items-center gap-2">
-              {/* Celular: o carrinho fica aqui em cima, para não cobrir nada da tela */}
+              {/* Configurações e Mercado ficam aqui em cima, ao lado do + */}
+              <Link
+                href="/configuracoes"
+                aria-label="Configurações"
+                aria-current={caminho === "/configuracoes" ? "page" : undefined}
+                className={`grid size-10 place-items-center rounded-full border text-lg ${caminho === "/configuracoes" ? "border-rosa bg-rosa/15" : "border-roxo/30 bg-superficie"}`}
+              >
+                ⚙️
+              </Link>
               <Link
                 href="/mercado"
                 aria-label="Mercado"
                 aria-current={caminho === "/mercado" ? "page" : undefined}
-                className={`grid size-10 place-items-center rounded-full border text-lg lg:hidden ${
-                  caminho === "/mercado" ? "border-rosa bg-rosa/15" : "border-roxo/30 bg-superficie"
-                }`}
+                className={`grid size-10 place-items-center rounded-full border text-lg ${caminho === "/mercado" ? "border-rosa bg-rosa/15" : "border-roxo/30 bg-superficie"}`}
               >
                 🛒
               </Link>
@@ -136,7 +139,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <NavInferior />
-      <BotaoMercado />
       <Avisos />
       {novoAberto && <FormLancamento onFechar={() => setNovoAberto(false)} />}
     </div>

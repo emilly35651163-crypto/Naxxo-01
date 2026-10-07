@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Logo from "./Logo";
-import { ITENS_MENU, itemAtivo } from "./NavInferior";
+import { ITENS_LATERAL, itemAtivo } from "./NavInferior";
 
 // Menu da esquerda, só aparece em telas largas (computador / tablet deitado).
 export default function BarraLateral() {
@@ -16,7 +16,7 @@ export default function BarraLateral() {
       </Link>
 
       <nav aria-label="Menu principal" className="flex flex-col gap-1 overflow-y-auto">
-        {ITENS_MENU.map((item) => {
+        {ITENS_LATERAL.map((item) => {
           const ativo = caminho === item.href;
           return (
             <Link

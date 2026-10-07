@@ -46,8 +46,7 @@
 body {
   background:
     radial-gradient(50rem 28rem at 110% -10%, rgb(139 92 246 / 0.2), transparent 60%),
-    radial-gradient(40rem 26rem at -15% 5%, rgb(255 78 216 / 0.12), transparent 60%),
-    var(--color-fundo);
+    radial-gradient(40rem 26rem at -15% 5%, rgb(255 78 216 / 0.12), transparent 60%), var(--color-fundo);
   background-attachment: fixed;
   color: var(--color-texto);
   color-scheme: dark;
@@ -57,8 +56,7 @@ body {
   color-scheme: light;
   background:
     radial-gradient(50rem 28rem at 110% -10%, rgb(139 92 246 / 0.1), transparent 60%),
-    radial-gradient(40rem 26rem at -15% 5%, rgb(255 78 216 / 0.07), transparent 60%),
-    var(--color-fundo);
+    radial-gradient(40rem 26rem at -15% 5%, rgb(255 78 216 / 0.07), transparent 60%), var(--color-fundo);
 }
 
 /* Quem pediu menos movimento no celular/computador: sem animações */
@@ -126,5 +124,14 @@ body {
   .campo-erro {
     border-color: var(--color-saida) !important;
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-saida) 25%, transparent);
+  }
+}
+
+/* No celular, campos com letra menor que 16px fazem o iPhone dar zoom ao tocar: todos ficam com 16px */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
   }
 }
