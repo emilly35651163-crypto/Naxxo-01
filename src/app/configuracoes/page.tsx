@@ -29,6 +29,7 @@ import { comDesfazer, mostrarAviso } from "@/lib/avisos";
 import { CampoValor, Chip } from "@/components/Campos";
 import { definirSenha, emailLogado, nuvemAtiva, sair } from "@/lib/nuvem";
 import RecuperarDados from "@/components/RecuperarDados";
+import InstalarApp from "@/components/InstalarApp";
 
 const AUTOMATICAS = ["Fatura do cartão", "Guardar (metas)"];
 
@@ -74,6 +75,7 @@ export default function Configuracoes() {
 
   return (
     <div className="space-y-6">
+      <InstalarApp />
       <RecuperarDados />
 
       {nuvemAtiva && (

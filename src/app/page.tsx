@@ -8,6 +8,7 @@ import { previstosDoMes, resumoDoMes, type Previsto } from "@/lib/previstos";
 import { useDados } from "@/lib/dados";
 import { brl, diasAte, formatarData, hojeISO, nomeMes } from "@/lib/formato";
 import ConfirmarPrevisto from "@/components/ConfirmarPrevisto";
+import InstalarApp from "@/components/InstalarApp";
 
 // Início: o essencial e mais nada. Renda, saldo, próximas contas e como o mês vai fechar.
 export default function Inicio() {
@@ -95,6 +96,8 @@ export default function Inicio() {
           </p>
         )}
       </section>
+
+      <InstalarApp fechavel />
 
       {/* Saldo */}
       <Link href="/contas" className="cartao block p-5 hover:border-rosa/50">
