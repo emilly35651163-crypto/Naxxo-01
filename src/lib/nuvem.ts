@@ -148,7 +148,8 @@ export async function pedirCodigo(email: string) {
     options: { shouldCreateUser: true, emailRedirectTo: `${window.location.origin}/entrar` },
   });
   if (!error) return null;
-  if (/rate|limit|seconds/i.test(error.message)) return "Muitos pedidos seguidos. Espere um minutinho e tente de novo.";
+  if (/rate|limit|seconds/i.test(error.message))
+    return "O limite de e-mails de entrada foi atingido por agora (o plano grátis manda poucos por hora). Tente de novo daqui a pouco — até 1 hora.";
   return "Não consegui enviar o código. Confira o e-mail.";
 }
 
