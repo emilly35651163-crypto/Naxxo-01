@@ -74,7 +74,7 @@ export default function FormConta({ conta, onFechar }: { conta?: Conta; onFechar
       return setErro(
         tipo === "dinheiro" ? "Dê um nome (ex.: Carteira)." : tipo === "vale" ? "Qual é o vale? (ex.: Alelo)" : "Qual é o banco?",
       );
-    if (!saldo.trim()) return setErro("Quanto tem nessa conta agora? (pode ser 0 ou negativo)");
+    // Vazio = R$ 0,00 (o campo de dinheiro não guarda um "0" sozinho)
     if (comCredito && !(valorLimite > 0)) return setErro("Qual é o limite do cartão?");
     if (comCredito && (!fechamento || !vencimento)) return setErro("Escolha o dia que a fatura fecha e o dia que vence.");
     if (desligandoCredito && comprasAbertas.length > 0)
@@ -152,7 +152,7 @@ export default function FormConta({ conta, onFechar }: { conta?: Conta; onFechar
             {nome || (tipo === "dinheiro" ? "Carteira" : tipo === "vale" ? "Meu vale" : "Minha conta")}
           </p>
           <p className="absolute bottom-4 left-4 text-xs text-white/80">
-            Saldo {saldo.trim() ? brl(lerValor(saldo) || 0) : "—"}
+            Saldo {brl(lerValor(saldo) || 0)}
             {comCredito && valorLimite > 0 && ` · limite ${brl(valorLimite)}`}
           </p>
           <span className="absolute bottom-3 right-4 text-2xl">
@@ -193,7 +193,7 @@ export default function FormConta({ conta, onFechar }: { conta?: Conta; onFechar
           </div>
         )}
 
-        {tipo !== "vale" && (!conta || lerValor(saldo) !== conta.saldo) && (
+        {tipo !== "vale" && (!conta || (lerValor(saldo) || 0) !== (conta.saldo ?? 0)) && (
           <RendaNoSaldo itens={jaCaiu} marcados={noSaldo} onChange={setNoSaldo} />
         )}
 
