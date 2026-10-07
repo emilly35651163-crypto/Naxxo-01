@@ -162,14 +162,8 @@ export default function Graficos() {
                 className="flex h-full flex-1 items-end justify-center gap-1 rounded-md transition-colors hover:bg-white/5"
                 title={`${nomeMes(m.mes)}: entra ${brl(m.entra)}, sai ${brl(m.sai)} — toque para ver os lançamentos`}
               >
-                <div
-                  className={`w-1/2 rounded-t-md ${m.vaiEntrar > 0 ? "bg-entrada/60" : "bg-entrada"}`}
-                  style={{ height: `${(m.entra / maiorMes) * 100}%` }}
-                />
-                <div
-                  className={`w-1/2 rounded-t-md ${m.vaiSair > 0 ? "bg-saida/60" : "bg-saida"}`}
-                  style={{ height: `${(m.sai / maiorMes) * 100}%` }}
-                />
+                <div className={`w-1/2 rounded-t-md bg-entrada`} style={{ height: `${(m.entra / maiorMes) * 100}%` }} />
+                <div className={`w-1/2 rounded-t-md bg-saida`} style={{ height: `${(m.sai / maiorMes) * 100}%` }} />
               </button>
             ))}
           </div>
@@ -187,7 +181,7 @@ export default function Graficos() {
             <span className="flex items-center gap-1.5">
               <span className="size-2 rounded-full bg-saida" /> Saídas
             </span>
-            <span>mais claro = inclui previsto · toque num mês para ver os lançamentos</span>
+            <span>toque num mês para ver os lançamentos</span>
           </div>
         </section>
       </div>

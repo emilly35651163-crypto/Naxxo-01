@@ -1572,12 +1572,43 @@ export function atualizarItemLista(id: string, mudancas: Partial<ItemLista>) {
   listaCompras.gravar(listaCompras.ler().map((l) => (l.id === id ? { ...l, ...mudancas } : l)));
 }
 
+/**
+ * Exclui um item de "em casa" de vez: some da despensa e da lista, e a compra dele é desfeita
+ * (sai do gasto do mercado; o valor volta para a conta ou sai da fatura).
+ */
+export function excluirDaDespensa(id: string) {
+  const item = itensMercado.ler().find((i) => i.id === id);
+  if (!item) return;
+  itensMercado.gravar(itensMercado.ler().filter((i) => i.id !== id));
+  listaCompras.gravar(listaCompras.ler().filter((l) => !mesmoNome(l.nome, item.nome)));
+  for (const c of comprasMercado.ler()) {
+    const doItem = c.itens.filter((x) => x.itemId === id || mesmoNome(x.nome, item.nome));
+    if (doItem.length === 0) continue;
+    const resto = c.itens.filter((x) => !doItem.includes(x));
+    const total = Math.round((c.total - doItem.reduce((t, x) => t + x.valor, 0)) * 100) / 100;
+    const lancamento = lancamentos.ler().find((l) => l.compraMercadoId === c.id);
+    const compra = compras.ler().find((x) => x.compraMercadoId === c.id);
+    if (resto.length === 0 || total <= 0) {
+      comprasMercado.gravar(comprasMercado.ler().filter((x) => x.id !== c.id));
+      if (lancamento) lancamentos.gravar(lancamentos.ler().filter((l) => l.id !== lancamento.id));
+      if (compra) compras.gravar(compras.ler().filter((x) => x.id !== compra.id));
+      continue;
+    }
+    const descricao = `Mercado · ${resto.length} ${resto.length === 1 ? "item" : "itens"}`;
+    comprasMercado.gravar(comprasMercado.ler().map((x) => (x.id === c.id ? { ...x, itens: resto, total } : x)));
+    if (lancamento)
+      lancamentos.gravar(lancamentos.ler().map((l) => (l.id === lancamento.id ? { ...l, valor: total, descricao } : l)));
+    if (compra) compras.gravar(compras.ler().map((x) => (x.id === compra.id ? { ...x, valorTotal: total, descricao } : x)));
+  }
+}
+
 /** Exclui o item de tudo: da lista e de "em casa" (despensa). As compras já feitas continuam nos lançamentos. */
 export function excluirItemDeTudo(id: string) {
   const l = listaCompras.ler().find((x) => x.id === id);
   if (!l) return;
   listaCompras.gravar(listaCompras.ler().filter((x) => x.id !== id));
-  itensMercado.gravar(itensMercado.ler().filter((i) => !mesmoNome(i.nome, l.nome)));
+  const naDespensa = itensMercado.ler().find((i) => mesmoNome(i.nome, l.nome));
+  if (naDespensa) excluirDaDespensa(naDespensa.id);
 }
 
 /** Preço por unidade a partir do total (ou o contrário): "o que for, serve para todos". */

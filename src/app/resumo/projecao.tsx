@@ -184,13 +184,9 @@ export default function Projecao() {
             </span>
           </span>
         </div>
-      </section>
-
-      {/* Como vai estar no dia escolhido */}
-      <section className="space-y-4 lg:col-span-2">
         {/* O dia tocado, em detalhe */}
         {tocado && (
-          <div className="cartao p-5">
+          <div className="mt-4 rounded-2xl border border-rosa/30 bg-fundo/50 p-4">
             <h3 className="titulo-secao capitalize">{nomeDoDia(tocado)}</h3>
             {doDia.length > 0 ? (
               <ul className="space-y-1.5 text-sm">
@@ -212,7 +208,10 @@ export default function Projecao() {
             )}
           </div>
         )}
+      </section>
 
+      {/* Como vai estar no dia escolhido */}
+      <section className="space-y-4 lg:col-span-2">
         <FechamentoDoMes mes={mes} />
 
         <div className="cartao relative overflow-hidden p-5">

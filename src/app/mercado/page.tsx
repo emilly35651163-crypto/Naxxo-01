@@ -10,23 +10,27 @@ import {
   totalDoItemLista,
   atualizarItemLista,
   useCartoes,
-  useComprasMercado,
+  excluirDaDespensa,
+  removerCompra,
+  removerLancamento,
   useItensMercado,
   useListaCompras,
   useMes,
   usePreferencias,
   type ItemLista,
 } from "@/lib/store";
-import { brl, nomeMes } from "@/lib/formato";
+import { brl, formatarData, nomeMes } from "@/lib/formato";
 import { DURACOES, previsaoDoMes, situacaoDoItem } from "@/lib/mercado";
 import { comDesfazer, mostrarAviso } from "@/lib/avisos";
 import FormItemLista from "./FormItemLista";
+import { gastosDoMes } from "@/lib/analise";
+import { useDados } from "@/lib/dados";
 import CamposPreco from "./CamposPreco";
 
 export default function Mercado() {
   const lista = useListaCompras();
   const despensa = useItensMercado();
-  const compras = useComprasMercado();
+  const dados = useDados();
   const contas = useCartoes();
   const prefs = usePreferencias();
   const mes = useMes();
@@ -37,7 +41,10 @@ export default function Mercado() {
   // De qual conta sai quando aperta "comprei" (a última usada)
   const contaId = contas.find((c) => c.id === prefs.ultimaConta)?.id ?? contas[0]?.id;
 
-  const gastoNoMes = compras.filter((c) => c.data.startsWith(mes)).reduce((t, c) => t + c.total, 0);
+  // Gasto do mês: o que está nos lançamentos e no cartão (o mesmo número do Resumo, já sem o que foi excluído)
+  const gastosMercado = gastosDoMes(mes, dados).filter((g) => g.categoria === "Mercado" && !g.previsto);
+  const gastoNoMes = gastosMercado.reduce((t, g) => t + g.valor, 0);
+  const [verGastos, setVerGastos] = useState(false);
   const previsto = previsaoDoMes(despensa, mes).total;
   const totalLista = lista.reduce((t, l) => t + totalDoItemLista(l), 0);
 
@@ -50,10 +57,52 @@ export default function Mercado() {
   return (
     <div className="space-y-6">
       <section className="grid grid-cols-3 gap-2 sm:gap-3">
-        <Numero rotulo={`Gasto em ${nomeMes(mes).split(" ")[0].toLowerCase()}`} valor={brl(gastoNoMes)} destaque />
+        <button onClick={() => setVerGastos(!verGastos)} aria-expanded={verGastos} className="text-left">
+          <Numero
+            rotulo={`Gasto em ${nomeMes(mes).split(" ")[0].toLowerCase()} ${verGastos ? "▴" : "▾"}`}
+            valor={brl(gastoNoMes)}
+            destaque
+          />
+        </button>
         <Numero rotulo="Repor este mês" valor={brl(previsto)} />
         <Numero rotulo="Na lista" valor={`${lista.length} ${lista.length === 1 ? "item" : "itens"}`} />
       </section>
+
+      {/* As compras do mês (tocando no gasto): dá para excluir uma compra feita por engano */}
+      {verGastos && (
+        <section className="cartao p-4">
+          <h2 className="mb-2 font-display font-semibold">Compras de {nomeMes(mes).split(" ")[0].toLowerCase()}</h2>
+          {gastosMercado.length > 0 ? (
+            <ul className="divide-y divide-white/5 text-sm">
+              {gastosMercado.map((g) => (
+                <li key={g.chave} className="flex items-center gap-2 py-2">
+                  <span className="min-w-0 flex-1 truncate">
+                    {g.descricao}{" "}
+                    <span className="text-xs text-suave">
+                      · {formatarData(g.data)} · {g.onde}
+                    </span>
+                  </span>
+                  <span className="tabular-nums">{brl(g.valor)}</span>
+                  {(g.lancamento || g.compra) && (
+                    <button
+                      onClick={() =>
+                        comDesfazer(`Compra de ${brl(g.valor)} excluída`, () =>
+                          g.lancamento ? removerLancamento(g.lancamento.id) : removerCompra(g.compra!.id),
+                        )
+                      }
+                      className="text-xs text-suave hover:text-saida"
+                    >
+                      excluir
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-suave">Nenhuma compra no mercado este mês.</p>
+          )}
+        </section>
+      )}
 
       <button onClick={() => setAdicionando(true)} className="botao-gradiente w-full rounded-2xl py-4 text-base font-semibold">
         + Adicionar à lista de compras
@@ -134,6 +183,10 @@ export default function Mercado() {
                           : `acaba em ${s.faltam} ${s.faltam === 1 ? "dia" : "dias"}`}
                   </span>
                 </span>
+                <ExcluirDeCasa
+                  nome={item.nome}
+                  onExcluir={() => comDesfazer(`${item.nome} excluído`, () => excluirDaDespensa(item.id))}
+                />
                 <button
                   onClick={() => {
                     acabouHoje(item.id);
@@ -256,5 +309,30 @@ function LinhaLista({ item: l, onEditar, contaId }: { item: ItemLista; onEditar:
         </div>
       )}
     </li>
+  );
+}
+
+/** × de "Em casa": confirma e exclui de vez (a compra também é desfeita). */
+function ExcluirDeCasa({ nome, onExcluir }: { nome: string; onExcluir: () => void }) {
+  const [confirmando, setConfirmando] = useState(false);
+  if (!confirmando)
+    return (
+      <button
+        onClick={() => setConfirmando(true)}
+        aria-label={`Excluir ${nome}`}
+        className="shrink-0 px-1 text-xl text-suave hover:text-saida"
+      >
+        ×
+      </button>
+    );
+  return (
+    <span className="flex shrink-0 items-center gap-1 text-xs">
+      <button onClick={() => setConfirmando(false)} className="rounded-full px-2 py-1 text-suave">
+        não
+      </button>
+      <button onClick={onExcluir} className="rounded-full bg-saida px-2 py-1 font-semibold text-fundo">
+        excluir de tudo
+      </button>
+    </span>
   );
 }
