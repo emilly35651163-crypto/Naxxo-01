@@ -6,6 +6,7 @@ import {
   atualizarCompra,
   CATEGORIAS,
   compraParaDebito,
+  adicionarLancamento,
   removerCompra,
   useCompras,
   useMetas,
@@ -111,8 +112,9 @@ export default function FormCompra({
   // A data acompanha as parcelas pagas, até a pessoa mudar a data na mão (ao editar, a data já é a da compra)
   const [dataManual, setDataManual] = useState(!!compra);
   // Editando: dá para corrigir uma compra que foi para o crédito mas era débito/Pix
-  const [forma, setForma] = useState(compra ? `credito:${compra.cartaoId}` : "");
-  const noDebito = !!compra && !lerEscolha(forma).credito;
+  // Débito ou crédito (começa no crédito do cartão escolhido)
+  const [forma, setForma] = useState(`credito:${compra?.cartaoId ?? cartaoInicial?.id ?? cartoes[0]?.id ?? ""}`);
+  const noDebito = !lerEscolha(forma).credito;
   const [erro, setErro] = useState("");
 
   function mudarCredito(novo: RascunhoCredito) {
@@ -147,10 +149,23 @@ export default function FormCompra({
     }
     if (!(numero > 0)) return setErro("Digite o valor total da compra.");
     if (!data) return setErro("Escolha a data da compra.");
-    if (compra && noDebito) {
+    if (noDebito) {
       const contaId = lerEscolha(forma).id;
       if (!contaId) return setErro("De qual conta saiu?");
-      compraParaDebito(compra.id, contaId, { valorTotal: numero, descricao: descricao.trim() || categoria, categoria, data });
+      if (compra)
+        compraParaDebito(compra.id, contaId, { valorTotal: numero, descricao: descricao.trim() || categoria, categoria, data });
+      else
+        adicionarLancamento({
+          tipo: "saida",
+          valor: numero,
+          descricao: descricao.trim() || categoria,
+          categoria,
+          data,
+          pago: data <= hojeISO(),
+          contaId,
+          // No débito com data antes de hoje: já saiu da conta antes, então o saldo de hoje não muda
+          jaNoSaldo: data < hojeISO() || undefined,
+        });
       return onFechar();
     }
     if (!credito.cartaoId) return setErro("Escolha o cartão.");
@@ -218,22 +233,24 @@ export default function FormCompra({
               <CampoValor valor={valor} onChange={setValor} />
             </Campo>
 
-            {compra && (
-              <EscolhaConta
-                valor={forma}
-                onChange={(nova) => {
-                  setForma(nova);
-                  const e = lerEscolha(nova);
-                  if (e.credito) mudarCredito({ ...credito, cartaoId: e.id });
-                }}
-                modo="ambos"
-                rotulo="Como pagou?"
-              />
-            )}
+            <EscolhaConta
+              valor={forma}
+              onChange={(nova) => {
+                setForma(nova);
+                const e = lerEscolha(nova);
+                if (e.credito) mudarCredito({ ...credito, cartaoId: e.id });
+              }}
+              modo="ambos"
+              rotulo="Como pagou?"
+            />
 
             {noDebito ? (
               <p className="rounded-2xl bg-roxo/10 px-4 py-3 text-xs text-suave">
-                🏦 Vai sair da fatura e virar uma saída da conta.
+                {compra
+                  ? "🏦 Vai sair da fatura e virar uma saída da conta."
+                  : data < hojeISO()
+                    ? "🏦 No débito, com data antes de hoje: fica registrado, mas não muda o saldo de hoje (já tinha saído)."
+                    : "🏦 Sai do saldo da conta."}
               </p>
             ) : (
               <CamposCredito cartoes={cartoes} rascunho={credito} onChange={mudarCredito} valorTotal={numero} data={data} />

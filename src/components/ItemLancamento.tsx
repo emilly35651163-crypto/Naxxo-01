@@ -1,9 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { iconeDaCategoria, jaAconteceu, podeReabrir, reabrirLancamento, type Conta, type Lancamento } from "@/lib/store";
+import {
+  iconeDaCategoria,
+  jaAconteceu,
+  podeReabrir,
+  reabrirLancamento,
+  removerLancamento,
+  type Conta,
+  type Lancamento,
+} from "@/lib/store";
 import { brl, formatarData } from "@/lib/formato";
-import { mostrarAviso } from "@/lib/avisos";
+import { comDesfazer, mostrarAviso } from "@/lib/avisos";
 import FormLancamento from "./FormLancamento";
 
 // Uma linha de lançamento. Tocar abre o formulário para editar (e excluir).
@@ -80,6 +88,13 @@ export default function ItemLancamento({
           )}
           <button onClick={() => setEditando(true)} className="text-suave hover:text-white">
             editar
+          </button>
+          {/* Excluir: como se nunca tivesse acontecido (o dinheiro volta para a conta) */}
+          <button
+            onClick={() => comDesfazer(`“${l.descricao}” excluído`, () => removerLancamento(l.id))}
+            className="text-suave hover:text-saida"
+          >
+            excluir
           </button>
         </div>
       </div>

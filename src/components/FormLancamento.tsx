@@ -26,7 +26,7 @@ import {
   type Lancamento,
   type Tipo,
 } from "@/lib/store";
-import { formatarData, formatarDigitado, hojeISO, lerValor, mesAtual, nomeMes, soNumeros, valorParaCampo } from "@/lib/formato";
+import { formatarData, hojeISO, lerValor, mesAtual, nomeMes, soNumeros, valorParaCampo, mascaraDinheiro } from "@/lib/formato";
 import { faturaDaData } from "@/lib/cartoes";
 import { comDesfazer, mostrarAviso } from "@/lib/avisos";
 import Modal from "./Modal";
@@ -69,10 +69,14 @@ type Modo = Tipo | "transferencia";
 export default function FormLancamento({
   lancamento,
   modoInicial,
+  inicial,
+  onSalvo,
   onFechar,
 }: {
   lancamento?: Lancamento;
   modoInicial?: Modo;
+  inicial?: { descricao: string; valor: number; categoria?: string };
+  onSalvo?: () => void;
   onFechar: () => void;
 }) {
   const contas = useCartoes();
@@ -96,9 +100,13 @@ export default function FormLancamento({
     const id = pontas.find((l) => l.tipo === "entrada")?.contaId ?? contas.find((c) => c.id !== ultima?.id)?.id;
     return id ? `debito:${id}` : "";
   });
-  const [valor, setValor] = useState(lancamento ? valorParaCampo(lancamento.valor) : "");
-  const [descricao, setDescricao] = useState(lancamento?.descricao ?? "");
-  const [categoria, setCategoria] = useState(lancamento?.categoria ?? categoriasDe("saida", personalizadas)[0].nome);
+  const [valor, setValor] = useState(
+    lancamento ? valorParaCampo(lancamento.valor) : inicial ? valorParaCampo(inicial.valor) : "",
+  );
+  const [descricao, setDescricao] = useState(lancamento?.descricao ?? inicial?.descricao ?? "");
+  const [categoria, setCategoria] = useState(
+    lancamento?.categoria ?? inicial?.categoria ?? categoriasDe("saida", personalizadas)[0].nome,
+  );
   const [subcategoria, setSubcategoria] = useState(lancamento?.subcategoria ?? "");
   const [novaCategoria, setNovaCategoria] = useState<null | "categoria" | "sub">(null);
   const [nomeNova, setNomeNova] = useState("");
@@ -139,6 +147,7 @@ export default function FormLancamento({
 
   /** Depois de salvar: aviso com "ver", sem mudar o mês do topo sozinho. */
   function avisarSalvo(texto: string, mesDestino: string, href = "/lancamentos") {
+    onSalvo?.();
     mostrarAviso({
       texto,
       link:
@@ -385,10 +394,9 @@ export default function FormLancamento({
             value={valor}
             aria-invalid={erro?.campo === "valor"}
             onChange={(e) => {
-              setValor(soNumeros(e.target.value));
+              setValor(mascaraDinheiro(e.target.value));
               setErro(null);
             }}
-            onBlur={() => setValor(formatarDigitado(valor))}
             className="w-48 bg-transparent font-display text-4xl font-bold outline-none placeholder:text-white/40"
           />
         </label>

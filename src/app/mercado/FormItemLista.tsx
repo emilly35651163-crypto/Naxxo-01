@@ -15,6 +15,7 @@ import {
 } from "@/lib/store";
 import { soNumeros } from "@/lib/formato";
 import { DURACOES, todasAsOpcoes } from "@/lib/mercado";
+import CamposPreco from "./CamposPreco";
 import { mostrarAviso } from "@/lib/avisos";
 import Modal from "@/components/Modal";
 import { Campo, Chip } from "@/components/Campos";
@@ -188,18 +189,7 @@ export default function FormItemLista({ inicial, onFechar }: { inicial?: ItemLis
           </Campo>
         </div>
 
-        <Campo rotulo={`Preço por ${unidade}`}>
-          <div className="campo flex items-center gap-2">
-            <span className="text-suave">R$</span>
-            <input
-              inputMode="decimal"
-              value={r.valor}
-              onChange={(e) => mudar({ valor: soNumeros(e.target.value) })}
-              placeholder="0,00"
-              className="w-full bg-transparent outline-none"
-            />
-          </div>
-        </Campo>
+        <CamposPreco valor={r.valor} qtd={r.qtd} unidade={unidade} onChange={(m) => mudar(m)} />
 
         <div className="space-y-1.5">
           <span className="text-xs text-suave">Quanto tempo dura?</span>

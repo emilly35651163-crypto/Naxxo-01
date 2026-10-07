@@ -1,6 +1,6 @@
 "use client";
 
-import { formatarDigitado, soNumeros } from "@/lib/formato";
+import { mascaraDinheiro } from "@/lib/formato";
 
 /** Um campo com o nome em cima. */
 export function Campo({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
@@ -13,7 +13,7 @@ export function Campo({ rotulo, children }: { rotulo: string; children: React.Re
 }
 
 /**
- * Campo para digitar dinheiro, com o "R$" na frente. Ao sair do campo, fica no formato "1.500,00".
+ * Campo para digitar dinheiro, com o "R$" na frente. Os números entram pela direita (1 → 0,01; 12345 → 123,45).
  * Com `negativo`, aceita o sinal de menos (ex.: saldo no cheque especial).
  */
 export function CampoValor({
@@ -41,8 +41,7 @@ export function CampoValor({
         placeholder={placeholder}
         autoFocus={autoFocus}
         aria-label={rotulo}
-        onChange={(e) => onChange(soNumeros(e.target.value, true, negativo))}
-        onBlur={() => onChange(formatarDigitado(valor))}
+        onChange={(e) => onChange(mascaraDinheiro(e.target.value, negativo))}
         className="w-full bg-transparent outline-none placeholder:text-white/45"
       />
       {negativo && (

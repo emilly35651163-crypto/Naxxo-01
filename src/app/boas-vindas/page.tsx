@@ -534,9 +534,7 @@ export default function BoasVindas() {
           <>
             <Titulo
               titulo="E a reserva de emergência?"
-              texto={`É um dinheiro guardado só para imprevistos: um conserto, uma consulta, um mês sem renda. O ideal é ter ${
-                sugestao.rendaVariavel ? "12 meses" : "de 3 a 6 meses"
-              } dos seus gastos.`}
+              texto={`É um dinheiro guardado só para imprevistos: um conserto, uma consulta, um mês sem renda. O ideal é ter ${"3 meses"} dos seus gastos.`}
             />
             <div className="grid gap-3">
               {OPCOES_RESERVA.map((o) => (
@@ -569,10 +567,8 @@ export default function BoasVindas() {
                 <p className="text-xs text-suave sm:col-span-2">
                   {sugestao.alvo > 0 ? (
                     <>
-                      💡 Sugestão: <b className="text-white">{brl(sugestao.alvo)}</b> ({sugestao.meses} meses
-                      {sugestao.provisoria ? " do que entra" : " dos seus gastos"}). É uma{" "}
-                      <b className="text-white">estimativa provisória</b>: quando você cadastrar os gastos fixos, a Trilha
-                      recalcula pelo que você gasta de verdade. Se deixar em branco, usamos esse valor.
+                      💡 Sugestão: <b className="text-white">{brl(sugestao.alvo)}</b> (3 meses do seu salário). Em branco, usamos
+                      esse valor.
                     </>
                   ) : (
                     "Sem renda informada, defina um valor que faça sentido para você (dá para mudar depois)."

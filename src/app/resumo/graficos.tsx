@@ -10,7 +10,7 @@ import { calcularMeta } from "@/lib/metas";
 import { planoDoMes } from "@/lib/previstos";
 import { useDados } from "@/lib/dados";
 
-const CORES = ["#ff4ed8", "#8b5cf6", "#3b82f6", "#34d399", "#fbbf24", "#fb7185", "#22d3ee", "#a3e635", "#9aa3b8"];
+const CORES = ["#ff4ed8", "#8b5cf6", "#3b82f6", "#00e6a1", "#fbbf24", "#fb7185", "#22d3ee", "#a3e635", "#9aa3b8"];
 
 // Gráficos com os dados de verdade do mês escolhido no topo.
 export default function Graficos() {
@@ -163,11 +163,11 @@ export default function Graficos() {
                 title={`${nomeMes(m.mes)}: entra ${brl(m.entra)}, sai ${brl(m.sai)} — toque para ver os lançamentos`}
               >
                 <div
-                  className={`w-1/2 rounded-t-md ${m.vaiEntrar > 0 ? "bg-entrada/50" : "bg-entrada/80"}`}
+                  className={`w-1/2 rounded-t-md ${m.vaiEntrar > 0 ? "bg-entrada/60" : "bg-entrada"}`}
                   style={{ height: `${(m.entra / maiorMes) * 100}%` }}
                 />
                 <div
-                  className={`w-1/2 rounded-t-md ${m.vaiSair > 0 ? "bg-saida/50" : "bg-saida/80"}`}
+                  className={`w-1/2 rounded-t-md ${m.vaiSair > 0 ? "bg-saida/60" : "bg-saida"}`}
                   style={{ height: `${(m.sai / maiorMes) * 100}%` }}
                 />
               </button>

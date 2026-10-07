@@ -16,10 +16,11 @@ export type RascunhoAssinatura = {
   cartaoId: string;
   frequencia: Frequencia;
   mesReferencia: string; // semestral/anual: mês da próxima cobrança
+  desde: string; // começou (ou começa) em qual mês
 };
 
 export function assinaturaVazia(cartaoId: string): RascunhoAssinatura {
-  return { nome: "", icone: "📺", valor: "", dia: "", cartaoId, frequencia: "mensal", mesReferencia: "" };
+  return { nome: "", icone: "📺", valor: "", dia: "", cartaoId, frequencia: "mensal", mesReferencia: "", desde: mesAtual() };
 }
 
 const SUGESTOES = SUGESTOES_FIXO.filter((s) => s.categoria === "assinaturas");
@@ -40,7 +41,9 @@ export function salvarAssinatura(r: RascunhoAssinatura, valor: number) {
     dia: Number(r.dia),
     pagamento: "cartao",
     cartaoId: r.cartaoId,
-    desde: mesAtual(),
+    desde: r.desde || mesAtual(),
+    // Começa num mês futuro: só entra nas faturas a partir dele (as faturas antigas já fecharam)
+    criadoEm: r.desde > mesAtual() ? `${r.desde}-01` : undefined,
     frequencia: r.frequencia,
     mesReferencia: r.frequencia !== "mensal" ? r.mesReferencia : undefined,
   });
@@ -120,6 +123,10 @@ export default function CamposAssinatura({
 
       <Campo rotulo={r.frequencia === "mensal" ? "Cobra todo dia" : "Dia da cobrança"}>
         <CampoSelect valor={r.dia} onChange={(dia) => mudar({ dia })} opcoes={DIAS_DO_MES} placeholder="Dia" />
+      </Campo>
+
+      <Campo rotulo="Começou (ou começa) em">
+        <CampoMes valor={r.desde} onChange={(desde) => mudar({ desde: desde || mesAtual() })} />
       </Campo>
 
       <p className="rounded-2xl bg-roxo/10 px-4 py-3 text-xs text-suave">

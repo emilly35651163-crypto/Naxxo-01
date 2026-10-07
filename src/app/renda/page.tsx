@@ -430,7 +430,7 @@ function FormRecebimento({ fonte, mes, onFechar }: { fonte: FonteRenda; mes: str
 
   function mudarHoras(texto: string, hora = lerValor(valorHora)) {
     setHoras(texto);
-    setValor(textoDe(lerValor(texto) * hora, 2));
+    setValor(lerValor(texto) * hora > 0 ? valorParaCampo(Math.round(lerValor(texto) * hora * 100) / 100) : "");
     setCalculado(texto ? "valor" : null);
   }
 

@@ -6,7 +6,7 @@ import { brl, lerValor, valorParaCampo } from "@/lib/formato";
 import { saldoDaConta } from "@/lib/contas";
 import Modal from "./Modal";
 import { Campo, CampoValor } from "./Campos";
-import RendaNoSaldo, { registrarRendaNoSaldo, useRendaQueJaCaiu } from "./RendaNoSaldo";
+import RendaNoSaldo, { marcarTodos, registrarRendaNoSaldo, useRendaQueJaCaiu } from "./RendaNoSaldo";
 
 // Conferir/ajustar o saldo de uma conta com o que aparece no app do banco.
 export default function FormSaldo({ cartao: conta, onFechar }: { cartao: Conta; onFechar: () => void }) {
@@ -14,16 +14,12 @@ export default function FormSaldo({ cartao: conta, onFechar }: { cartao: Conta; 
   const calculado = saldoDaConta(conta, lancamentos);
   const [saldo, setSaldo] = useState(valorParaCampo(Math.round(calculado * 100) / 100));
   const jaCaiu = useRendaQueJaCaiu();
-  const [noSaldo, setNoSaldo] = useState<string[]>(() => jaCaiu.map((x) => x.parte.chave));
+  const [noSaldo, setNoSaldo] = useState(() => marcarTodos(jaCaiu));
 
   function salvar(e: React.FormEvent) {
     e.preventDefault();
     informarSaldo(conta.id, lerValor(saldo) || 0);
-    if (conta.tipo !== "vale")
-      registrarRendaNoSaldo(
-        jaCaiu.filter((x) => noSaldo.includes(x.parte.chave)),
-        conta.id,
-      );
+    if (conta.tipo !== "vale") registrarRendaNoSaldo(jaCaiu, noSaldo, conta.id);
     onFechar();
   }
 

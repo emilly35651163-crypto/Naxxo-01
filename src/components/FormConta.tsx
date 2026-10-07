@@ -21,7 +21,7 @@ import { temCredito } from "@/lib/contas";
 import { limiteUsadoPelasCompras, parcelasPagasDaCompra } from "@/lib/cartoes";
 import { comDesfazer } from "@/lib/avisos";
 import Modal from "./Modal";
-import RendaNoSaldo, { registrarRendaNoSaldo, useRendaQueJaCaiu } from "./RendaNoSaldo";
+import RendaNoSaldo, { marcarTodos, registrarRendaNoSaldo, useRendaQueJaCaiu } from "./RendaNoSaldo";
 import { Campo, CampoSelect, CampoValor, Chip, DIAS_DO_MES } from "./Campos";
 
 const NOMES_DAS_CORES = ["Rosa e roxo", "Roxo e azul", "Azul e ciano", "Laranja e rosa", "Verde e azul", "Grafite"];
@@ -55,7 +55,7 @@ export default function FormConta({ conta, onFechar }: { conta?: Conta; onFechar
   const [erro, setErro] = useState("");
   // Criou a conta depois do salário cair? O saldo já tem ele dentro: marca como recebido sem somar de novo
   const jaCaiu = useRendaQueJaCaiu();
-  const [noSaldo, setNoSaldo] = useState<string[]>(() => jaCaiu.map((x) => x.parte.chave));
+  const [noSaldo, setNoSaldo] = useState(() => marcarTodos(jaCaiu));
 
   const comCredito = tipo === "banco" && credito;
   const valorLimite = lerValor(limite);
@@ -107,11 +107,7 @@ export default function FormConta({ conta, onFechar }: { conta?: Conta; onFechar
     if (desligandoCredito && conta && assinaturasNoCartao.length > 0) moverAssinaturasParaDebito(conta.id);
     const id = conta ? conta.id : adicionarCartao({ ...novos, ...saldoNovo, ...ajuste, criadoEm: hojeISO() });
     if (conta) atualizarCartao(conta.id, { ...novos, ...saldoNovo, ...ajuste });
-    if (saldoMudou && tipo !== "vale")
-      registrarRendaNoSaldo(
-        jaCaiu.filter((x) => noSaldo.includes(x.parte.chave)),
-        id,
-      );
+    if (saldoMudou && tipo !== "vale") registrarRendaNoSaldo(jaCaiu, noSaldo, id);
     onFechar();
   }
 

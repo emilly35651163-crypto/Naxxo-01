@@ -742,6 +742,8 @@ export function atualizarLancamento(id: string, mudancas: Partial<Lancamento>) {
 /** Desfaz o que o lançamento fez fora dele (na meta ou na fatura). */
 function desfazerEfeito(l: Lancamento) {
   if (l.pagamentoFaturaId) pagamentos.gravar(pagamentos.ler().filter((p) => p.id !== l.pagamentoFaturaId));
+  // Compra do mercado: some também do histórico do Mercado (gasto do mês)
+  if (l.compraMercadoId) comprasMercado.gravar(comprasMercado.ler().filter((c) => c.id !== l.compraMercadoId));
   if (!l.metaId || !l.efeito) return;
   metas.gravar(
     metas.ler().map((m) => {
@@ -965,6 +967,25 @@ export function registrarAdiantamento(id: string, quantas: number, economia: num
   });
 }
 
+// ---------- Desejos (coisas pequenas: perfume, restaurante, roupa…) ----------
+
+export type Desejo = { id: string; nome: string; icone: string; valor: number; criadoEm: string };
+
+const SEM_DESEJOS: Desejo[] = [];
+const desejos = criarDado<Desejo[]>("naxxo:desejos", SEM_DESEJOS);
+
+export function useDesejos() {
+  return useSyncExternalStore(inscrever, desejos.ler, () => SEM_DESEJOS);
+}
+
+export function adicionarDesejo(novo: Omit<Desejo, "id" | "criadoEm">) {
+  desejos.gravar([...desejos.ler(), { ...novo, id: novoId(), criadoEm: hojeISO() }]);
+}
+
+export function removerDesejo(id: string) {
+  desejos.gravar(desejos.ler().filter((d) => d.id !== id));
+}
+
 // ---------- Fontes de renda ----------
 
 const SEM_FONTES: FonteRenda[] = [];
@@ -1161,6 +1182,8 @@ export function atualizarCompra(id: string, mudancas: Partial<CompraCartao>) {
 }
 
 export function removerCompra(id: string) {
+  const alvo = compras.ler().find((c) => c.id === id);
+  if (alvo?.compraMercadoId) comprasMercado.gravar(comprasMercado.ler().filter((c) => c.id !== alvo.compraMercadoId));
   compras.gravar(compras.ler().filter((c) => c.id !== id));
 }
 
@@ -1169,7 +1192,7 @@ export function lancamentoParaCredito(id: string, cartaoId: string, parcelas: nu
   const l = lancamentos.ler().find((x) => x.id === id);
   if (!l) return;
   const final = { ...l, ...mudancas };
-  removerLancamento(id);
+  lancamentos.gravar(lancamentos.ler().filter((x) => x.id !== id));
   adicionarCompra({
     cartaoId,
     descricao: final.descricao,
@@ -1190,7 +1213,7 @@ export function compraParaDebito(id: string, contaId: string, mudancas: Partial<
   const c = compras.ler().find((x) => x.id === id);
   if (!c) return;
   const final = { ...c, ...mudancas };
-  removerCompra(id);
+  compras.gravar(compras.ler().filter((x) => x.id !== id));
   adicionarLancamento({
     tipo: "saida",
     valor: final.valorTotal,
@@ -1547,6 +1570,20 @@ export function adicionarNaDespensa(item: Omit<ItemMercado, "id">) {
 /** Vai salvando o que a pessoa preenche no mercado (quantidade, valor, duração). */
 export function atualizarItemLista(id: string, mudancas: Partial<ItemLista>) {
   listaCompras.gravar(listaCompras.ler().map((l) => (l.id === id ? { ...l, ...mudancas } : l)));
+}
+
+/** Exclui o item de tudo: da lista e de "em casa" (despensa). As compras já feitas continuam nos lançamentos. */
+export function excluirItemDeTudo(id: string) {
+  const l = listaCompras.ler().find((x) => x.id === id);
+  if (!l) return;
+  listaCompras.gravar(listaCompras.ler().filter((x) => x.id !== id));
+  itensMercado.gravar(itensMercado.ler().filter((i) => !mesmoNome(i.nome, l.nome)));
+}
+
+/** Preço por unidade a partir do total (ou o contrário): "o que for, serve para todos". */
+export function precoPorUnidade(total: number, qtd: string | undefined) {
+  const q = lerValor(qtd ?? "") || 1;
+  return Math.round((total / q) * 100) / 100;
 }
 
 export function removerDaLista(id: string) {

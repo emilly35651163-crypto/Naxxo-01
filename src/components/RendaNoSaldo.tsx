@@ -1,7 +1,8 @@
 "use client";
 
 import { adicionarLancamento, rendaFixa, useFontes, useLancamentos, type FonteRenda } from "@/lib/store";
-import { brl, formatarData, hojeISO, mesAtual } from "@/lib/formato";
+import { formatarData, hojeISO, lerValor, mesAtual, valorParaCampo } from "@/lib/formato";
+import { CampoValor } from "./Campos";
 import { rendaPendente, type ParteDaRenda } from "@/lib/renda";
 
 /** O que já devia ter caído este mês (até hoje) e ainda não foi marcado como recebido. */
@@ -15,12 +16,26 @@ export function useRendaQueJaCaiu() {
   );
 }
 
-/** Marca como recebido o que já está dentro do saldo informado (não soma de novo no saldo). */
-export function registrarRendaNoSaldo(itens: { fonte: FonteRenda; parte: ParteDaRenda }[], contaId: string) {
+/** Valor de cada parte marcada (chave → texto do campo). Desmarcado = não está no objeto. */
+export type MarcadosNoSaldo = Record<string, string>;
+
+export function marcarTodos(itens: { parte: ParteDaRenda }[]): MarcadosNoSaldo {
+  return Object.fromEntries(itens.map(({ parte }) => [parte.chave, valorParaCampo(parte.valor)]));
+}
+
+/** Marca como recebido o que já está dentro do saldo informado (não soma de novo no saldo), com o valor que a pessoa confirmou. */
+export function registrarRendaNoSaldo(
+  itens: { fonte: FonteRenda; parte: ParteDaRenda }[],
+  marcados: MarcadosNoSaldo,
+  contaId: string,
+) {
   for (const { fonte, parte } of itens) {
+    if (!(parte.chave in marcados)) continue;
+    const valor = lerValor(marcados[parte.chave]) || 0;
+    if (!(valor > 0)) continue;
     adicionarLancamento({
       tipo: "entrada",
-      valor: parte.valor,
+      valor,
       descricao: parte.nome,
       categoria: parte.parte === "beneficio" ? "Benefícios" : rendaFixa(fonte.forma) ? "Salário" : "Freelance",
       data: parte.data,
@@ -41,28 +56,48 @@ export default function RendaNoSaldo({
   onChange,
 }: {
   itens: { fonte: FonteRenda; parte: ParteDaRenda }[];
-  marcados: string[];
-  onChange: (chaves: string[]) => void;
+  marcados: MarcadosNoSaldo;
+  onChange: (marcados: MarcadosNoSaldo) => void;
 }) {
   if (itens.length === 0) return null;
   return (
     <div className="space-y-2 rounded-2xl border border-entrada/30 bg-entrada/5 p-3 text-sm">
       <p className="font-semibold">Esse saldo já inclui o que caiu este mês?</p>
-      {itens.map(({ parte }) => (
-        <label key={parte.chave} className="flex cursor-pointer items-center gap-3">
-          <input
-            type="checkbox"
-            checked={marcados.includes(parte.chave)}
-            onChange={(e) => onChange(e.target.checked ? [...marcados, parte.chave] : marcados.filter((c) => c !== parte.chave))}
-            className="size-5 accent-rosa"
-          />
-          <span className="min-w-0 flex-1">
-            {parte.nome} <span className="text-xs text-suave">· caiu {formatarData(parte.data)}</span>
-          </span>
-          <span className="tabular-nums">{brl(parte.valor)}</span>
-        </label>
-      ))}
-      <p className="text-xs text-suave">Marcados: ficam como recebidos e não são somados de novo no saldo.</p>
+      {itens.map(({ parte }) => {
+        const marcado = parte.chave in marcados;
+        return (
+          <div key={parte.chave} className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={marcado}
+              aria-label={parte.nome}
+              onChange={(e) => {
+                const novo = { ...marcados };
+                if (e.target.checked) novo[parte.chave] = valorParaCampo(parte.valor);
+                else delete novo[parte.chave];
+                onChange(novo);
+              }}
+              className="size-5 shrink-0 accent-rosa"
+            />
+            <span className="min-w-0 flex-1">
+              {parte.nome} <span className="text-xs text-suave">· {formatarData(parte.data)}</span>
+            </span>
+            {/* O valor é editável: quem ganha por hora recebe diferente da estimativa */}
+            {marcado && (
+              <div className="w-32 shrink-0">
+                <CampoValor
+                  valor={marcados[parte.chave]}
+                  onChange={(v) => onChange({ ...marcados, [parte.chave]: v })}
+                  rotulo={`Valor de ${parte.nome}`}
+                />
+              </div>
+            )}
+          </div>
+        );
+      })}
+      <p className="text-xs text-suave">
+        Marcados ficam como recebidos e não somam de novo no saldo. Ajuste o valor se foi diferente.
+      </p>
     </div>
   );
 }

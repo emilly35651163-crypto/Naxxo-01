@@ -10,20 +10,11 @@ import {
   type FormaRenda,
   type TipoBeneficio,
 } from "@/lib/store";
-import {
-  brl,
-  dataDoRecebimento,
-  formatarData,
-  hojeISO,
-  lerValor,
-  mesAtual,
-  OPCOES_DIA_RECEBIMENTO,
-  soNumeros,
-  valorParaCampo,
-} from "@/lib/formato";
+import { brl, hojeISO, lerValor, soNumeros, valorParaCampo } from "@/lib/formato";
 import { ehVale } from "@/lib/contas";
 import { Campo, CampoSelect, CampoValor, Chip, DIAS_DO_MES } from "./Campos";
 import EscolhaConta, { lerEscolha } from "./EscolhaConta";
+import CampoDiaRecebimento from "./CampoDiaRecebimento";
 
 // Os campos de uma fonte de renda, usados no questionário e na aba Renda (criar e editar).
 // Enquanto a pessoa digita, os valores ficam como texto (o "rascunho").
@@ -284,19 +275,10 @@ export default function CamposFonte({
         </>
       ) : (
         <>
-          <Campo rotulo={fixa ? "Que dia entra?" : "Que dia costuma entrar? (opcional)"}>
-            <CampoSelect
-              valor={r.dia}
-              onChange={(dia) => mudar({ dia })}
-              opcoes={OPCOES_DIA_RECEBIMENTO}
-              placeholder="Escolha o dia"
-            />
-          </Campo>
-          {r.dia && (
-            <p className="-mt-2 text-xs text-suave">
-              📅 Neste mês cai em {formatarData(dataDoRecebimento(r.dia, mesAtual()))} (o dia útil já pula feriados).
-            </p>
-          )}
+          <div className="space-y-1.5">
+            <span className="text-xs text-suave">{fixa ? "Que dia entra?" : "Que dia costuma entrar? (opcional)"}</span>
+            <CampoDiaRecebimento valor={r.dia} onChange={(dia) => mudar({ dia })} />
+          </div>
         </>
       )}
 

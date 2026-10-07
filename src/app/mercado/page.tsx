@@ -6,7 +6,7 @@ import {
   CATEGORIAS_MERCADO,
   comprarItemDaLista,
   mudarPreferencias,
-  removerDaLista,
+  excluirItemDeTudo,
   totalDoItemLista,
   atualizarItemLista,
   useCartoes,
@@ -17,10 +17,11 @@ import {
   usePreferencias,
   type ItemLista,
 } from "@/lib/store";
-import { brl, nomeMes, soNumeros } from "@/lib/formato";
+import { brl, nomeMes } from "@/lib/formato";
 import { DURACOES, previsaoDoMes, situacaoDoItem } from "@/lib/mercado";
 import { comDesfazer, mostrarAviso } from "@/lib/avisos";
 import FormItemLista from "./FormItemLista";
+import CamposPreco from "./CamposPreco";
 
 export default function Mercado() {
   const lista = useListaCompras();
@@ -178,6 +179,7 @@ function Numero({ rotulo, valor, destaque }: { rotulo: string; valor: string; de
 
 /** Um item da lista: preço e duração para preencher, ✓ comprado e ×. */
 function LinhaLista({ item: l, onEditar, contaId }: { item: ItemLista; onEditar: () => void; contaId?: string }) {
+  const [excluindo, setExcluindo] = useState(false);
   const duracaoAtual = DURACOES.find((d) => d.duracao === l.duracao && d.unidade === l.unidadeDuracao)?.rotulo ?? "";
   return (
     <li className="rounded-2xl bg-fundo/50 p-3">
@@ -204,25 +206,23 @@ function LinhaLista({ item: l, onEditar, contaId }: { item: ItemLista; onEditar:
           ✓ Comprei
         </button>
         <button
-          onClick={() => comDesfazer(`${l.nome} saiu da lista`, () => removerDaLista(l.id))}
+          onClick={() => setExcluindo(true)}
           aria-label={`Tirar ${l.nome} da lista`}
           className="shrink-0 px-1 text-xl text-suave hover:text-saida"
         >
           ×
         </button>
       </div>
-      <div className="mt-2 grid grid-cols-2 gap-2">
-        <label className="campo flex items-center gap-1 py-2">
-          <span className="text-xs text-suave">R$</span>
-          <input
-            inputMode="decimal"
-            value={l.valor ?? ""}
-            onChange={(e) => atualizarItemLista(l.id, { valor: soNumeros(e.target.value) })}
-            placeholder={`preço/${l.unidadeQtd ?? "un"}`}
-            aria-label={`Preço de ${l.nome}`}
-            className="w-full min-w-0 bg-transparent outline-none"
-          />
-        </label>
+      <div className="mt-2">
+        <CamposPreco
+          valor={l.valor ?? ""}
+          qtd={l.qtd ?? ""}
+          unidade={l.unidadeQtd ?? "un"}
+          compacto
+          onChange={(m) => atualizarItemLista(l.id, m)}
+        />
+      </div>
+      <div className="mt-2">
         <select
           value={duracaoAtual}
           onChange={(e) => {
@@ -240,6 +240,21 @@ function LinhaLista({ item: l, onEditar, contaId }: { item: ItemLista; onEditar:
           ))}
         </select>
       </div>
+      {/* Excluir pede confirmação e tira o item de tudo (lista e "em casa") */}
+      {excluindo && (
+        <div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl bg-saida/10 p-2 text-xs">
+          <span className="min-w-0 flex-1">Excluir {l.nome} da lista e de “em casa”?</span>
+          <button onClick={() => setExcluindo(false)} className="rounded-full px-3 py-1 text-suave">
+            Cancelar
+          </button>
+          <button
+            onClick={() => comDesfazer(`${l.nome} excluído`, () => excluirItemDeTudo(l.id))}
+            className="rounded-full bg-saida px-3 py-1 font-semibold text-fundo"
+          >
+            Excluir
+          </button>
+        </div>
+      )}
     </li>
   );
 }

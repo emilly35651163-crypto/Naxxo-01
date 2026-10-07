@@ -6,7 +6,7 @@ import { useMes, usePerfil } from "@/lib/store";
 import { saldoDosVales, saldoTotal, ehVale } from "@/lib/contas";
 import { previstosDoMes, resumoDoMes, type Previsto } from "@/lib/previstos";
 import { useDados } from "@/lib/dados";
-import { brl, diasAte, formatarData, nomeMes } from "@/lib/formato";
+import { brl, diasAte, formatarData, hojeISO, nomeMes } from "@/lib/formato";
 import ConfirmarPrevisto from "@/components/ConfirmarPrevisto";
 
 // Início: o essencial e mais nada. Renda, saldo, próximas contas e como o mês vai fechar.
@@ -56,12 +56,18 @@ export default function Inicio() {
                   <span className="text-xs text-suave"> · {formatarData(p.data)}</span>
                 </span>
                 <span className="tabular-nums text-suave">{brl(p.valor)}</span>
-                <button
-                  onClick={() => setConfirmando(p)}
-                  className="rounded-full bg-entrada/15 px-3 py-1 text-xs font-semibold text-entrada"
-                >
-                  Recebi
-                </button>
+                {p.data <= hojeISO() ? (
+                  <button
+                    onClick={() => setConfirmando(p)}
+                    className="rounded-full bg-entrada/15 px-3 py-1 text-xs font-semibold text-entrada"
+                  >
+                    Recebi
+                  </button>
+                ) : (
+                  <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-suave">
+                    {diasAte(p.data) === 1 ? "amanhã" : `em ${diasAte(p.data)} dias`}
+                  </span>
+                )}
               </li>
             ))}
           </ul>

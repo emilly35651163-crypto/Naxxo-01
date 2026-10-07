@@ -1,12 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { doMes, iconeDaCategoria, somar, useMes, usePreferencias } from "@/lib/store";
 import { itensAPagar } from "@/lib/apagar";
 import { itensDaFatura } from "@/lib/cartoes";
 import { calcularMeta } from "@/lib/metas";
 import { fixosDoMes, valorNoMes } from "@/lib/fixos";
-import { balancoDoMes, despesasPorCategoria, NECESSIDADES_PADRAO } from "@/lib/analise";
+import { balancoDoMes, despesasPorCategoria, gastosDoMes, NECESSIDADES_PADRAO } from "@/lib/analise";
 import { useDados } from "@/lib/dados";
 import { brl, nomeMes } from "@/lib/formato";
 
@@ -30,9 +31,22 @@ export default function Relatorio() {
   const totalEntradas = recebido + aReceber;
 
   const porCategoria = despesasPorCategoria(mes, dados);
+  // Lista por categoria: tudo, só débito (saiu da conta) ou só crédito (fatura do cartão)
+  const [forma, setForma] = useState<"tudo" | "debito" | "credito">("tudo");
+  const listaPorCategoria =
+    forma === "tudo"
+      ? porCategoria
+      : Object.entries(
+          gastosDoMes(mes, dados)
+            .filter((g) => (forma === "credito" ? !!g.compra || g.onde.startsWith("💳") : !g.compra && !g.onde.startsWith("💳")))
+            .reduce<Record<string, number>>((acc, g) => ({ ...acc, [g.categoria]: (acc[g.categoria] ?? 0) + g.valor }), {}),
+        )
+          .map(([categoria, valor]) => ({ categoria, valor }))
+          .sort((a, b) => b.valor - a.valor);
+  const totalDaLista = somar(listaPorCategoria);
   const pendentes = itensAPagar(mes, { lancamentos, fixos, cartoes, compras, pagamentos, metas });
   const totalDespesas = somar(porCategoria);
-  const maiorCategoria = porCategoria[0]?.valor ?? 1;
+  const maiorCategoria = listaPorCategoria[0]?.valor ?? 1;
 
   const resultado = totalEntradas - totalDespesas;
   const necessidades = somar(porCategoria.filter((c) => NECESSIDADES.includes(c.categoria)));
@@ -88,9 +102,33 @@ export default function Relatorio() {
         {/* Despesas por categoria */}
         <section className="cartao p-5">
           <h3 className="titulo-secao">Despesas por categoria</h3>
-          {porCategoria.length > 0 ? (
+          <div
+            className="mb-3 grid grid-cols-3 gap-1 rounded-full bg-fundo p-1 text-xs"
+            role="radiogroup"
+            aria-label="Forma de pagamento"
+          >
+            {(
+              [
+                ["tudo", "Tudo"],
+                ["debito", "🏦 Débito"],
+                ["credito", "💳 Crédito"],
+              ] as const
+            ).map(([id, nome]) => (
+              <button
+                key={id}
+                role="radio"
+                aria-checked={forma === id}
+                onClick={() => setForma(id)}
+                className={`rounded-full py-1.5 ${forma === id ? "bg-white font-semibold text-fundo" : "text-suave"}`}
+              >
+                {nome}
+              </button>
+            ))}
+          </div>
+          {forma !== "tudo" && <p className="-mt-1 mb-2 text-xs text-suave">Total: {brl(totalDaLista)}</p>}
+          {listaPorCategoria.length > 0 ? (
             <ul className="space-y-3">
-              {porCategoria.map((c) => (
+              {listaPorCategoria.map((c) => (
                 <li key={c.categoria} className="text-sm">
                   <Link
                     href={`/resumo/categoria?nome=${encodeURIComponent(c.categoria)}&de=relatorio`}
@@ -99,7 +137,9 @@ export default function Relatorio() {
                     <div className="flex items-center gap-2">
                       <span>{iconeDaCategoria("saida", c.categoria)}</span>
                       <span className="flex-1">{c.categoria}</span>
-                      <span className="tabular-nums text-suave">{porcento(c.valor, totalDespesas)}%</span>
+                      <span className="tabular-nums text-suave">
+                        {porcento(c.valor, forma === "tudo" ? totalDespesas : totalDaLista)}%
+                      </span>
                       <span className="w-24 text-right tabular-nums">{brl(c.valor)}</span>
                       <span className="text-suave group-hover:text-rosa">›</span>
                     </div>

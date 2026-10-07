@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { mudarMes, somar, useMes } from "@/lib/store";
+import { iconeDaCategoria, jaAconteceu, mudarMes, somar, useMes } from "@/lib/store";
 import { brl, dataDoRecebimento, formatarData, hojeISO, mesAtual, nomeMes } from "@/lib/formato";
 import { eventosAte, projetarDia, type Evento } from "@/lib/projecao";
 import { previstosDoMes, resumoDoMes } from "@/lib/previstos";
@@ -44,15 +44,49 @@ export default function Projecao() {
     );
   }
 
-  // Dia escolhido: o que a pessoa tocou, ou o último dia do mês
-  const dia = escolhido && escolhido.startsWith(mes) && escolhido >= hoje ? escolhido : fimDoMes;
+  // Dia tocado (pode ser um dia que já passou: mostra o que aconteceu nele). A projeção usa o dia, ou o fim do mês.
+  const tocado = escolhido && escolhido.startsWith(mes) ? escolhido : null;
+  const dia = tocado && tocado >= hoje ? tocado : fimDoMes;
   const projecao = projetarDia(dia, dados);
-  const ehFimDoMes = dia === fimDoMes;
 
   // Eventos do mês, para as bolinhas e o saldo de cada dia do calendário
   const eventosDoMes = eventosAte(fimDoMes, dados);
   const porDia = new Map<string, Evento[]>();
   for (const e of eventosDoMes) porDia.set(e.data, [...(porDia.get(e.data) ?? []), e]);
+  // Dias que já passaram: as bolinhas mostram o que aconteceu de verdade
+  for (const l of dados.lancamentos.filter(
+    (x) => x.data.startsWith(mes) && x.data < hoje && jaAconteceu(x) && !x.transferenciaId,
+  ))
+    porDia.set(l.data, [
+      ...(porDia.get(l.data) ?? []),
+      { chave: l.id, data: l.data, tipo: l.tipo, valor: l.valor, nome: l.descricao, icone: "", origem: "lançamento" } as Evento,
+    ]);
+  function porDiaDoMes(data: string) {
+    return eventosDoMes.filter((e) => e.data === data);
+  }
+  // O que entra e sai no dia tocado: o que já aconteceu (lançamentos) + o que está previsto
+  const doDia = tocado
+    ? [
+        ...dados.lancamentos
+          .filter((l) => l.data === tocado && jaAconteceu(l) && !l.transferenciaId)
+          .map((l) => ({
+            chave: l.id,
+            nome: l.descricao,
+            icone: iconeDaCategoria(l.tipo, l.categoria),
+            tipo: l.tipo,
+            valor: l.valor,
+            feito: true,
+          })),
+        ...(tocado >= hoje ? (porDiaDoMes(tocado) ?? []) : []).map((e) => ({
+          chave: e.chave,
+          nome: e.nome,
+          icone: e.icone,
+          tipo: e.tipo,
+          valor: e.valor,
+          feito: false,
+        })),
+      ]
+    : [];
   const saldoNoFimDoDia = new Map<string, number>();
   let corrente = projecao.saldoInicial;
   for (const e of eventosDoMes) {
@@ -116,13 +150,12 @@ export default function Projecao() {
             return (
               <button
                 key={data}
-                disabled={passado}
                 onClick={() => setEscolhido(data)}
                 className={`flex aspect-square flex-col items-center justify-between rounded-xl border p-1 text-sm transition-colors sm:aspect-auto sm:min-h-16 ${
                   selecionado
                     ? "border-rosa bg-rosa/15"
                     : passado
-                      ? "border-transparent text-white/35"
+                      ? "border-transparent text-white/50 hover:border-white/10"
                       : "border-white/5 bg-fundo/40 hover:border-roxo/60"
                 } ${data === hoje ? "ring-1 ring-azul" : ""}`}
               >
@@ -141,7 +174,7 @@ export default function Projecao() {
           })}
         </div>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-suave">
-          <span>Toque num dia para ver como vão estar as contas. Embaixo de cada dia, o saldo previsto.</span>
+          <span>Toque num dia para ver o que entra e sai nele.</span>
           <span className="flex gap-3">
             <span className="flex items-center gap-1">
               <span className="size-2 rounded-full bg-entrada" /> entra
@@ -155,6 +188,33 @@ export default function Projecao() {
 
       {/* Como vai estar no dia escolhido */}
       <section className="space-y-4 lg:col-span-2">
+        {/* O dia tocado, em detalhe */}
+        {tocado && (
+          <div className="cartao p-5">
+            <h3 className="titulo-secao capitalize">{nomeDoDia(tocado)}</h3>
+            {doDia.length > 0 ? (
+              <ul className="space-y-1.5 text-sm">
+                {doDia.map((e) => (
+                  <li key={e.chave} className="flex items-center gap-2">
+                    <span aria-hidden>{e.icone}</span>
+                    <span className="min-w-0 flex-1 truncate">
+                      {e.nome}
+                      {!e.feito && <span className="ml-1 text-xs text-suave">· previsto</span>}
+                    </span>
+                    <span className={`tabular-nums ${e.tipo === "entrada" ? "text-entrada" : "text-saida"}`}>
+                      {e.tipo === "entrada" ? "+" : "−"} {brl(e.valor)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-suave">Nada nesse dia.</p>
+            )}
+          </div>
+        )}
+
+        <FechamentoDoMes mes={mes} />
+
         <div className="cartao relative overflow-hidden p-5">
           <div className="pointer-events-none absolute -right-12 -top-12 size-40 rounded-full bg-roxo/25 blur-3xl" />
           <p className="text-xs text-suave">Se tudo acontecer como programado, em</p>
@@ -187,8 +247,6 @@ export default function Projecao() {
             </p>
           )}
         </div>
-
-        {ehFimDoMes && <FechamentoDoMes mes={mes} />}
 
         <div className="cartao p-5">
           <h3 className="titulo-secao">O que acontece até lá</h3>

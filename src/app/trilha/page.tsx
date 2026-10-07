@@ -26,6 +26,7 @@ import Modal from "@/components/Modal";
 import { CampoValor, Chip } from "@/components/Campos";
 import EscolhaConta, { lerEscolha } from "@/components/EscolhaConta";
 import EstadoVazio from "@/components/EstadoVazio";
+import Desejos from "./Desejos";
 
 export default function Trilha() {
   const dados = useDados();
@@ -126,6 +127,8 @@ export default function Trilha() {
           />
         </div>
       )}
+
+      <Desejos />
 
       {/* Histórico de conquistas */}
       {conquistas.length > 0 && (

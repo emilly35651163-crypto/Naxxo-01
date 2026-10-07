@@ -192,6 +192,18 @@ export function lerValor(texto: string) {
   return negativo ? -numero : numero;
 }
 
+/**
+ * Campo de dinheiro tipo caixa eletrônico: cada número entra pela direita.
+ * "1" → "0,01" · "12" → "0,12" · "12345" → "123,45". Apagar tudo deixa vazio.
+ */
+export function mascaraDinheiro(texto: string, negativo = false) {
+  const menos = negativo && texto.includes("-");
+  const digitos = texto.replace(/\D/g, "").replace(/^0+/, "").slice(0, 13);
+  if (!digitos) return menos ? "-" : "";
+  const valor = (Number(digitos) / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return menos ? `-${valor}` : valor;
+}
+
 /** Mostra o valor digitado no jeito brasileiro: "1500" → "1.500,00". Vazio continua vazio. */
 export function formatarDigitado(texto: string) {
   if (!texto.trim() || texto.trim() === "-") return texto;
