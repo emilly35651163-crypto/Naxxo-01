@@ -192,7 +192,7 @@ export default function FormItemLista({ inicial, onFechar }: { inicial?: ItemLis
         <CamposPreco valor={r.valor} qtd={r.qtd} unidade={unidade} onChange={(m) => mudar(m)} />
 
         <div className="space-y-1.5">
-          <span className="text-xs text-suave">Quanto tempo dura?</span>
+          <span className="text-xs text-suave">Quanto tempo dura cada {unidade}?</span>
           <div className="flex flex-wrap gap-2">
             {DURACOES.map((d) => (
               <Chip

@@ -296,10 +296,12 @@ function LinhaLista({ item: l, onEditar, contaId }: { item: ItemLista; onEditar:
           aria-label={`Quanto dura ${l.nome}`}
           className="campo cursor-pointer py-2"
         >
-          <option value="">{l.duracao ? `dura ${l.duracao} ${l.unidadeDuracao}` : "dura quanto?"}</option>
+          <option value="">
+            {l.duracao ? `${cada(l.unidadeQtd)} dura ${l.duracao} ${l.unidadeDuracao}` : `${cada(l.unidadeQtd)} dura quanto?`}
+          </option>
           {DURACOES.map((d) => (
             <option key={d.rotulo} value={d.rotulo}>
-              dura {d.rotulo}
+              {cada(l.unidadeQtd)} dura {d.rotulo}
             </option>
           ))}
         </select>
@@ -346,4 +348,15 @@ function ExcluirDeCasa({ nome, onExcluir }: { nome: string; onExcluir: () => voi
       </button>
     </span>
   );
+}
+
+/** "cada um", "cada kg", "cada litro": a duração é sempre de uma unidade */
+function cada(unidade?: string) {
+  return unidade === "kg"
+    ? "cada kg"
+    : unidade === "L"
+      ? "cada litro"
+      : unidade === "g" || unidade === "ml"
+        ? "cada " + unidade
+        : "cada um";
 }

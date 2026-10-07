@@ -5,7 +5,7 @@
 
 import { useSyncExternalStore } from "react";
 import { diasEntre, hojeISO, lerValor, mesAtual, somarMeses } from "./formato";
-import { melhorUnidade } from "./duracao";
+import { DIAS_POR_UNIDADE, melhorUnidade } from "./duracao";
 
 // ---------- Tipos ----------
 
@@ -1466,6 +1466,15 @@ export function totalDoItemLista(l: Pick<ItemLista, "valor" | "qtd">) {
   return Math.round(preco * qtd * 100) / 100;
 }
 
+/** A duração na lista é de CADA unidade (ou kg/litro): em casa, dura isso × a quantidade. */
+function duracaoTotal(l: Pick<ItemLista, "duracao" | "unidadeDuracao" | "qtd" | "unidadeQtd">) {
+  const porUnidade = Number(l.duracao);
+  if (!(porUnidade > 0)) return { duracao: null, unidade: l.unidadeDuracao ?? ("meses" as UnidadeDuracao) };
+  const qtd = lerValor(l.qtd ?? "") || 1;
+  const dias = Math.max(Math.round(porUnidade * DIAS_POR_UNIDADE[l.unidadeDuracao ?? "meses"] * qtd), 1);
+  return melhorUnidade(dias);
+}
+
 /**
  * "Comprei": o item sai da lista, vai para a despensa e entra no gasto de hoje.
  * Vários itens comprados no mesmo dia (na mesma conta) viram uma compra só nos lançamentos.
@@ -1480,8 +1489,7 @@ export function comprarItemDaLista(id: string, contaId?: string, data = hojeISO(
     categoria: l.categoria,
     quantidade: l.qtd ? `${l.qtd} ${l.unidadeQtd ?? "un"}` : "",
     valor,
-    duracao: Number(l.duracao) > 0 ? Number(l.duracao) : null,
-    unidade: l.unidadeDuracao ?? "meses",
+    ...duracaoTotal(l),
     repor: true,
   };
   const deHoje = comprasMercado.ler().find((c) => c.data === data && c.tipo === "avulsa" && !c.cartaoId && c.contaId === contaId);

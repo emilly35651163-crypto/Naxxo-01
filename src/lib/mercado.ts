@@ -136,6 +136,7 @@ export function iconeDaCategoriaMercado(categoria: CategoriaMercado) {
 
 // Quanto dura: as opções rápidas (o mesmo em todo o Mercado)
 export const DURACOES: { rotulo: string; duracao: string; unidade: UnidadeDuracao }[] = [
+  { rotulo: "1 semana", duracao: "1", unidade: "semanas" },
   { rotulo: "15 dias", duracao: "15", unidade: "dias" },
   { rotulo: "1 mês", duracao: "1", unidade: "meses" },
   { rotulo: "2 meses", duracao: "2", unidade: "meses" },
