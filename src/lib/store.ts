@@ -257,6 +257,7 @@ export type FonteRenda = {
   // Freela que paga toda semana ou a cada 15 dias: `valor` é o de cada vez, a partir de `inicio`
   frequencia?: "mensal" | "semanal" | "quinzenal";
   inicio?: string;
+  criadoEm?: string; // "2026-10-07": quando foi cadastrada (meses antes disso não contam)
 };
 
 // ---------- Listas fixas ----------
@@ -841,6 +842,64 @@ export function transferir(deContaId: string, paraContaId: string, valor: number
   adicionarLancamento({ ...base, tipo: "entrada", descricao, contaId: paraContaId });
 }
 
+/**
+ * Um lançamento que era, na verdade, dinheiro indo de uma conta minha para outra (ex.: Pix para mim mesma).
+ * Ele vira uma ponta da transferência; a outra ponta é a entrada/saída igual que já existe na outra conta
+ * (ex.: veio do extrato do outro banco) ou, se não tiver, é criada. Deixa de contar como gasto ou renda.
+ */
+export function virarTransferencia(
+  id: string,
+  deContaId: string,
+  paraContaId: string,
+  valor: number,
+  data: string,
+  descricao: string,
+) {
+  const lista = lancamentos.ler();
+  const alvo = lista.find((l) => l.id === id);
+  if (!alvo) return;
+  const transferenciaId = novoId();
+  // Este lançamento é a saída (de "de") ou a entrada (em "para"); a outra ponta fica na outra conta
+  const souSaida = alvo.tipo === "saida";
+  const minhaConta = souSaida ? deContaId : paraContaId;
+  const outraConta = souSaida ? paraContaId : deContaId;
+  const tipoOutra: Tipo = souSaida ? "entrada" : "saida";
+  const outra = lista.find(
+    (l) =>
+      l.id !== id &&
+      !l.transferenciaId &&
+      l.contaId === outraConta &&
+      l.tipo === tipoOutra &&
+      Math.abs(l.valor - valor) < 0.01 &&
+      Math.abs(diasEntre(l.data, data)) <= 3,
+  );
+  const base = { valor, data, pago: true, categoria: "Transferência", descricao, transferenciaId, subcategoria: undefined };
+  let nova = lista.map((l) =>
+    l.id === id
+      ? { ...l, ...base, contaId: minhaConta, fonteId: undefined, parteRenda: undefined }
+      : outra && l.id === outra.id
+        ? { ...l, ...base, fonteId: undefined, parteRenda: undefined }
+        : l,
+  );
+  if (!outra) {
+    // O dinheiro já estava na outra conta quando o saldo dela foi informado? Então não soma de novo.
+    const conta = cartoes.ler().find((c) => c.id === outraConta);
+    const diaDoSaldo = (conta?.saldoAtualizadoEm ?? conta?.criadoEm ?? "").slice(0, 10);
+    nova = [
+      {
+        ...base,
+        id: novoId(),
+        tipo: tipoOutra,
+        contaId: outraConta,
+        criadoEm: agoraLocal(),
+        jaNoSaldo: (diaDoSaldo && data <= diaDoSaldo) || undefined,
+      },
+      ...nova,
+    ];
+  }
+  lancamentos.gravar(nova);
+}
+
 /** Edita as duas pontas de uma transferência de uma vez. */
 export function atualizarTransferencia(
   transferenciaId: string,
@@ -1035,7 +1094,12 @@ export function useFontes() {
 }
 
 export function adicionarFonte(nova: Omit<FonteRenda, "id">) {
-  fontes.gravar([...fontes.ler(), { ...nova, id: novoId() }]);
+  fontes.gravar([...fontes.ler(), { criadoEm: hojeISO(), ...nova, id: novoId() }]);
+}
+
+/** As fontes agora (fora de um componente). */
+export function lerFontes() {
+  return fontes.ler();
 }
 
 export function atualizarFonte(id: string, mudancas: Partial<FonteRenda>) {
@@ -1114,6 +1178,11 @@ export function pagarGastoFixo(
 
 const SEM_CARTOES: Cartao[] = [];
 const cartoes = criarDado<Cartao[]>("naxxo:cartoes", SEM_CARTOES);
+
+/** As contas agora (fora de um componente). */
+export function lerCartoes() {
+  return cartoes.ler();
+}
 
 export function useCartoes() {
   return useSyncExternalStore(inscrever, cartoes.ler, () => SEM_CARTOES);
@@ -1724,7 +1793,7 @@ export function concluirBoasVindas(dados: {
   fontes: Omit<FonteRenda, "id">[];
   metas: Omit<Meta, "id">[];
 }) {
-  const criadas = dados.fontes.map((f) => ({ ...f, id: novoId() }));
+  const criadas = dados.fontes.map((f) => ({ criadoEm: hojeISO(), ...f, id: novoId() }));
   fontes.gravar(criadas);
   // Meta sem valor não é salva (evita "R$ 0,00 de R$ 0,00")
   metas.gravar(dados.metas.filter((m) => m.alvo > 0).map((m) => ({ ...m, id: novoId() })));

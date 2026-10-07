@@ -441,6 +441,13 @@ function CartaoConta({
   const foraDoSaldo = lancamentos.filter(
     (l) => l.contaId === conta.id && l.extratoId && l.pago && l.data <= hojeISO() && !contaNoSaldo(l, conta),
   );
+  const [avisoFechadoEm, setAvisoFechadoEm] = useState(() => {
+    try {
+      return Number(localStorage.getItem(`naxxo:aviso-fora-saldo:${conta.id}`)) || 0;
+    } catch {
+      return 0;
+    }
+  });
   const efeitoForaDoSaldo = foraDoSaldo.reduce((t, l) => t + (l.tipo === "entrada" ? l.valor : -l.valor), 0);
   const uso = conta.limite > 0 ? Math.min(usado / conta.limite, 1) : 0;
 
@@ -626,7 +633,7 @@ function CartaoConta({
           )}
         </div>
 
-        {foraDoSaldo.length > 0 && (
+        {foraDoSaldo.length > 0 && avisoFechadoEm !== foraDoSaldo.length && (
           <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-amber-300/40 bg-amber-300/10 p-3 text-xs">
             <span className="min-w-0 flex-1">
               ⚠️ {foraDoSaldo.length} movimentaç{foraDoSaldo.length > 1 ? "ões" : "ão"} do extrato não mexe
@@ -645,6 +652,19 @@ function CartaoConta({
               className="botao-gradiente rounded-full px-3 py-1.5 font-semibold"
             >
               Contar no saldo
+            </button>
+            <button
+              onClick={() => {
+                // Fechado: só volta se aparecerem outras movimentações nessa situação
+                setAvisoFechadoEm(foraDoSaldo.length);
+                try {
+                  localStorage.setItem(`naxxo:aviso-fora-saldo:${conta.id}`, String(foraDoSaldo.length));
+                } catch {}
+              }}
+              aria-label="Fechar aviso"
+              className="text-lg leading-none text-suave hover:text-white"
+            >
+              ×
             </button>
           </div>
         )}

@@ -6,20 +6,16 @@ import { brl, lerValor, valorParaCampo } from "@/lib/formato";
 import { saldoDaConta } from "@/lib/contas";
 import Modal from "./Modal";
 import { Campo, CampoValor } from "./Campos";
-import RendaNoSaldo, { marcarTodos, registrarRendaNoSaldo, useRendaQueJaCaiu } from "./RendaNoSaldo";
 
 // Conferir/ajustar o saldo de uma conta com o que aparece no app do banco.
 export default function FormSaldo({ cartao: conta, onFechar }: { cartao: Conta; onFechar: () => void }) {
   const lancamentos = useLancamentos();
   const calculado = saldoDaConta(conta, lancamentos);
   const [saldo, setSaldo] = useState(valorParaCampo(Math.round(calculado * 100) / 100));
-  const jaCaiu = useRendaQueJaCaiu();
-  const [noSaldo, setNoSaldo] = useState(() => marcarTodos(jaCaiu));
 
   function salvar(e: React.FormEvent) {
     e.preventDefault();
     informarSaldo(conta.id, lerValor(saldo) || 0);
-    if (conta.tipo !== "vale") registrarRendaNoSaldo(jaCaiu, noSaldo, conta.id);
     onFechar();
   }
 
@@ -34,7 +30,6 @@ export default function FormSaldo({ cartao: conta, onFechar }: { cartao: Conta; 
         <Campo rotulo="Quanto tem na conta agora?">
           <CampoValor valor={saldo} onChange={setSaldo} autoFocus negativo={conta.tipo !== "vale" && conta.tipo !== "dinheiro"} />
         </Campo>
-        {conta.tipo !== "vale" && <RendaNoSaldo itens={jaCaiu} marcados={noSaldo} onChange={setNoSaldo} />}
         {Math.abs(diferenca) >= 0.01 && (
           <p className="text-xs text-amber-300">
             Diferença de {brl(Math.abs(diferenca))}: talvez algum gasto ou entrada não foi lançado.

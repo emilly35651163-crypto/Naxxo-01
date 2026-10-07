@@ -22,7 +22,6 @@ import { saldoDaConta, temCredito } from "@/lib/contas";
 import { limiteUsadoPelasCompras, parcelasPagasDaCompra } from "@/lib/cartoes";
 import { comDesfazer } from "@/lib/avisos";
 import Modal from "./Modal";
-import RendaNoSaldo, { marcarTodos, registrarRendaNoSaldo, useRendaQueJaCaiu } from "./RendaNoSaldo";
 import { Campo, CampoSelect, CampoValor, Chip, DIAS_DO_MES } from "./Campos";
 
 const NOMES_DAS_CORES = ["Rosa e roxo", "Roxo e azul", "Azul e ciano", "Laranja e rosa", "Verde e azul", "Grafite"];
@@ -58,8 +57,6 @@ export default function FormConta({ conta, onFechar }: { conta?: Conta; onFechar
   const [destino, setDestino] = useState("");
   const [erro, setErro] = useState("");
   // Criou a conta depois do salário cair? O saldo já tem ele dentro: marca como recebido sem somar de novo
-  const jaCaiu = useRendaQueJaCaiu();
-  const [noSaldo, setNoSaldo] = useState(() => marcarTodos(jaCaiu));
 
   const comCredito = tipo === "banco" && credito;
   const valorLimite = lerValor(limite);
@@ -109,9 +106,8 @@ export default function FormConta({ conta, onFechar }: { conta?: Conta; onFechar
       ajuste = { ajusteLimite: Math.round((usadoNoBanco - limiteUsadoPelasCompras({ ...conta, ...novos }, dados)) * 100) / 100 };
     }
     if (desligandoCredito && conta && assinaturasNoCartao.length > 0) moverAssinaturasParaDebito(conta.id);
-    const id = conta ? conta.id : adicionarCartao({ ...novos, ...saldoNovo, ...ajuste, criadoEm: hojeISO() });
     if (conta) atualizarCartao(conta.id, { ...novos, ...saldoNovo, ...ajuste });
-    if (saldoMudou && tipo !== "vale") registrarRendaNoSaldo(jaCaiu, noSaldo, id);
+    else adicionarCartao({ ...novos, ...saldoNovo, ...ajuste, criadoEm: hojeISO() });
     onFechar();
   }
 
@@ -197,9 +193,6 @@ export default function FormConta({ conta, onFechar }: { conta?: Conta; onFechar
           </div>
         )}
 
-        {tipo !== "vale" && (!conta || Math.abs((lerValor(saldo) || 0) - (saldoAtual ?? 0)) >= 0.005) && (
-          <RendaNoSaldo itens={jaCaiu} marcados={noSaldo} onChange={setNoSaldo} />
-        )}
 
         <Campo rotulo="Quanto tem nessa conta agora?">
           <CampoValor valor={saldo} onChange={setSaldo} negativo={tipo === "banco"} />

@@ -28,16 +28,6 @@ export const ITENS_MENU: ItemMenu[] = [
     ),
   },
   {
-    href: "/lancamentos",
-    rotulo: "Lançamentos",
-    usaMes: true,
-    icone: (
-      <svg viewBox="0 0 24 24" className={ICONE} aria-hidden>
-        <path d="M4 7h14l-3-3M20 17H6l3 3" />
-      </svg>
-    ),
-  },
-  {
     href: "/contas",
     rotulo: "Contas",
     usaMes: true,
@@ -131,10 +121,10 @@ export function itemAtivo(caminho: string) {
 /** As páginas que aparecem no menu da esquerda (computador). Renda fica no Início; os fixos, em Contas. */
 export const ITENS_LATERAL = ITENS_MENU.filter((i) => !["/fixos", "/renda"].includes(i.href));
 
-// Menu de baixo (celular): 5 itens, sempre com o nome. Configurações e Mercado ficam no topo.
+// Menu de baixo (celular): 4 itens, sempre com o nome. Configurações e Mercado ficam no topo.
 export default function NavInferior() {
   const caminho = itemAtivo(usePathname());
-  const itens = ITENS_MENU.filter((i) => ["/", "/lancamentos", "/contas", "/trilha", "/resumo"].includes(i.href));
+  const itens = ITENS_MENU.filter((i) => ["/", "/contas", "/trilha", "/resumo"].includes(i.href));
 
   return (
     <nav

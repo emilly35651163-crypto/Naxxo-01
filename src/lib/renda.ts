@@ -11,7 +11,7 @@ import {
   type Lancamento,
   type ParteRenda,
 } from "./store";
-import { dataDoRecebimento, diasEntre, somarDias } from "./formato";
+import { dataDoRecebimento, diasEntre, hojeISO, somarDias } from "./formato";
 
 /** Freela semanal (7 dias) ou quinzenal (14 dias): de quantos em quantos dias cai. */
 export function intervaloDaRenda(f: FonteRenda) {
@@ -147,8 +147,16 @@ export function partesDaRenda(f: FonteRenda, mes: string): ParteDaRenda[] {
   return partes;
 }
 
-/** O que ainda não caiu da fonte no mês (tira o que já foi registrado). */
-export function rendaPendente(f: FonteRenda, mes: string, lancamentos: Lancamento[]): ParteDaRenda[] {
+/**
+ * O que ainda vai cair da fonte no mês: tira o que já foi registrado e o que já passou
+ * (dia que já passou = já caiu; ele é registrado sozinho por `registrarRendaQueJaCaiu`).
+ */
+export function rendaPendente(f: FonteRenda, mes: string, lancamentos: Lancamento[], hoje = hojeISO()): ParteDaRenda[] {
+  return rendaNaoRegistrada(f, mes, lancamentos).filter((p) => p.data >= hoje);
+}
+
+/** O que a fonte paga no mês e ainda não tem lançamento (já tendo passado ou não). */
+export function rendaNaoRegistrada(f: FonteRenda, mes: string, lancamentos: Lancamento[]): ParteDaRenda[] {
   const doMes = lancamentos.filter((l) => l.tipo === "entrada" && l.fonteId === f.id && l.data.startsWith(mes));
   // Recebimentos antigos (sem dizer qual parte) contam para o salário/adiantamento, na ordem das datas
   let semParte = doMes.filter((l) => !l.parteRenda && !l.beneficio).reduce((t, l) => t + l.valor, 0);

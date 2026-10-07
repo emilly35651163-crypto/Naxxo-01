@@ -157,10 +157,10 @@ export default function Graficos() {
                 key={m.mes}
                 onClick={() => {
                   irParaMes(m.mes);
-                  router.push("/lancamentos");
+                  router.push("/");
                 }}
                 className="flex h-full flex-1 items-end justify-center gap-1 rounded-md transition-colors hover:bg-white/5"
-                title={`${nomeMes(m.mes)}: entra ${brl(m.entra)}, sai ${brl(m.sai)} — toque para ver os lançamentos`}
+                title={`${nomeMes(m.mes)}: entra ${brl(m.entra)}, sai ${brl(m.sai)} — toque para ver o mês no Início`}
               >
                 <div className={`w-1/2 rounded-t-md bg-entrada`} style={{ height: `${(m.entra / maiorMes) * 100}%` }} />
                 <div className={`w-1/2 rounded-t-md bg-saida`} style={{ height: `${(m.sai / maiorMes) * 100}%` }} />

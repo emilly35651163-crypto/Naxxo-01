@@ -585,7 +585,7 @@ function FormRecebimento({ fonte, mes, onFechar }: { fonte: FonteRenda; mes: str
 
         <EscolhaConta valor={conta} onChange={setConta} rotulo="Caiu em qual conta?" />
 
-        <p className="text-xs text-suave">Isso também entra como uma entrada na aba Lançamentos.</p>
+        <p className="text-xs text-suave">Isso também entra como uma entrada no mês (Início).</p>
         {erro && (
           <p role="alert" className="text-sm text-saida">
             {erro}

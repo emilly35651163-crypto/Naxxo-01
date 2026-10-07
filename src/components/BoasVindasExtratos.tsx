@@ -338,7 +338,7 @@ export default function BoasVindasExtratos({
               <p className="text-sm font-semibold">🏦 Conta</p>
               <ZonaArquivo
                 titulo="Extrato da conta"
-                ajuda="OFX ou CSV · escolha ou arraste aqui"
+                ajuda="Toque para abrir o arquivo (OFX ou CSV)"
                 arquivo={b.conta}
                 onArquivo={(f) => void receber(b, "conta", f)}
                 onTirar={() => mudar(b.id, { conta: null, itensConta: b.itensConta.filter((c) => c.origem !== "arquivo") })}
@@ -360,7 +360,7 @@ export default function BoasVindasExtratos({
               <p className="text-sm font-semibold">💳 Cartão de crédito</p>
               <ZonaArquivo
                 titulo="Extrato / fatura do cartão"
-                ajuda="OFX, CSV ou prints da fatura · escolha ou arraste aqui"
+                ajuda="Toque para abrir: OFX, CSV ou prints da fatura"
                 aceitaPrints
                 arquivo={b.cartao}
                 onArquivo={(f) => void receber(b, "cartao", f)}

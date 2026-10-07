@@ -17,6 +17,7 @@ import {
   removerLancamento,
   subcategoriasDe,
   transferir,
+  virarTransferencia,
   useCartoes,
   useCategoriasPersonalizadas,
   useLancamentos,
@@ -26,7 +27,20 @@ import {
   type Lancamento,
   type Tipo,
 } from "@/lib/store";
-import { formatarData, hojeISO, lerValor, mesAtual, nomeMes, soNumeros, valorParaCampo, mascaraDinheiro } from "@/lib/formato";
+import {
+  brl,
+  formatarData,
+  hojeISO,
+  lerValor,
+  mesAtual,
+  nomeMes,
+  soNumeros,
+  somarDias,
+  somarMeses,
+  valorParaCampo,
+  mascaraDinheiro,
+} from "@/lib/formato";
+import { criarRepeticao } from "@/lib/repeticao";
 import { faturaDaData } from "@/lib/cartoes";
 import { comDesfazer, mostrarAviso } from "@/lib/avisos";
 import Modal from "./Modal";
@@ -116,6 +130,8 @@ export default function FormLancamento({
   const [repete, setRepete] = useState<Repeticao>("nao");
   const [aCadaDias, setACadaDias] = useState("30");
   const [varia, setVaria] = useState(false);
+  // Quantas vezes ao todo, contando esta (vazio = sem fim). Ex.: notebook de R$ 2.000 em Pix de R$ 200 = 10
+  const [vezesTotal, setVezesTotal] = useState("");
   const [pago, setPago] = useState(lancamento?.pago ?? true);
   const [erro, setErro] = useState<{ texto: string; campo?: "valor" | "conta" | "dias" } | null>(null);
 
@@ -132,6 +148,17 @@ export default function FormLancamento({
   );
   const subcategorias = subcategoriasDe(tipo, categoria, personalizadas);
   const ehPagamento = !!lancamento && (!!lancamento.pagamentoFaturaId || !!lancamento.efeito);
+  // Editando: dá para virar transferência (ex.: Pix para mim mesma) e para dizer que vai se repetir
+  const podeVirarTransferencia = !!lancamento && !lancamento.transferenciaId && !ehPagamento && !lancamento.gastoFixoId;
+  const podeRepetirAoEditar =
+    !!lancamento &&
+    !entrada &&
+    !noCredito &&
+    !lancamento.transferenciaId &&
+    !ehPagamento &&
+    !lancamento.gastoFixoId &&
+    !lancamento.fonteId;
+  const mostrarRepeticao = !transferencia && (!lancamento || podeRepetirAoEditar);
 
   function falhar(texto: string, campo?: "valor" | "conta" | "dias") {
     setErro({ texto, campo });
@@ -142,13 +169,25 @@ export default function FormLancamento({
     setErro(null);
     setRepete("nao");
     setSubcategoria("");
-    if (novo === "transferencia") return;
+    if (novo === "transferencia") {
+      if (lancamento?.contaId) {
+        const outra = contas.find((c) => c.id !== lancamento.contaId)?.id;
+        if (lancamento.tipo === "saida") {
+          setDe(`debito:${lancamento.contaId}`);
+          if (outra) setPara(`debito:${outra}`);
+        } else {
+          setPara(`debito:${lancamento.contaId}`);
+          if (outra) setDe(`debito:${outra}`);
+        }
+      }
+      return;
+    }
     setCategoria(categoriasDe(novo, personalizadas).filter((c) => !AUTOMATICAS.includes(c.nome))[0].nome);
     if (novo === "entrada" && escolha.credito) setConta(`debito:${escolha.id}`);
   }
 
   /** Depois de salvar: aviso com "ver", sem mudar o mês do topo sozinho. */
-  function avisarSalvo(texto: string, mesDestino: string, href = "/lancamentos") {
+  function avisarSalvo(texto: string, mesDestino: string, href = "/") {
     onSalvo?.();
     mostrarAviso({
       texto,
@@ -173,7 +212,10 @@ export default function FormLancamento({
       const nomeDe = contas.find((c) => c.id === deId)?.nome;
       const nomePara = contas.find((c) => c.id === paraId)?.nome;
       const texto = descricao.trim() || `${nomeDe} → ${nomePara}`;
-      if (lancamento?.transferenciaId) {
+      if (lancamento && !lancamento.transferenciaId) {
+        // Era uma saída/entrada comum: vira transferência (e acha a outra ponta, se já existir)
+        virarTransferencia(lancamento.id, deId, paraId, numero, data, texto);
+      } else if (lancamento?.transferenciaId) {
         atualizarTransferencia(lancamento.transferenciaId, {
           deContaId: deId,
           paraContaId: paraId,
@@ -208,6 +250,25 @@ export default function FormLancamento({
         avisarSalvo(`💳 Foi para a fatura do ${cartao.nome}`, faturaDaData(data, cartao), "/contas");
         return onFechar();
       }
+      let ligacao = {};
+      if (podeRepetirAoEditar && repete !== "nao") {
+        const intervalo = repete === "semana" ? 7 : repete === "quinzena" ? 15 : repete === "outro" ? Number(aCadaDias) : 0;
+        if (repete === "outro" && !(intervalo > 0)) return falhar("A cada quantos dias?", "dias");
+        const fixoId = criarRepeticao({
+          nome,
+          categoria,
+          valor: numero,
+          data,
+          contaId,
+          repetir: {
+            modo: repete === "mes" ? "mes" : "dias",
+            intervalo: repete === "ano" ? 365 : intervalo,
+            vezes: Number(vezesTotal) || null,
+            varia,
+          },
+        });
+        ligacao = { gastoFixoId: fixoId, competencia: data.slice(0, 7) };
+      }
       atualizarLancamento(lancamento.id, {
         tipo,
         valor: numero,
@@ -217,8 +278,9 @@ export default function FormLancamento({
         data,
         pago: futuro ? false : pago,
         contaId,
+        ...ligacao,
       });
-      avisarSalvo("Alterações salvas ✓", data.slice(0, 7));
+      avisarSalvo(repete !== "nao" ? "🔁 Salvo: as próximas vezes ficam previstas" : "Alterações salvas ✓", data.slice(0, 7));
       return onFechar();
     }
 
@@ -271,6 +333,15 @@ export default function FormLancamento({
         mesReferencia: frequencia === "anual" ? data.slice(0, 7) : undefined,
         intervaloDias: frequencia === "personalizada" ? intervalo : undefined,
         inicio: frequencia === "personalizada" ? data : undefined,
+        // "Quantas vezes ao todo": o último mês em que cobra
+        ate:
+          Number(vezesTotal) > 0
+            ? frequencia === "mensal"
+              ? somarMeses(data.slice(0, 7), Number(vezesTotal) - 1)
+              : frequencia === "anual"
+                ? somarMeses(data.slice(0, 7), 12 * (Number(vezesTotal) - 1))
+                : somarDias(data, (Number(vezesTotal) - 1) * intervalo).slice(0, 7)
+            : undefined,
       };
       const id = adicionarGastoFixo(fixo);
       // Hoje (ou antes) e já pago: esta vez já fica registrada como paga
@@ -348,7 +419,7 @@ export default function FormLancamento({
         : !entrada && repete !== "nao"
           ? noCredito
             ? "📌 Vira um gasto fixo no cartão: entra na fatura sozinho."
-            : `📌 Vira um gasto fixo: aparece previsto nos Lançamentos toda vez.${!futuro && pago ? " Esta vez já fica como paga." : ""}`
+            : `📌 Vira um gasto fixo: aparece previsto no Início toda vez.${!futuro && pago ? " Esta vez já fica como paga." : ""}`
           : noCredito && cartao
             ? `💳 Vai para a fatura do ${cartao.nome}${vezes > 1 ? ` em ${vezes}x` : ""} (fatura de ${nomeMes(faturaDaData(data, cartao)).toLowerCase()}).`
             : futuro || !pago
@@ -363,7 +434,11 @@ export default function FormLancamento({
       <form onSubmit={salvar} className="space-y-5">
         <div className="grid grid-cols-3 gap-1 rounded-full bg-fundo p-1" role="radiogroup" aria-label="Tipo">
           {(["saida", "entrada", "transferencia"] as const)
-            .filter((m) => !lancamento || (m === "transferencia") === transferencia)
+            .filter((m) =>
+              !lancamento || lancamento.transferenciaId
+                ? m === "transferencia" || !lancamento
+                : m !== "transferencia" || podeVirarTransferencia,
+            )
             .map((m) => (
               <button
                 key={m}
@@ -523,9 +598,11 @@ export default function FormLancamento({
 
         {noCredito && repete === "nao" && <EscolhaParcelas valor={parcelas} onChange={setParcelas} valorTotal={numero} />}
 
-        {!lancamento && !transferencia && (
+        {mostrarRepeticao && (
           <div className="space-y-1.5">
-            <span className="text-xs text-suave">{entrada ? "Vai entrar de novo?" : "Vai se repetir?"}</span>
+            <span className="text-xs text-suave">
+              {entrada ? "Vai entrar de novo?" : lancamento ? "Vai se repetir nos próximos meses?" : "Vai se repetir?"}
+            </span>
             <div className="flex flex-wrap gap-2">
               {repeticoes.map((r) => (
                 <Chip key={r.id} ativo={repete === r.id} onClick={() => setRepete(r.id)}>
@@ -544,6 +621,22 @@ export default function FormLancamento({
                   className={`campo w-16 px-2 py-1.5 text-center ${erro?.campo === "dias" ? "campo-erro" : ""}`}
                 />
                 dias
+              </div>
+            )}
+            {repete !== "nao" && !entrada && (
+              <div className="flex flex-wrap items-center gap-2 pt-1 text-sm">
+                Quantas vezes ao todo, contando esta?
+                <input
+                  inputMode="numeric"
+                  value={vezesTotal}
+                  onChange={(e) => setVezesTotal(soNumeros(e.target.value, false).slice(0, 3))}
+                  placeholder="sem fim"
+                  aria-label="Quantas vezes ao todo"
+                  className="campo w-24 px-2 py-1.5 text-center"
+                />
+                {Number(vezesTotal) > 1 && numero > 0 && (
+                  <span className="text-xs text-suave">= {brl(numero * Number(vezesTotal))} no total</span>
+                )}
               </div>
             )}
             {repete !== "nao" && (

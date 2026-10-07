@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { usePerfil, usePreferencias } from "@/lib/store";
+import { useCartoes, useFontes, usePerfil, usePreferencias } from "@/lib/store";
+import { registrarRendaQueJaCaiu } from "@/lib/rendaAutomatica";
 import { useLembretes } from "@/lib/lembretes";
 import { useEstadoNuvem } from "@/lib/nuvem";
 import Logo from "./Logo";
@@ -59,6 +60,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (dadosProntos && perfil && !perfil.concluido && !emBoasVindas && !emEntrar) router.replace("/boas-vindas");
   }, [dadosProntos, perfil, emBoasVindas, emEntrar, router]);
+
+  // Renda: o que já passou do dia já caiu (registra sozinho, uma vez só). Roda ao abrir e quando a renda ou as contas mudam.
+  const fontes = useFontes();
+  const contas = useCartoes();
+  const pronto = dadosProntos && !!perfil?.concluido;
+  useEffect(() => {
+    if (pronto) registrarRendaQueJaCaiu();
+  }, [pronto, fontes, contas]);
 
   // Entrar e o questionário ocupam a tela inteira, sem menu
   if (emEntrar || (emBoasVindas && dadosProntos))

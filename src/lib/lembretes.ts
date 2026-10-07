@@ -58,7 +58,7 @@ export function useLembretes(ativo: boolean) {
       mostrarAviso(
         {
           texto: textos.length === 1 ? textos[0] : `${textos[0]} · e mais ${textos.length - 1}`,
-          link: { texto: "Ver", href: "/lancamentos" },
+          link: { texto: "Ver", href: "/" },
         },
         8,
       );

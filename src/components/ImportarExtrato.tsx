@@ -337,7 +337,7 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
             arrastando ? "border-rosa bg-rosa/15" : "border-rosa/50"
           }`}
         >
-          {nomeArquivo ? `📄 ${nomeArquivo} (trocar)` : "📂 Escolha ou arraste aqui o arquivo do extrato"}
+          {nomeArquivo ? `📄 ${nomeArquivo} (trocar)` : "📂 Abrir o arquivo do extrato"}
           <input
             type="file"
             accept=".ofx,.csv,.txt,.qfx"
