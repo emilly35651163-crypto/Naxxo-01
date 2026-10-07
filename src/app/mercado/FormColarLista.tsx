@@ -21,7 +21,7 @@ export default function FormColarLista({ onFechar }: { onFechar: () => void }) {
   const contas = useCartoes();
   const prefs = usePreferencias();
   const [texto, setTexto] = useState("");
-  const [comprei, setComprei] = useState(true);
+  const [comprei, setComprei] = useState(false); // começa em "Só na lista": colar costuma ser para montar a lista
   const [precoDaLinha, setPrecoDaLinha] = useState(true);
   const [contaId, setContaId] = useState(contas.find((c) => c.id === prefs.ultimaConta)?.id ?? contas[0]?.id ?? "");
   const itens = lerListaColada(texto, precoDaLinha);
