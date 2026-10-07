@@ -27,7 +27,7 @@ import { NECESSIDADES_PADRAO } from "@/lib/analise";
 import { pedirPermissaoDeNotificacao } from "@/lib/lembretes";
 import { comDesfazer, mostrarAviso } from "@/lib/avisos";
 import { CampoValor, Chip } from "@/components/Campos";
-import { emailLogado, nuvemAtiva, sair } from "@/lib/nuvem";
+import { definirSenha, emailLogado, nuvemAtiva, sair } from "@/lib/nuvem";
 import RecuperarDados from "@/components/RecuperarDados";
 
 const AUTOMATICAS = ["Fatura do cartão", "Guardar (metas)"];
@@ -84,6 +84,7 @@ export default function Configuracoes() {
           <p className="mt-1 text-xs text-suave">
             Seus dados ficam guardados na nuvem: entre com o mesmo e-mail em qualquer aparelho.
           </p>
+          <CriarSenha />
           <button
             onClick={() => void sair()}
             className="mt-3 rounded-full border border-white/15 px-4 py-2 text-sm text-suave hover:text-white"
@@ -460,5 +461,57 @@ function Confirmacao({
         </button>
       </div>
     </div>
+  );
+}
+
+/** Criar ou mudar a senha: depois dá para entrar com e-mail e senha, sem esperar e-mail. */
+function CriarSenha() {
+  const [aberto, setAberto] = useState(false);
+  const [senha, setSenha] = useState("");
+  const [erro, setErro] = useState("");
+  if (!aberto)
+    return (
+      <button
+        onClick={() => setAberto(true)}
+        className="mr-2 mt-3 rounded-full border border-rosa/50 px-4 py-2 text-sm text-rosa"
+      >
+        🔑 Criar / mudar senha
+      </button>
+    );
+  return (
+    <form
+      onSubmit={async (e) => {
+        e.preventDefault();
+        const problema = await definirSenha(senha);
+        if (problema) return setErro(problema);
+        setAberto(false);
+        setSenha("");
+        mostrarAviso({ texto: "Senha salva ✓ Agora dá para entrar com e-mail e senha" });
+      }}
+      className="mt-3 space-y-2"
+    >
+      <input
+        type="password"
+        autoFocus
+        autoComplete="new-password"
+        value={senha}
+        onChange={(e) => {
+          setSenha(e.target.value);
+          setErro("");
+        }}
+        placeholder="nova senha (mínimo 8 caracteres)"
+        aria-label="Nova senha"
+        className="campo"
+      />
+      {erro && <p className="text-sm text-saida">{erro}</p>}
+      <div className="flex gap-2">
+        <button type="submit" className="botao-gradiente rounded-full px-4 py-2 text-sm font-semibold">
+          Salvar senha
+        </button>
+        <button type="button" onClick={() => setAberto(false)} className="px-3 text-sm text-suave">
+          cancelar
+        </button>
+      </div>
+    </form>
   );
 }

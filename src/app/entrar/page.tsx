@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import simbolo from "@/assets/naxxo-simbolo.png";
 import { NomeNaxxo } from "@/components/Logo";
-import { confirmarCodigo, pedirCodigo, useEstadoNuvem } from "@/lib/nuvem";
+import { confirmarCodigo, entrarComSenha, pedirCodigo, useEstadoNuvem } from "@/lib/nuvem";
 
 // Entrar: o e-mail e, depois, o código de 6 números que chega nele. Sem senha.
 export default function Entrar() {
@@ -13,7 +13,8 @@ export default function Entrar() {
   const estado = useEstadoNuvem();
   const [email, setEmail] = useState("");
   const [codigo, setCodigo] = useState("");
-  const [etapa, setEtapa] = useState<"email" | "codigo">("email");
+  const [etapa, setEtapa] = useState<"email" | "codigo" | "senha">("email");
+  const [senha, setSenha] = useState("");
   const [comCodigo, setComCodigo] = useState(false);
   const [erro, setErro] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -26,6 +27,15 @@ export default function Entrar() {
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
     setErro("");
+    if (etapa === "senha") {
+      if (!/^\S+@\S+\.\S+$/.test(email.trim())) return setErro("Digite um e-mail válido.");
+      if (!senha) return setErro("Digite a senha.");
+      setEnviando(true);
+      const problema = await entrarComSenha(email, senha);
+      setEnviando(false);
+      if (problema) return setErro(problema);
+      return;
+    }
     if (etapa === "email") {
       if (!/^\S+@\S+\.\S+$/.test(email.trim())) return setErro("Digite um e-mail válido.");
       setEnviando(true);
@@ -47,17 +57,41 @@ export default function Entrar() {
       <div className="flex flex-col items-center text-center">
         <Image src={simbolo} alt="" className="h-20 w-auto drop-shadow-[0_0_30px_rgb(255_78_216/0.5)]" priority />
         <NomeNaxxo className="mt-5 h-5 w-auto" />
-        <h1 className="mt-8 font-display text-2xl font-bold">{etapa === "email" ? "Entrar" : "Confira seu e-mail 📬"}</h1>
+        <h1 className="mt-8 font-display text-2xl font-bold">{etapa === "codigo" ? "Confira seu e-mail 📬" : "Login"}</h1>
         <p className="mt-2 text-sm text-suave">
-          {etapa === "email"
-            ? "Sem senha: mandamos um link de entrada para o seu e-mail."
-            : `Mandamos um e-mail para ${email.trim()}. Abra neste aparelho e toque em “Sign in”: você volta para cá já dentro do app.`}
+          {etapa === "senha"
+            ? "Entre com o seu e-mail e a sua senha."
+            : etapa === "email"
+              ? "Sem senha: mandamos um link de entrada para o seu e-mail."
+              : `Mandamos um e-mail para ${email.trim()}. Abra neste aparelho e toque em “Sign in”: você volta para cá já dentro do app.`}
         </p>
         {etapa === "codigo" && <p className="mt-2 text-xs text-suave">Não chegou? Olhe a caixa de spam ou promoções.</p>}
       </div>
 
       <div className="mt-8 space-y-3">
-        {etapa === "email" ? (
+        {etapa === "senha" ? (
+          <>
+            <input
+              type="email"
+              autoFocus
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="seu@email.com"
+              aria-label="E-mail"
+              className="campo text-center"
+            />
+            <input
+              type="password"
+              autoComplete="current-password"
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
+              placeholder="sua senha"
+              aria-label="Senha"
+              className="campo text-center"
+            />
+          </>
+        ) : etapa === "email" ? (
           <input
             type="email"
             autoFocus
@@ -89,13 +123,43 @@ export default function Entrar() {
             {erro}
           </p>
         )}
-        {(etapa === "email" || comCodigo) && (
+        {(etapa !== "codigo" || comCodigo) && (
           <button
             type="submit"
             disabled={enviando}
             className="botao-gradiente w-full rounded-full py-3.5 font-semibold disabled:opacity-60"
           >
-            {enviando ? "Um instante…" : etapa === "email" ? "Receber link de entrada" : "Entrar com o código"}
+            {enviando
+              ? "Um instante…"
+              : etapa === "email"
+                ? "Receber link de entrada"
+                : etapa === "senha"
+                  ? "Entrar"
+                  : "Entrar com o código"}
+          </button>
+        )}
+        {etapa === "email" && (
+          <button
+            type="button"
+            onClick={() => {
+              setEtapa("senha");
+              setErro("");
+            }}
+            className="w-full rounded-full border border-rosa/50 py-3.5 font-semibold text-rosa"
+          >
+            Entrar com senha
+          </button>
+        )}
+        {etapa === "senha" && (
+          <button
+            type="button"
+            onClick={() => {
+              setEtapa("email");
+              setErro("");
+            }}
+            className="w-full text-sm text-suave"
+          >
+            Não tenho senha: receber link por e-mail
           </button>
         )}
         {etapa === "codigo" && (

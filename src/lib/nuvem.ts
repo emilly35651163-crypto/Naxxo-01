@@ -184,6 +184,27 @@ export async function confirmarCodigo(email: string, codigo: string) {
   return error ? "Código errado ou vencido. Confira o e-mail ou peça outro." : null;
 }
 
+/** Entra com e-mail e senha (para quem já criou uma senha em Configurações). Devolve uma mensagem de erro, ou null. */
+export async function entrarComSenha(email: string, senha: string) {
+  if (!supabase) return "Login indisponível.";
+  const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password: senha });
+  if (!error) return null;
+  if (/invalid/i.test(error.message))
+    return "E-mail ou senha errados. Ainda não tem senha? Entre pelo link e crie uma em Configurações.";
+  return "Não consegui entrar agora. Tente de novo.";
+}
+
+/** Cria ou muda a senha da conta (estando logada). Devolve uma mensagem de erro, ou null. */
+export async function definirSenha(senha: string) {
+  if (!supabase) return "Login indisponível.";
+  if (senha.length < 8) return "A senha precisa ter pelo menos 8 caracteres.";
+  const { error } = await supabase.auth.updateUser({ password: senha });
+  if (!error) return null;
+  if (/same/i.test(error.message)) return "Essa já é a sua senha.";
+  if (/weak|short|pwned/i.test(error.message)) return "Senha fraca. Use letras e números, com pelo menos 8 caracteres.";
+  return "Não consegui salvar a senha. Tente de novo.";
+}
+
 /** Sai da conta: os dados ficam na nuvem e saem deste aparelho. */
 export async function sair() {
   if (!supabase) return;
