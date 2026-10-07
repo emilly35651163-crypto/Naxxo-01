@@ -28,6 +28,7 @@ import { pedirPermissaoDeNotificacao } from "@/lib/lembretes";
 import { comDesfazer, mostrarAviso } from "@/lib/avisos";
 import { CampoValor, Chip } from "@/components/Campos";
 import { emailLogado, nuvemAtiva, sair } from "@/lib/nuvem";
+import RecuperarDados from "@/components/RecuperarDados";
 
 const AUTOMATICAS = ["Fatura do cartão", "Guardar (metas)"];
 
@@ -73,6 +74,8 @@ export default function Configuracoes() {
 
   return (
     <div className="space-y-6">
+      <RecuperarDados />
+
       {nuvemAtiva && (
         <Secao titulo="☁️ Sua conta">
           <p className="text-sm">
