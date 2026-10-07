@@ -16,6 +16,8 @@ import {
   type GastoFixo,
   type Lancamento,
   type Meta,
+  tirarDoExtrato,
+  zerarCartao,
 } from "@/lib/store";
 import FormGastoFixo from "@/components/FormGastoFixo";
 import FormSaldo from "@/components/FormSaldo";
@@ -429,6 +431,11 @@ function CartaoConta({
   // Faturas de meses anteriores que ficaram sem pagar
   const atrasadas = credito ? faturasAtrasadas(conta, { compras, fixos, pagamentos }) : [];
   const disponivel = Math.max(conta.limite - usado, 0);
+  // Para zerar o cartão / tirar o que veio do extrato
+  const comprasDoCartao = credito ? compras.filter((c) => c.cartaoId === conta.id && !c.metaId).length : 0;
+  const doExtrato =
+    lancamentos.filter((l) => l.contaId === conta.id && l.importado).length +
+    compras.filter((c) => c.cartaoId === conta.id && c.importado).length;
   const uso = conta.limite > 0 ? Math.min(usado / conta.limite, 1) : 0;
 
   // Tudo o que mexeu nesta conta no mês, numa lista só: débito/Pix/transferências + o que está na fatura do cartão
@@ -612,6 +619,43 @@ function CartaoConta({
             </ul>
           )}
         </div>
+
+        {(comprasDoCartao > 0 || doExtrato > 0) && (
+          <div className="flex flex-wrap gap-x-4 gap-y-1 border-t border-white/5 pt-3 text-xs">
+            {doExtrato > 0 && (
+              <button
+                onClick={() => {
+                  if (
+                    !confirm(
+                      `Tirar de ${conta.nome} tudo o que veio do extrato (${doExtrato})? O que você tinha lançado à mão fica.`,
+                    )
+                  )
+                    return;
+                  comDesfazer(`Extrato tirado de ${conta.nome}`, () => tirarDoExtrato(conta.id));
+                }}
+                className="text-suave hover:text-saida"
+              >
+                ↩️ Tirar o que veio do extrato ({doExtrato})
+              </button>
+            )}
+            {comprasDoCartao > 0 && (
+              <button
+                onClick={() => {
+                  if (
+                    !confirm(
+                      `Zerar o cartão ${conta.nome}? Saem as ${comprasDoCartao} compras dele (as ligadas a dívidas da Trilha ficam). Dá para desfazer logo depois.`,
+                    )
+                  )
+                    return;
+                  comDesfazer(`Cartão ${conta.nome} zerado`, () => zerarCartao(conta.id));
+                }}
+                className="text-suave hover:text-saida"
+              >
+                🧹 Zerar cartão ({comprasDoCartao} compras)
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {editandoCompra && (

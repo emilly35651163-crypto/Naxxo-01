@@ -16,6 +16,8 @@ export type Frequente = {
   nome: string;
   icone: string;
   categoria: CategoriaFixo;
+  /** Categoria dos pagamentos (ex.: "Parcelas e dívidas") */
+  categoriaLancamento: string;
   varia: boolean;
   /** 0 = todo mês, no mesmo dia; senão, a cada X dias */
   intervaloDias: number;
@@ -30,10 +32,16 @@ const dias = (a: string, b: string) =>
 type Candidato = { chave: string; nome: string; data: string; valor: number; detalhe: string; ligacao: Ligacao };
 
 /** O que pode ser esta linha: previstos do mês e lançamentos perto da data, os mais parecidos primeiro. */
-function candidatos(l: LinhaExtrato, previstos: Previsto[], lancamentos: Lancamento[], busca: string): Candidato[] {
+function candidatos(
+  l: LinhaExtrato,
+  previstos: Previsto[],
+  lancamentos: Lancamento[],
+  busca: string,
+  ocupados: Set<string>,
+): Candidato[] {
   const lista: Candidato[] = [
     ...previstos
-      .filter((p) => p.tipo === l.tipo && p.origem !== "guardar")
+      .filter((p) => p.tipo === l.tipo && p.origem !== "guardar" && !ocupados.has(`p-${p.chave}`))
       .map((p) => ({
         chave: `p-${p.chave}`,
         nome: `${p.icone} ${p.nome}`,
@@ -43,13 +51,13 @@ function candidatos(l: LinhaExtrato, previstos: Previsto[], lancamentos: Lancame
         ligacao: { tipo: "previsto" as const, previsto: p },
       })),
     ...lancamentos
-      .filter((x) => x.tipo === l.tipo && !x.extratoId && dias(x.data, l.data) <= 20)
+      .filter((x) => x.pago && x.tipo === l.tipo && !x.extratoId && !ocupados.has(`l-${x.id}`) && dias(x.data, l.data) <= 20)
       .map((x) => ({
         chave: `l-${x.id}`,
         nome: x.descricao,
         data: x.data,
         valor: x.valor,
-        detalhe: x.pago ? "lançado" : "lançado (a pagar)",
+        detalhe: "já lançado",
         ligacao: { tipo: "lancamento" as const, id: x.id, descricao: x.descricao },
       })),
   ];
@@ -74,26 +82,53 @@ export function previstoParecido(l: LinhaExtrato, previstos: Previsto[], usados:
 }
 
 const TIPOS_FREQUENTE = [
-  { id: "gasolina", nome: "⛽ Gasolina", icone: "⛽", categoria: "transporte", varia: true, intervaloDias: 15 },
-  { id: "divida", nome: "💸 Dívida / parcela", icone: "💸", categoria: "outros", varia: false, intervaloDias: 0 },
-  { id: "outro", nome: "🔁 Outro", icone: "🔁", categoria: "outros", varia: true, intervaloDias: 0 },
+  {
+    id: "gasolina",
+    nome: "⛽ Gasolina",
+    icone: "⛽",
+    categoria: "transporte",
+    categoriaLancamento: "Transporte",
+    varia: true,
+    intervaloDias: 15,
+  },
+  {
+    id: "divida",
+    nome: "💸 Dívida / parcela",
+    icone: "💸",
+    categoria: "outros",
+    categoriaLancamento: "Parcelas e dívidas",
+    varia: false,
+    intervaloDias: 0,
+  },
+  {
+    id: "outro",
+    nome: "🔁 Outro",
+    icone: "🔁",
+    categoria: "outros",
+    categoriaLancamento: "Outros",
+    varia: true,
+    intervaloDias: 0,
+  },
 ] as const;
 
 export function PainelLigar({
   linha: l,
   previstos,
   lancamentos,
+  ocupados,
   onLigar,
   onFechar,
 }: {
   linha: LinhaExtrato;
   previstos: Previsto[];
   lancamentos: Lancamento[];
+  /** O que outras linhas já ligaram ("p-chave" ou "l-id"): não aparece de novo */
+  ocupados: Set<string>;
   onLigar: (ligacao: Ligacao) => void;
   onFechar: () => void;
 }) {
   const [busca, setBusca] = useState("");
-  const lista = candidatos(l, previstos, lancamentos, busca);
+  const lista = candidatos(l, previstos, lancamentos, busca, ocupados);
   return (
     <div className="mt-2 space-y-2 rounded-xl border border-roxo/40 bg-roxo/10 p-2 text-xs">
       <div className="flex items-center justify-between">
@@ -238,6 +273,7 @@ export function PainelFrequente({
             nome: nome.trim(),
             icone: base.icone,
             categoria: base.categoria,
+            categoriaLancamento: base.categoriaLancamento,
             varia: base.varia,
             intervaloDias: aCadaDias ? Number(intervalo) : 0,
             restantes: tipo === "divida" ? restantes : "",

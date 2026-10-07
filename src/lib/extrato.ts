@@ -10,6 +10,8 @@ export type LinhaExtrato = {
   valor: number; // sempre positivo
   tipo: Tipo;
   categoria: string;
+  /** Cartão: "Loja - Parcela 3/10" → { numero: 3, total: 10 } (o valor é o de uma parcela) */
+  parcela?: { numero: number; total: number };
 };
 
 export type Extrato = { linhas: LinhaExtrato[]; ehCartao: boolean };
@@ -90,7 +92,19 @@ function categoriaPelaDescricao(descricao: string, tipo: Tipo) {
 }
 
 /** Linhas que não são movimento (saldo do dia, saldo anterior…) */
-const NAO_E_MOVIMENTO = /^saldo|saldo do dia|saldo anterior|saldo final|s a l d o|total/;
+const NAO_E_MOVIMENTO = /^saldo|saldo do dia|saldo anterior|saldo final|s a l d o|^total\b/;
+
+/** "Parcela 3/10", "Parc 03/10", "3/10" no fim → { numero, total } e o título sem isso */
+function separarParcela(descricao: string) {
+  const m = descricao.match(/\s*[-–·]?\s*(?:parcela|parc\.?)?\s*(\d{1,2})\s*(?:\/|de)\s*(\d{1,2})\s*$/i);
+  if (!m) return { descricao, parcela: undefined };
+  const numero = Number(m[1]);
+  const total = Number(m[2]);
+  // "3/10" solto pode ser data (03/10): só vale se disser "parcela" ou se o número for menor que o total
+  const disseParcela = /parc/i.test(m[0]);
+  if (!(total >= 2 && numero >= 1 && numero <= total) || (!disseParcela && total > 24)) return { descricao, parcela: undefined };
+  return { descricao: descricao.slice(0, m.index).trim(), parcela: { numero, total } };
+}
 
 const MINUSCULAS = new Set(["de", "da", "do", "das", "dos", "e"]);
 
@@ -129,13 +143,15 @@ function linha(
   // No cartão, compra vem positiva (e estorno/pagamento, negativo); na conta, saída vem negativa
   const tipo: Tipo = ehCartao ? (valorComSinal > 0 ? "saida" : "entrada") : valorComSinal < 0 ? "saida" : "entrada";
   const valor = Math.round(Math.abs(valorComSinal) * 100) / 100;
+  const { descricao: semParcela, parcela } = ehCartao ? separarParcela(desc) : { descricao: desc, parcela: undefined };
   return {
     id: idBanco ? `b:${idBanco}` : `${data}|${valor}|${semAcento(desc).slice(0, 40)}`,
     data,
-    descricao: limparDescricao(desc) || "Sem descrição",
+    descricao: limparDescricao(semParcela) || "Sem descrição",
     valor,
     tipo,
     categoria: categoriaPelaDescricao(desc, tipo),
+    ...(parcela ? { parcela } : {}),
   };
 }
 
@@ -254,10 +270,23 @@ export type Existente = {
   exato: boolean;
 };
 
+const palavras = (texto: string) =>
+  semAcento(texto)
+    .split(/[^a-z0-9]+/)
+    .filter((p) => p.length >= 4);
+/** Os nomes têm alguma palavra em comum? ("Netflix.com" × "Netflix") */
+export function nomesParecidos(a: string, b: string) {
+  const pb = new Set(palavras(b));
+  return palavras(a).some((p) => pb.has(p));
+}
+
 /**
  * O que já está no app e parece ser esta linha do extrato (para não duplicar o que a pessoa já tinha lançado).
- * Vale: o mesmo id de extrato; ou mesmo tipo e valor parecido com até 3 dias de diferença,
- * em qualquer conta (lançamentos antigos podem estar sem conta ou na conta errada).
+ * - Conta: mesmo id de extrato; ou lançamento JÁ PAGO, do mesmo tipo, valor parecido e até 3 dias de diferença
+ *   (os que ainda estão a pagar aparecem como previstos, para serem confirmados).
+ * - Cartão: compra com o mesmo id; ou mesmo valor e até 3 dias; parcela: compra com o mesmo nº de parcelas e o mesmo valor da parcela.
+ * `usados`: cada coisa do app só vale para uma linha (duas padarias de R$ 10 no extrato não somem por causa de uma no app).
+ * Entre os parecidos, fica o da mesma conta e mais perto na data.
  */
 export function jaExiste(
   l: LinhaExtrato,
@@ -265,28 +294,56 @@ export function jaExiste(
   lancamentos: Lancamento[],
   compras: CompraCartao[],
   ehCartao: boolean,
+  usados: Set<string> = new Set(),
 ): Existente | null {
   const perto = (data: string) => diasEntre(data, l.data) <= 3;
   const igual = (data: string, valor: number, conta?: string) =>
     data === l.data && Math.abs(valor - l.valor) < 0.01 && conta === contaId;
+  const melhor = <T extends { id: string; data: string }>(lista: T[], conta: (x: T) => string | undefined) =>
+    lista
+      .filter((x) => !usados.has(x.id))
+      .sort(
+        (a, b) =>
+          Number(conta(b) === contaId) - Number(conta(a) === contaId) || diasEntre(a.data, l.data) - diasEntre(b.data, l.data),
+      )[0];
+
   if (ehCartao) {
-    const c = compras.find(
-      (c) =>
-        c.extratoId === l.id ||
-        (c.cartaoId === contaId && perto(c.data) && valorParecido(c.valorTotal, l.valor, c.categoria === l.categoria)),
-    );
+    const p = l.parcela;
+    const c =
+      compras.find((c) => c.extratoId === l.id && !usados.has(c.id)) ??
+      melhor(
+        compras.filter((c) =>
+          p
+            ? c.cartaoId === contaId &&
+              c.parcelas === p.total &&
+              Math.abs(c.valorTotal / c.parcelas - l.valor) <= 0.05 &&
+              nomesParecidos(c.descricao, l.descricao)
+            : c.cartaoId === contaId && perto(c.data) && valorParecido(c.valorTotal, l.valor, c.categoria === l.categoria),
+        ),
+        (c) => c.cartaoId,
+      );
     if (!c) return null;
-    const exato = c.extratoId === l.id || igual(c.data, c.valorTotal, c.cartaoId);
-    return { id: c.id, descricao: c.descricao, data: c.data, valor: c.valorTotal, contaId: c.cartaoId, exato };
+    usados.add(c.id);
+    const exato = c.extratoId === l.id || (!!p && c.parcelas === p.total) || igual(c.data, c.valorTotal, c.cartaoId);
+    return {
+      id: c.id,
+      descricao: c.descricao,
+      data: c.data,
+      valor: p ? c.valorTotal / c.parcelas : c.valorTotal,
+      contaId: c.cartaoId,
+      exato,
+    };
   }
-  // Prefere o que é igualzinho; senão, o mais parecido
-  const candidatos = lancamentos.filter(
-    (x) =>
-      x.extratoId === l.id ||
-      (x.tipo === l.tipo && perto(x.data) && valorParecido(x.valor, l.valor, x.categoria === l.categoria)),
-  );
-  const x = candidatos.find((x) => x.extratoId === l.id || igual(x.data, x.valor, x.contaId)) ?? candidatos[0];
+  const x =
+    lancamentos.find((x) => x.extratoId === l.id && !usados.has(x.id)) ??
+    melhor(
+      lancamentos.filter(
+        (x) => x.pago && x.tipo === l.tipo && perto(x.data) && valorParecido(x.valor, l.valor, x.categoria === l.categoria),
+      ),
+      (x) => x.contaId,
+    );
   if (!x) return null;
+  usados.add(x.id);
   const exato = x.extratoId === l.id || igual(x.data, x.valor, x.contaId);
   return { id: x.id, descricao: x.descricao, data: x.data, valor: x.valor, contaId: x.contaId, exato };
 }

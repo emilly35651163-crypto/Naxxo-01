@@ -40,6 +40,7 @@ export type Lancamento = {
   // Já estava dentro do saldo informado da conta (ex.: criou a conta depois do salário cair): conta como recebido, não soma de novo
   jaNoSaldo?: boolean;
   extratoId?: string; // veio do extrato do banco: a linha de lá (para não importar duas vezes)
+  importado?: boolean; // criado pela importação do extrato (dá para tirar tudo de uma vez)
 };
 
 /** As partes de uma renda que caem em datas diferentes. */
@@ -174,6 +175,7 @@ export type CompraCartao = {
   compraMercadoId?: string; // quando é uma ida ao mercado no crédito
   subcategoria?: string;
   extratoId?: string; // veio do extrato do cartão
+  importado?: boolean; // criada pela importação do extrato
 };
 
 export type PagamentoFatura = {
@@ -1220,6 +1222,37 @@ export function adicionarCompra(nova: Omit<CompraCartao, "id">) {
 
 export function atualizarCompra(id: string, mudancas: Partial<CompraCartao>) {
   compras.gravar(compras.ler().map((c) => (c.id === id ? { ...c, ...mudancas } : c)));
+}
+
+/**
+ * Zerar o cartão: tira todas as compras dele (para importar de novo do extrato, por exemplo).
+ * Ficam as compras ligadas a uma dívida da Trilha. Devolve quantas saíram.
+ */
+export function zerarCartao(cartaoId: string) {
+  const sair = compras.ler().filter((c) => c.cartaoId === cartaoId && !c.metaId);
+  const ids = new Set(sair.map((c) => c.id));
+  const mercado = new Set(sair.map((c) => c.compraMercadoId).filter(Boolean));
+  if (mercado.size) comprasMercado.gravar(comprasMercado.ler().filter((c) => !mercado.has(c.id)));
+  compras.gravar(compras.ler().filter((c) => !ids.has(c.id)));
+  return sair.length;
+}
+
+/**
+ * Tira desta conta (ou cartão) tudo o que veio do extrato: o que a importação criou sai;
+ * o que já existia e só foi ligado ao extrato volta a ser como era (sem a ligação). Devolve quantos saíram.
+ */
+export function tirarDoExtrato(contaId: string) {
+  const criados = lancamentos.ler().filter((l) => l.contaId === contaId && l.importado);
+  criados.forEach((l) => removerLancamento(l.id));
+  lancamentos.gravar(lancamentos.ler().map((l) => (l.contaId === contaId && l.extratoId ? { ...l, extratoId: undefined } : l)));
+  const comprasCriadas = compras.ler().filter((c) => c.cartaoId === contaId && c.importado);
+  compras.gravar(
+    compras
+      .ler()
+      .filter((c) => !(c.cartaoId === contaId && c.importado))
+      .map((c) => (c.cartaoId === contaId && c.extratoId ? { ...c, extratoId: undefined } : c)),
+  );
+  return criados.length + comprasCriadas.length;
 }
 
 export function removerCompra(id: string) {

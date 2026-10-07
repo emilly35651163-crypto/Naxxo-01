@@ -5,7 +5,6 @@ import {
   adicionarCompras,
   adicionarGastoFixo,
   adicionarLancamentos,
-  CATEGORIAS_FIXO,
   lerLancamentos,
   atualizarCompra,
   atualizarLancamento,
@@ -15,7 +14,7 @@ import {
   useCompras,
   useLancamentos,
 } from "@/lib/store";
-import { brl, formatarData, hojeISO, mesAtual, somarMeses } from "@/lib/formato";
+import { brl, dataDoRecebimento, formatarData, hojeISO, mesAtual, somarMeses } from "@/lib/formato";
 import { previstosDoMes, type Previsto } from "@/lib/previstos";
 import { useDados } from "@/lib/dados";
 import { confirmarPrevisto } from "./ConfirmarPrevisto";
@@ -56,6 +55,28 @@ type Linha = LinhaExtrato & {
 
 const resolvida = (l: Linha) => !!l.ligado || !!l.frequente;
 
+/** A linha sem o que foi calculado (para calcular de novo ao trocar de conta); fica o que a pessoa escolheu. */
+function semCalculo(l: LinhaExtrato | Linha): LinhaExtrato & Pick<Linha, "ligado" | "frequente"> {
+  const c: Partial<Linha> = { ...l };
+  delete c.marcada;
+  delete c.aviso;
+  delete c.conflito;
+  delete c.escolha;
+  delete c.sugestao;
+  delete c.recusou;
+  delete c.painel;
+  return c as LinhaExtrato;
+}
+
+/** A mesma compra parcelada (mesmo nome, nº de parcelas e valor) */
+const chaveDaCompra = (l: LinhaExtrato) => `${l.descricao.toLowerCase()}|${l.parcela?.total}|${l.valor}`;
+
+/** Data da compra de uma parcela: a parcela N caiu N-1 meses depois da compra. */
+function dataDaCompra(l: LinhaExtrato) {
+  if (!l.parcela || l.parcela.numero <= 1) return l.data;
+  return dataDoRecebimento(String(Number(l.data.slice(8, 10))), somarMeses(l.data.slice(0, 7), -(l.parcela.numero - 1)));
+}
+
 // Importar o extrato do banco (OFX ou CSV): mostra tudo antes, a pessoa desmarca o que não quer e importa.
 export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar: () => void; arquivoInicial?: File | null }) {
   const contas = useCartoes();
@@ -75,12 +96,20 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
   const conta = opcoes.find((c) => c.id === contaId);
 
   // Marca o que é novo; desmarca o que já está no app e o pagamento de fatura (esse se registra pela fatura)
-  function preparar(lidas: LinhaExtrato[], cartao: boolean, id: string): Linha[] {
+  function preparar(lidas: (LinhaExtrato | Linha)[], cartao: boolean, id: string): Linha[] {
     const usados = new Set<string>(); // cada previsto é sugerido para uma linha só
+    const usadosNoApp = new Set<string>(); // cada lançamento/compra do app vale para uma linha só
+    // Parcelas da mesma compra no arquivo (ex.: 2/10 e 3/10 em faturas diferentes): fica uma só, a mais recente
+    const ultimaParcela = new Map<string, number>();
+    for (const l of lidas)
+      if (l.parcela) ultimaParcela.set(chaveDaCompra(l), Math.max(ultimaParcela.get(chaveDaCompra(l)) ?? 0, l.parcela.numero));
     return lidas
+      .map(semCalculo)
       .filter((l) => !cartao || l.tipo === "saida") // no cartão, pagamento e estorno não são compras
-      .map((l) => {
-        const existente = jaExiste(l, id, lancamentos, compras, cartao);
+      .map((l): Linha => {
+        if (l.parcela && ultimaParcela.get(chaveDaCompra(l)) !== l.parcela.numero)
+          return { ...l, marcada: false, aviso: "outra parcela da mesma compra (ela entra uma vez só, pela mais recente)" };
+        const existente = jaExiste(l, id, lancamentos, compras, cartao, usadosNoApp);
         if (existente?.exato) return { ...l, marcada: false, aviso: `já está no app: “${existente.descricao}”` };
         if (existente) return { ...l, marcada: false, conflito: existente };
         const sugestao = cartao ? undefined : previstoParecido(l, previstos, usados);
@@ -89,7 +118,11 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
           return { ...l, marcada: false, sugestao };
         }
         if (l.categoria === "Fatura do cartão")
-          return { ...l, marcada: false, aviso: "pagamento de fatura: registre em Contas → Pagar fatura" };
+          return {
+            ...l,
+            marcada: false,
+            aviso: "pagamento de fatura: use 🔗 Já está no app para ligar à fatura, ou marque para incluir",
+          };
         return { ...l, marcada: true };
       })
       .sort((a, b) => b.data.localeCompare(a.data));
@@ -140,7 +173,17 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
   const semResposta =
     linhas?.filter((l) => !resolvida(l) && ((l.conflito && !l.escolha) || (l.sugestao && !l.recusou))).length ?? 0;
   const nomeConta = (id?: string) => contas.find((x) => x.id === id)?.nome ?? "sem conta";
-  const totalSai = marcadas.filter((l) => l.tipo === "saida").reduce((t, l) => t + l.valor, 0);
+  // O que outras linhas já ligaram: não aparece de novo na lista de ligar
+  const ocupados = new Set(
+    (linhas ?? []).flatMap((l) =>
+      l.ligado
+        ? [l.ligado.tipo === "previsto" ? `p-${l.ligado.previsto.chave}` : `l-${l.ligado.id}`]
+        : l.sugestao && !l.recusou
+          ? [`p-${l.sugestao.chave}`]
+          : [],
+    ),
+  );
+  const totalSai = [...marcadas, ...frequentes].filter((l) => l.tipo === "saida").reduce((t, l) => t + l.valor, 0);
   const totalEntra = marcadas.filter((l) => l.tipo === "entrada").reduce((t, l) => t + l.valor, 0);
 
   const semDuvida = linhas?.filter((l) => !l.conflito && !l.sugestao && !resolvida(l)) ?? [];
@@ -170,17 +213,24 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
         );
         manter.forEach((l) => atualizarCompra(l.conflito!.id, { extratoId: l.id }));
         adicionarCompras(
-          marcadas.map((l) => ({
-            cartaoId: conta.id,
-            descricao: l.descricao,
-            categoria: l.categoria,
-            valorTotal: l.valor,
-            parcelas: 1,
-            // Faturas que já fecharam: a compra entra no histórico, mas não volta a cobrar
-            parcelasPagas: faturaDaData(l.data, conta) < aberta ? 1 : undefined,
-            data: l.data,
-            extratoId: l.id,
-          })),
+          marcadas.map((l) => {
+            const parcelas = l.parcela?.total ?? 1;
+            const numero = l.parcela?.numero ?? 1;
+            // Faturas que já fecharam: a parcela entra no histórico, mas não volta a cobrar
+            const fechou = faturaDaData(l.data, conta) < aberta;
+            const pagas = numero - 1 + (fechou ? 1 : 0);
+            return {
+              cartaoId: conta.id,
+              descricao: l.descricao,
+              categoria: l.categoria,
+              valorTotal: Math.round(l.valor * parcelas * 100) / 100,
+              parcelas,
+              parcelasPagas: pagas || undefined,
+              data: dataDaCompra(l),
+              extratoId: l.id,
+              importado: true,
+            };
+          }),
         );
       });
     } else {
@@ -203,7 +253,9 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
         for (const l of ligadas) {
           const ligacao = l.ligado!;
           if (ligacao.tipo === "lancamento") {
-            atualizarLancamento(ligacao.id, { extratoId: l.id });
+            const antigo = lancamentos.find((x) => x.id === ligacao.id);
+            // Sem conta (lançamento antigo): fica na conta do extrato
+            atualizarLancamento(ligacao.id, { extratoId: l.id, ...(antigo?.contaId ? {} : { contaId: conta.id }) });
             continue;
           }
           const antes = new Set(lerLancamentos().map((x) => x.id));
@@ -211,7 +263,15 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
           const novos = lerLancamentos().filter((x) => !antes.has(x.id));
           const marcar = novos.length ? novos : ligacao.previsto.lancamento ? [ligacao.previsto.lancamento] : [];
           // A data é a do extrato (ex.: parcela paga dias atrás)
-          marcar.forEach((x) => atualizarLancamento(x.id, { extratoId: l.id, data: l.data, jaNoSaldo: jaNoSaldo(l.data) }));
+          marcar.forEach((x) =>
+            atualizarLancamento(x.id, {
+              extratoId: l.id,
+              data: l.data,
+              jaNoSaldo: jaNoSaldo(l.data),
+              // Criado agora pela importação (dá para tirar depois); um lançamento que já existia continua dela
+              importado: novos.length > 0 || undefined,
+            }),
+          );
         }
 
         // Frequentes: cria o gasto que se repete; esta linha é o primeiro pagamento dele
@@ -239,7 +299,7 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
             tipo: "saida" as const,
             valor: l.valor,
             descricao: f.nome,
-            categoria: CATEGORIAS_FIXO.find((x) => x.id === f.categoria)?.categoriaLancamento ?? "Outros",
+            categoria: f.categoriaLancamento,
             data: l.data,
             pago: l.data <= hoje,
             contaId: conta.id,
@@ -247,6 +307,7 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
             competencia: mes,
             jaNoSaldo: jaNoSaldo(l.data),
             extratoId: l.id,
+            importado: true,
           };
         });
 
@@ -262,6 +323,7 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
             contaId: conta.id,
             jaNoSaldo: jaNoSaldo(l.data),
             extratoId: l.id,
+            importado: true,
           })),
         ]);
       });
@@ -299,7 +361,10 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
             type="file"
             accept=".ofx,.csv,.txt,.qfx"
             className="sr-only"
-            onChange={(e) => void escolherArquivo(e.target.files?.[0])}
+            onChange={(e) => {
+              void escolherArquivo(e.target.files?.[0]);
+              e.target.value = "";
+            }}
           />
         </label>
 
@@ -382,7 +447,10 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
                         </span>
                       </div>
                       <div className="mt-1 flex items-center gap-2 text-xs text-suave">
-                        <span>{formatarData(l.data)}</span>
+                        <span>
+                          {formatarData(l.data)}
+                          {l.parcela && ` · parcela ${l.parcela.numero}/${l.parcela.total}`}
+                        </span>
                         <select
                           value={l.categoria}
                           onChange={(e) => mudarLinha(i, { categoria: e.target.value })}
@@ -478,6 +546,7 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
                           linha={l}
                           previstos={previstos}
                           lancamentos={lancamentos}
+                          ocupados={ocupados}
                           onLigar={(ligado) => mudarLinha(i, { ligado, painel: undefined })}
                           onFechar={() => mudarLinha(i, { painel: undefined })}
                         />
