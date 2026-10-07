@@ -24,6 +24,7 @@ import { DURACOES, previsaoDoMes, situacaoDoItem } from "@/lib/mercado";
 import { comDesfazer, mostrarAviso } from "@/lib/avisos";
 import FormItemLista from "./FormItemLista";
 import FormColarLista from "./FormColarLista";
+import FizOMercado from "./FizOMercado";
 import { gastosDoMes } from "@/lib/analise";
 import { useDados } from "@/lib/dados";
 import CamposPreco from "./CamposPreco";
@@ -164,6 +165,7 @@ export default function Mercado() {
                   </div>
                 );
               })}
+              <FizOMercado lista={lista} contaId={contaId} />
             </>
           )}
         </section>
