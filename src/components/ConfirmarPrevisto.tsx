@@ -31,6 +31,36 @@ function contaSugerida(p: Previsto) {
   return id ? `debito:${id}` : "";
 }
 
+/** Confirma um previsto (pago/recebido) no débito/Pix, com o valor, a data e a conta reais. Também usado ao importar extrato. */
+export function confirmarPrevisto(p: Previsto, numero: number, data: string, contaId?: string) {
+  const competencia = p.item?.tipo === "fixo" ? p.item.competencia : undefined;
+  if (p.origem === "lançamento" && p.lancamento) {
+    atualizarLancamento(p.lancamento.id, { pago: true, valor: numero, data, contaId });
+  } else if ((p.origem === "renda" || p.origem === "benefício") && p.fonte) {
+    const parte = p.parte;
+    adicionarLancamento({
+      tipo: "entrada",
+      valor: numero,
+      descricao: p.nome,
+      categoria: p.origem === "benefício" ? "Benefícios" : rendaFixa(p.fonte.forma) ? "Salário" : "Freelance",
+      data,
+      pago: true,
+      fonteId: p.fonte.id,
+      contaId,
+      parteRenda: parte?.parte,
+      beneficio: parte?.beneficio?.tipo,
+    });
+  } else if (p.item?.tipo === "fixo") {
+    pagarGastoFixo(p.item.fixo, numero, data, contaId, undefined, competencia);
+  } else if (p.item?.tipo === "fatura") {
+    pagarFatura(p.item.cartao, p.item.fatura, numero, data, contaId);
+  } else if (p.origem === "parcela" && p.meta) {
+    pagarParcela(p.meta.id, contaId, numero);
+  } else if (p.origem === "guardar" && p.meta) {
+    guardarNaMeta(p.meta.id, numero, contaId, data.slice(0, 7) === p.data.slice(0, 7) ? data : p.data);
+  }
+}
+
 // "Pago" / "Recebi": confirma um previsto, com o valor real e a conta de onde saiu (ou onde entrou).
 export default function ConfirmarPrevisto({ previsto: p, onFechar }: { previsto: Previsto; onFechar: () => void }) {
   const contas = useCartoes();
@@ -67,31 +97,7 @@ export default function ConfirmarPrevisto({ previsto: p, onFechar }: { previsto:
       return onFechar();
     }
 
-    if (p.origem === "lançamento" && p.lancamento) {
-      atualizarLancamento(p.lancamento.id, { pago: true, valor: numero, data, contaId });
-    } else if ((p.origem === "renda" || p.origem === "benefício") && p.fonte) {
-      const parte = p.parte;
-      adicionarLancamento({
-        tipo: "entrada",
-        valor: numero,
-        descricao: p.nome,
-        categoria: p.origem === "benefício" ? "Benefícios" : rendaFixa(p.fonte.forma) ? "Salário" : "Freelance",
-        data,
-        pago: true,
-        fonteId: p.fonte.id,
-        contaId,
-        parteRenda: parte?.parte,
-        beneficio: parte?.beneficio?.tipo,
-      });
-    } else if (p.item?.tipo === "fixo") {
-      pagarGastoFixo(p.item.fixo, numero, data, contaId, undefined, competencia);
-    } else if (p.item?.tipo === "fatura") {
-      pagarFatura(p.item.cartao, p.item.fatura, numero, data, contaId);
-    } else if (p.origem === "parcela" && p.meta) {
-      pagarParcela(p.meta.id, contaId, numero);
-    } else if (p.origem === "guardar" && p.meta) {
-      guardarNaMeta(p.meta.id, numero, contaId, data.slice(0, 7) === p.data.slice(0, 7) ? data : p.data);
-    }
+    confirmarPrevisto(p, numero, data, contaId);
     mostrarAviso({ texto: entrada ? "Recebido ✓" : p.origem === "guardar" ? "Guardado 🎯" : "Pago ✓" });
     onFechar();
   }

@@ -737,6 +737,11 @@ export function useLancamentos() {
   return useSyncExternalStore(inscrever, lancamentos.ler, () => SEM_LANCAMENTOS);
 }
 
+/** Os lançamentos agora (fora de um componente). */
+export function lerLancamentos() {
+  return lancamentos.ler();
+}
+
 /** Vários de uma vez (ex.: importar extrato): grava uma vez só. */
 export function adicionarLancamentos(novos: Omit<Lancamento, "id">[]) {
   const criadoEm = agoraLocal();

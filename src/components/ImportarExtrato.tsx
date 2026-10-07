@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import {
   adicionarCompras,
+  adicionarGastoFixo,
   adicionarLancamentos,
+  CATEGORIAS_FIXO,
+  lerLancamentos,
   atualizarCompra,
   atualizarLancamento,
   categoriasDe,
@@ -12,7 +15,11 @@ import {
   useCompras,
   useLancamentos,
 } from "@/lib/store";
-import { brl, formatarData, hojeISO } from "@/lib/formato";
+import { brl, formatarData, hojeISO, mesAtual, somarMeses } from "@/lib/formato";
+import { previstosDoMes, type Previsto } from "@/lib/previstos";
+import { useDados } from "@/lib/dados";
+import { confirmarPrevisto } from "./ConfirmarPrevisto";
+import { PainelFrequente, PainelLigar, previstoParecido, type Frequente, type Ligacao } from "./LigarOuFrequente";
 import { cartoesDeCredito, marcoDoSaldo } from "@/lib/contas";
 import { faturaAberta, faturaDaData } from "@/lib/cartoes";
 import { jaExiste, lerExtrato, type Existente, type LinhaExtrato } from "@/lib/extrato";
@@ -32,7 +39,22 @@ async function lerArquivo(arquivo: File) {
  * - "app": o que já estava fica como está;  - "extrato": corrige o que estava com os dados do extrato;
  * - "ambos": são duas coisas diferentes, inclui a do extrato também.
  */
-type Linha = LinhaExtrato & { marcada: boolean; aviso?: string; conflito?: Existente; escolha?: "app" | "extrato" | "ambos" };
+type Linha = LinhaExtrato & {
+  marcada: boolean;
+  aviso?: string;
+  conflito?: Existente;
+  escolha?: "app" | "extrato" | "ambos";
+  /** Previsto que parece ser esta linha (ex.: o salário do mês): a pessoa confirma ou diz que não é */
+  sugestao?: Previsto;
+  recusou?: boolean;
+  /** "Já está no app": ligada a um lançamento ou previsto */
+  ligado?: Ligacao;
+  /** Vira um gasto frequente (dívida, gasolina…) */
+  frequente?: Frequente;
+  painel?: "ligar" | "frequente";
+};
+
+const resolvida = (l: Linha) => !!l.ligado || !!l.frequente;
 
 // Importar o extrato do banco (OFX ou CSV): mostra tudo antes, a pessoa desmarca o que não quer e importa.
 export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar: () => void; arquivoInicial?: File | null }) {
@@ -40,6 +62,8 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
   const lancamentos = useLancamentos();
   const compras = useCompras();
   const personalizadas = useCategoriasPersonalizadas();
+  const dados = useDados();
+  const previstos = previstosDoMes(mesAtual(), dados);
   const [linhas, setLinhas] = useState<Linha[] | null>(null);
   const [ehCartao, setEhCartao] = useState(false);
   const [contaId, setContaId] = useState("");
@@ -52,12 +76,18 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
 
   // Marca o que é novo; desmarca o que já está no app e o pagamento de fatura (esse se registra pela fatura)
   function preparar(lidas: LinhaExtrato[], cartao: boolean, id: string): Linha[] {
+    const usados = new Set<string>(); // cada previsto é sugerido para uma linha só
     return lidas
       .filter((l) => !cartao || l.tipo === "saida") // no cartão, pagamento e estorno não são compras
       .map((l) => {
         const existente = jaExiste(l, id, lancamentos, compras, cartao);
         if (existente?.exato) return { ...l, marcada: false, aviso: `já está no app: “${existente.descricao}”` };
         if (existente) return { ...l, marcada: false, conflito: existente };
+        const sugestao = cartao ? undefined : previstoParecido(l, previstos, usados);
+        if (sugestao) {
+          usados.add(sugestao.chave);
+          return { ...l, marcada: false, sugestao };
+        }
         if (l.categoria === "Fatura do cartão")
           return { ...l, marcada: false, aviso: "pagamento de fatura: registre em Contas → Pagar fatura" };
         return { ...l, marcada: true };
@@ -102,24 +132,33 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
     setLinhas((atual) => atual && atual.map((l, j) => (j === i ? { ...l, ...mudancas } : l)));
   }
 
-  const marcadas = linhas?.filter((l) => (l.conflito ? l.escolha === "ambos" : l.marcada)) ?? [];
-  const corrigir = linhas?.filter((l) => l.conflito && l.escolha === "extrato") ?? [];
-  const manter = linhas?.filter((l) => l.conflito && l.escolha === "app") ?? [];
-  const semResposta = linhas?.filter((l) => l.conflito && !l.escolha).length ?? 0;
+  const marcadas = linhas?.filter((l) => !resolvida(l) && (l.conflito ? l.escolha === "ambos" : l.marcada)) ?? [];
+  const corrigir = linhas?.filter((l) => !resolvida(l) && l.conflito && l.escolha === "extrato") ?? [];
+  const manter = linhas?.filter((l) => !resolvida(l) && l.conflito && l.escolha === "app") ?? [];
+  const ligadas = linhas?.filter((l) => l.ligado) ?? [];
+  const frequentes = linhas?.filter((l) => !l.ligado && l.frequente) ?? [];
+  const semResposta =
+    linhas?.filter((l) => !resolvida(l) && ((l.conflito && !l.escolha) || (l.sugestao && !l.recusou))).length ?? 0;
   const nomeConta = (id?: string) => contas.find((x) => x.id === id)?.nome ?? "sem conta";
   const totalSai = marcadas.filter((l) => l.tipo === "saida").reduce((t, l) => t + l.valor, 0);
   const totalEntra = marcadas.filter((l) => l.tipo === "entrada").reduce((t, l) => t + l.valor, 0);
 
-  const semDuvida = linhas?.filter((l) => !l.conflito) ?? [];
+  const semDuvida = linhas?.filter((l) => !l.conflito && !l.sugestao && !resolvida(l)) ?? [];
   const todasMarcadas = semDuvida.length > 0 && semDuvida.every((l) => l.marcada);
 
   function importar() {
     if (!conta) return setErro(ehCartao ? "Escolha o cartão." : "Escolha a conta.");
     if (semResposta > 0)
-      return setErro(`Falta dizer qual está certo em ${semResposta} ${semResposta > 1 ? "itens" : "item"} (marcados com ⚖️).`);
-    if (marcadas.length + corrigir.length + manter.length === 0) return setErro("Marque pelo menos uma movimentação.");
+      return setErro(`Falta responder ${semResposta} ${semResposta > 1 ? "itens" : "item"} (os quadros amarelos ⚖️ e 💡).`);
+    if (marcadas.length + corrigir.length + manter.length + ligadas.length + frequentes.length === 0)
+      return setErro("Marque pelo menos uma movimentação.");
     const hoje = hojeISO();
-    const texto = [marcadas.length && `${marcadas.length} importados`, corrigir.length && `${corrigir.length} corrigidos`]
+    const texto = [
+      marcadas.length && `${marcadas.length} importados`,
+      corrigir.length && `${corrigir.length} corrigidos`,
+      ligadas.length && `${ligadas.length} ligados`,
+      frequentes.length && `${frequentes.length} gastos frequentes criados`,
+    ]
       .filter(Boolean)
       .join(", ");
     if (ehCartao) {
@@ -158,8 +197,62 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
           }),
         );
         manter.forEach((l) => atualizarLancamento(l.conflito!.id, { extratoId: l.id }));
-        adicionarLancamentos(
-          marcadas.map((l) => ({
+        const jaNoSaldo = (data: string) => data <= diaDoMarco || undefined;
+
+        // Ligadas: o lançamento ganha a marca do extrato; o previsto é confirmado (pago/recebido) com os dados do extrato
+        for (const l of ligadas) {
+          const ligacao = l.ligado!;
+          if (ligacao.tipo === "lancamento") {
+            atualizarLancamento(ligacao.id, { extratoId: l.id });
+            continue;
+          }
+          const antes = new Set(lerLancamentos().map((x) => x.id));
+          confirmarPrevisto(ligacao.previsto, l.valor, l.data, conta.id);
+          const novos = lerLancamentos().filter((x) => !antes.has(x.id));
+          const marcar = novos.length ? novos : ligacao.previsto.lancamento ? [ligacao.previsto.lancamento] : [];
+          // A data é a do extrato (ex.: parcela paga dias atrás)
+          marcar.forEach((x) => atualizarLancamento(x.id, { extratoId: l.id, data: l.data, jaNoSaldo: jaNoSaldo(l.data) }));
+        }
+
+        // Frequentes: cria o gasto que se repete; esta linha é o primeiro pagamento dele
+        const pagamentos = frequentes.map((l) => {
+          const f = l.frequente!;
+          const mes = l.data.slice(0, 7);
+          const restantes = Number(f.restantes);
+          const fixoId = adicionarGastoFixo({
+            nome: f.nome,
+            icone: f.icone,
+            categoria: f.categoria,
+            valor: l.valor,
+            varia: f.varia,
+            dia: Number(l.data.slice(8, 10)),
+            pagamento: "debito",
+            contaId: conta.id,
+            desde: mes,
+            criadoEm: l.data,
+            ...(f.intervaloDias > 0
+              ? { frequencia: "personalizada" as const, intervaloDias: f.intervaloDias, inicio: l.data }
+              : {}),
+            ate: restantes > 0 ? somarMeses(mes, restantes - 1) : undefined,
+          });
+          return {
+            tipo: "saida" as const,
+            valor: l.valor,
+            descricao: f.nome,
+            categoria: CATEGORIAS_FIXO.find((x) => x.id === f.categoria)?.categoriaLancamento ?? "Outros",
+            data: l.data,
+            pago: l.data <= hoje,
+            contaId: conta.id,
+            gastoFixoId: fixoId,
+            competencia: mes,
+            jaNoSaldo: jaNoSaldo(l.data),
+            extratoId: l.id,
+          };
+        });
+
+        adicionarLancamentos([
+          ...pagamentos,
+          ...marcadas.map((l) => ({
             tipo: l.tipo,
             valor: l.valor,
             descricao: l.descricao,
@@ -167,10 +260,10 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
             data: l.data,
             pago: l.data <= hoje,
             contaId: conta.id,
-            jaNoSaldo: l.data <= diaDoMarco || undefined,
+            jaNoSaldo: jaNoSaldo(l.data),
             extratoId: l.id,
           })),
-        );
+        ]);
       });
     }
     onFechar();
@@ -243,11 +336,11 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
             <div className="flex items-center justify-between text-sm">
               <span>
                 <b>{marcadas.length}</b> de {linhas.length} marcadas
-                {semResposta > 0 && <span className="text-amber-300"> · {semResposta} para conferir ⚖️</span>}
+                {semResposta > 0 && <span className="text-amber-300"> · {semResposta} para conferir</span>}
               </span>
               <button
                 type="button"
-                onClick={() => setLinhas(linhas.map((l) => (l.conflito ? l : { ...l, marcada: !todasMarcadas })))}
+                onClick={() => setLinhas(linhas.map((l) => (semDuvida.includes(l) ? { ...l, marcada: !todasMarcadas } : l)))}
                 className="text-rosa"
               >
                 {todasMarcadas ? "Desmarcar todas" : "Marcar todas"}
@@ -258,13 +351,17 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
               {linhas.map((l, i) => (
                 <li
                   key={l.id}
-                  className={`rounded-2xl border px-3 py-2 ${l.marcada ? "border-white/15 bg-fundo/60" : "border-white/5 opacity-60"}`}
+                  className={`rounded-2xl border px-3 py-2 ${
+                    l.marcada || resolvida(l) || l.conflito || (l.sugestao && !l.recusou)
+                      ? "border-white/15 bg-fundo/60"
+                      : "border-white/5 opacity-60"
+                  }`}
                 >
                   <div className="flex items-start gap-3">
                     <input
                       type="checkbox"
-                      disabled={!!l.conflito}
-                      checked={l.conflito ? l.escolha === "ambos" : l.marcada}
+                      disabled={!!l.conflito || resolvida(l) || (!!l.sugestao && !l.recusou)}
+                      checked={resolvida(l) || (l.conflito ? l.escolha === "ambos" : l.marcada)}
                       onChange={(e) => mudarLinha(i, { marcada: e.target.checked })}
                       aria-label={`Importar ${l.descricao}`}
                       className="mt-1 size-4 accent-[#FF4ED8]"
@@ -302,7 +399,97 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
                         </select>
                       </div>
                       {l.aviso && <p className="mt-1 text-[0.7rem] text-amber-300">⚠️ {l.aviso}</p>}
-                      {l.conflito && (
+                      {l.ligado && (
+                        <p className="mt-1.5 text-xs text-entrada">
+                          🔗 Ligado a: <b>{l.ligado.tipo === "previsto" ? l.ligado.previsto.nome : l.ligado.descricao}</b>
+                          {l.ligado.tipo === "previsto" && " (vai ficar como pago/recebido)"}{" "}
+                          <button
+                            type="button"
+                            onClick={() => mudarLinha(i, { ligado: undefined })}
+                            className="text-suave underline"
+                          >
+                            desfazer
+                          </button>
+                        </p>
+                      )}
+                      {l.frequente && !l.ligado && (
+                        <p className="mt-1.5 text-xs text-entrada">
+                          🔁 Vira gasto frequente: <b>{l.frequente.nome}</b> (
+                          {l.frequente.intervaloDias ? `a cada ${l.frequente.intervaloDias} dias` : "todo mês"}
+                          {l.frequente.restantes ? `, ${l.frequente.restantes} parcelas` : ""}){" "}
+                          <button
+                            type="button"
+                            onClick={() => mudarLinha(i, { frequente: undefined })}
+                            className="text-suave underline"
+                          >
+                            desfazer
+                          </button>
+                        </p>
+                      )}
+                      {l.sugestao && !l.recusou && !resolvida(l) && (
+                        <div className="mt-2 space-y-2 rounded-xl border border-amber-300/40 bg-amber-300/10 p-2 text-xs">
+                          <p>
+                            💡 Parece ser{" "}
+                            <b>
+                              {l.sugestao.icone} {l.sugestao.nome}
+                            </b>{" "}
+                            (previsto para {formatarData(l.sugestao.data)}, {brl(l.sugestao.valor)}). É isso?
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => mudarLinha(i, { ligado: { tipo: "previsto", previsto: l.sugestao! } })}
+                              className="rounded-full border border-white/15 px-2.5 py-1 hover:border-rosa"
+                            >
+                              É esse (ligar)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => mudarLinha(i, { recusou: true, marcada: true })}
+                              className="rounded-full border border-white/15 px-2.5 py-1 text-suave hover:text-white"
+                            >
+                              Não é: incluir como novo
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {!ehCartao && !resolvida(l) && !l.painel && (
+                        <div className="mt-1.5 flex flex-wrap gap-3 text-[0.7rem]">
+                          <button
+                            type="button"
+                            onClick={() => mudarLinha(i, { painel: "ligar" })}
+                            className="text-rosa hover:underline"
+                          >
+                            🔗 Já está no app
+                          </button>
+                          {l.tipo === "saida" && (
+                            <button
+                              type="button"
+                              onClick={() => mudarLinha(i, { painel: "frequente" })}
+                              className="text-rosa hover:underline"
+                            >
+                              🔁 Gasto frequente
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      {l.painel === "ligar" && !resolvida(l) && (
+                        <PainelLigar
+                          linha={l}
+                          previstos={previstos}
+                          lancamentos={lancamentos}
+                          onLigar={(ligado) => mudarLinha(i, { ligado, painel: undefined })}
+                          onFechar={() => mudarLinha(i, { painel: undefined })}
+                        />
+                      )}
+                      {l.painel === "frequente" && !resolvida(l) && (
+                        <PainelFrequente
+                          linha={l}
+                          onSalvar={(frequente) => mudarLinha(i, { frequente, painel: undefined })}
+                          onFechar={() => mudarLinha(i, { painel: undefined })}
+                        />
+                      )}
+                      {l.conflito && !resolvida(l) && (
                         <div className="mt-2 space-y-2 rounded-xl border border-amber-300/40 bg-amber-300/10 p-2 text-xs">
                           <p>
                             ⚖️ Parecido com o que já está no app: <b>“{l.conflito.descricao}”</b>
@@ -376,8 +563,8 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
         {linhas && (
           <button type="button" onClick={importar} className="botao-gradiente w-full rounded-full py-3 font-semibold">
             {semResposta > 0
-              ? `Responda os ${semResposta} ⚖️ para continuar`
-              : `Importar ${marcadas.length} ${ehCartao ? "compras" : "lançamentos"}${corrigir.length ? ` e corrigir ${corrigir.length}` : ""}`}
+              ? `Responda os ${semResposta} quadros amarelos para continuar`
+              : `Importar ${marcadas.length + frequentes.length} ${ehCartao ? "compras" : "lançamentos"}${corrigir.length ? ` · corrigir ${corrigir.length}` : ""}${ligadas.length ? ` · ligar ${ligadas.length}` : ""}`}
           </button>
         )}
       </div>
