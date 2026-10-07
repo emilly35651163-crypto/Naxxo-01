@@ -38,6 +38,7 @@ export default function Mercado() {
   const mes = useMes();
   const [adicionando, setAdicionando] = useState(false);
   const [colando, setColando] = useState(false);
+  const [emCasaNovo, setEmCasaNovo] = useState(false);
   const [editando, setEditando] = useState<ItemLista | null>(null);
   const [listaAberta, setListaAberta] = useState(true);
 
@@ -174,7 +175,15 @@ export default function Mercado() {
       {/* Pós-compra: o que tem em casa e quando acaba */}
       {emCasa.length > 0 && (
         <section className="cartao p-4">
-          <h2 className="mb-3 font-display font-semibold">🏠 Em casa</h2>
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h2 className="font-display font-semibold">🏠 Em casa</h2>
+            <button
+              onClick={() => setEmCasaNovo(true)}
+              className="rounded-full border border-rosa/50 px-3 py-1.5 text-sm text-rosa"
+            >
+              + Já tenho em casa
+            </button>
+          </div>
           <ul className="divide-y divide-white/5">
             {emCasa.map(({ item, s }) => (
               <li key={item.id} className="flex items-center gap-3 py-2.5">
@@ -215,10 +224,16 @@ export default function Mercado() {
       )}
 
       {lista.length === 0 && emCasa.length === 0 && (
-        <p className="cartao p-5 text-center text-sm text-suave">Comece adicionando o que você costuma comprar. 🛒</p>
+        <div className="cartao space-y-3 p-5 text-center text-sm text-suave">
+          <p>Comece adicionando o que você costuma comprar. 🛒</p>
+          <button onClick={() => setEmCasaNovo(true)} className="rounded-full border border-rosa/50 px-4 py-1.5 text-rosa">
+            + Já tenho em casa
+          </button>
+        </div>
       )}
 
       {colando && <FormColarLista onFechar={() => setColando(false)} />}
+      {emCasaNovo && <FormItemLista emCasa onFechar={() => setEmCasaNovo(false)} />}
       {(adicionando || editando) && (
         <FormItemLista
           inicial={editando ?? undefined}

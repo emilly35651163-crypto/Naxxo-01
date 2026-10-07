@@ -65,9 +65,7 @@ export default function FormColarLista({ onFechar }: { onFechar: () => void }) {
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
           rows={7}
-          placeholder={
-            "Um item por linha, com o preço no fim:\n5kg Arroz 24,99\n4 Sabonete de 5,88\n2 pacotinhos Bacon 14,99 cada"
-          }
+          placeholder={"Um item por linha (o preço no fim é opcional):\n5kg Arroz 24,99\n4 Sabonete 23,52\n2 Pão\nAlface"}
           className="campo resize-y"
         />
 
@@ -106,9 +104,12 @@ export default function FormColarLista({ onFechar }: { onFechar: () => void }) {
                     {i.nome}{" "}
                     <span className="text-xs text-suave">
                       {i.qtd} {i.unidadeQtd}
+                      {i.total > 0 && ` × ${brl(i.precoUnidade)}`}
                     </span>
                   </span>
-                  <span className="tabular-nums">{brl(i.total)}</span>
+                  <span className="tabular-nums">
+                    {i.total > 0 ? brl(i.total) : <span className="text-xs text-suave">sem preço</span>}
+                  </span>
                 </li>
               ))}
             </ul>

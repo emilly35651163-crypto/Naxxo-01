@@ -190,16 +190,13 @@ export function lerListaColada(textoColado: string, precoDaLinha = true): ItemCo
   for (const bruta of textoColado.split(/\r?\n/)) {
     let linha = bruta.trim();
     if (!linha) continue;
+    // Preço no fim da linha (sem preço = R$ 0, para preencher depois)
     const preco = linha.match(/(\d{1,3}(?:\.\d{3})*,\d{2}|\d+[.,]\d{2})\s*(cada|und|un)?\s*$/i);
-    if (!preco) continue;
-    let valor = num(preco[1].includes(",") ? preco[1] : preco[1].replace(".", ","));
-    // Na nota do mercado, o número já é o total da linha; "de cada unidade" multiplica pela quantidade
-    let porUnidade = !precoDaLinha && !!preco[2] && /cada/i.test(preco[2]);
-    linha = linha.slice(0, preco.index).trim();
-    if (/\sde$/i.test(linha)) {
-      porUnidade = !precoDaLinha;
-      linha = linha.replace(/\s+de$/i, "").trim();
-    }
+    let valor = preco ? num(preco[1].includes(",") ? preco[1] : preco[1].replace(".", ",")) : 0;
+    // "Total da linha" (como na nota): o número já é o total. "De cada unidade": multiplica pela quantidade.
+    const porUnidade = !precoDaLinha;
+    if (preco) linha = linha.slice(0, preco.index).trim();
+    linha = linha.replace(/\s+(de|cada)$/i, "").trim();
     // Quantidade e medida no começo: "5kg", "300g", "2 und", "2 pacotinhos", "pote de", "1,5kg de"
     const q = linha.match(
       /^(\d+(?:[.,]\d+)?)?\s*(kg|g|ml|l|litros?|und|un|unid|pacotinhos?|pacotes?|potes?|bandejas?)?\.?\s+(?:de\s+)?/i,
@@ -228,6 +225,7 @@ export function lerListaColada(textoColado: string, precoDaLinha = true): ItemCo
       total = valor;
     }
     valor = total / (qtd || 1);
+    if (!nome.trim()) continue;
     const igual = itens.find((i) => semAcento(i.nome) === semAcento(nome));
     if (igual) {
       const novaQtd = num(igual.qtd) + qtd;

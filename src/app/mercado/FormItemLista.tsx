@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import {
+  adicionarNaDespensa,
   adicionarNaLista,
+  duracaoTotal,
+  totalDoItemLista,
   atualizarItemLista,
   CATEGORIAS_MERCADO,
   semAcento,
@@ -14,7 +17,7 @@ import {
   type UnidadeDuracao,
   type UnidadeQtd,
 } from "@/lib/store";
-import { soNumeros } from "@/lib/formato";
+import { hojeISO, soNumeros } from "@/lib/formato";
 import { DURACOES, todasAsOpcoes } from "@/lib/mercado";
 import CamposPreco from "./CamposPreco";
 import { mostrarAviso } from "@/lib/avisos";
@@ -47,7 +50,15 @@ const NOMES_UNIDADE: Record<UnidadeQtd, string> = { un: "unidade", kg: "kg", g: 
 
 // Adicionar itens na lista, um de cada vez: categoria, nome (com sugestões), quantidade, preço e quanto dura.
 // Só o nome é obrigatório. "Adicionar mais" passa para o próximo; dá para voltar e corrigir o anterior.
-export default function FormItemLista({ inicial, onFechar }: { inicial?: ItemLista; onFechar: () => void }) {
+export default function FormItemLista({
+  inicial,
+  emCasa,
+  onFechar,
+}: {
+  inicial?: ItemLista;
+  emCasa?: boolean; // "Já tenho em casa": vai direto para "Em casa", sem passar pela lista
+  onFechar: () => void;
+}) {
   const despensa = useItensMercado();
   const criadas = useOpcoesMercado();
   const [rascunhos, setRascunhos] = useState<Rascunho[]>([
@@ -97,10 +108,23 @@ export default function FormItemLista({ inicial, onFechar }: { inicial?: ItemLis
         unidadeDuracao: x.duracao ? x.unidadeDuracao : undefined,
       };
       // Editando: atualiza o próprio item (mudar o nome não cria outro)
-      if (inicial && x === rascunhos[0]) atualizarItemLista(inicial.id, dados);
+      if (emCasa) {
+        adicionarNaDespensa({
+          nome: dados.nome,
+          icone: dados.icone,
+          categoria: dados.categoria,
+          quantidade: dados.qtd ? `${dados.qtd} ${dados.unidadeQtd}` : "",
+          valor: totalDoItemLista(dados),
+          ...duracaoTotal(dados),
+          origemDuracao: dados.duracao ? "informada" : undefined,
+          ultimaCompra: hojeISO(),
+          repor: true,
+        });
+      } else if (inicial && x === rascunhos[0]) atualizarItemLista(inicial.id, dados);
       else adicionarNaLista(dados);
     }
-    mostrarAviso({ texto: validos.length === 1 ? `${validos[0].nome.trim()} na lista ✓` : `${validos.length} itens na lista ✓` });
+    const onde = emCasa ? "em casa" : "na lista";
+    mostrarAviso({ texto: validos.length === 1 ? `${validos[0].nome.trim()} ${onde} ✓` : `${validos.length} itens ${onde} ✓` });
     return true;
   }
 

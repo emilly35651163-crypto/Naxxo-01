@@ -1467,7 +1467,7 @@ export function totalDoItemLista(l: Pick<ItemLista, "valor" | "qtd">) {
 }
 
 /** A duração na lista é de CADA unidade (ou kg/litro): em casa, dura isso × a quantidade. */
-function duracaoTotal(l: Pick<ItemLista, "duracao" | "unidadeDuracao" | "qtd" | "unidadeQtd">) {
+export function duracaoTotal(l: Pick<ItemLista, "duracao" | "unidadeDuracao" | "qtd" | "unidadeQtd">) {
   const porUnidade = Number(l.duracao);
   if (!(porUnidade > 0)) return { duracao: null, unidade: l.unidadeDuracao ?? ("meses" as UnidadeDuracao) };
   const qtd = lerValor(l.qtd ?? "") || 1;
