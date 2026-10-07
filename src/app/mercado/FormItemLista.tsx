@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   adicionarNaLista,
+  atualizarItemLista,
   CATEGORIAS_MERCADO,
   semAcento,
   UNIDADES_QTD,
@@ -85,8 +86,8 @@ export default function FormItemLista({ inicial, onFechar }: { inicial?: ItemLis
     const validos = rascunhos.filter((x) => x.nome.trim());
     if (validos.length === 0) return false;
     for (const x of validos) {
-      adicionarNaLista({
-        nome: x.nome,
+      const dados = {
+        nome: x.nome.trim(),
         icone: CATEGORIAS_MERCADO.find((c) => c.id === x.categoria)!.icone,
         categoria: x.categoria,
         qtd: x.qtd || undefined,
@@ -94,7 +95,10 @@ export default function FormItemLista({ inicial, onFechar }: { inicial?: ItemLis
         valor: x.valor || undefined,
         duracao: x.duracao || undefined,
         unidadeDuracao: x.duracao ? x.unidadeDuracao : undefined,
-      });
+      };
+      // Editando: atualiza o próprio item (mudar o nome não cria outro)
+      if (inicial && x === rascunhos[0]) atualizarItemLista(inicial.id, dados);
+      else adicionarNaLista(dados);
     }
     mostrarAviso({ texto: validos.length === 1 ? `${validos[0].nome.trim()} na lista ✓` : `${validos.length} itens na lista ✓` });
     return true;
