@@ -18,7 +18,6 @@ import { useDados } from "@/lib/dados";
 import ItemLancamento from "@/components/ItemLancamento";
 import ConfirmarPrevisto from "@/components/ConfirmarPrevisto";
 import EstadoVazio from "@/components/EstadoVazio";
-import ImportarExtrato from "@/components/ImportarExtrato";
 
 const FILTROS: { valor: Tipo | "tudo"; rotulo: string }[] = [
   { valor: "tudo", rotulo: "Tudo" },
@@ -55,9 +54,6 @@ export default function Lancamentos() {
   const [valorMax, setValorMax] = useState("");
   const [confirmando, setConfirmando] = useState<Previsto | null>(null);
   const [faturaAberta, setFaturaAberta] = useState<string | null>(null);
-  const [importando, setImportando] = useState(false);
-  const [arquivo, setArquivo] = useState<File | null>(null);
-  const [arrastando, setArrastando] = useState(false);
 
   // Busca sem acento: "acucar" acha "Açúcar"
   const termo = semAcento(busca);
@@ -98,32 +94,7 @@ export default function Lancamentos() {
   const categorias = [...categoriasDe("saida", personalizadas), ...categoriasDe("entrada", personalizadas)];
 
   return (
-    <div
-      className="relative space-y-5"
-      // Arrastar o extrato (dos Downloads) para qualquer lugar da tela abre a importação com ele
-      onDragOver={(e) => {
-        if (!e.dataTransfer.types.includes("Files")) return;
-        e.preventDefault();
-        setArrastando(true);
-      }}
-      onDragLeave={(e) => {
-        if (!e.currentTarget.contains(e.relatedTarget as Node)) setArrastando(false);
-      }}
-      onDrop={(e) => {
-        if (!e.dataTransfer.files[0]) return;
-        e.preventDefault();
-        setArrastando(false);
-        setArquivo(e.dataTransfer.files[0]);
-        setImportando(true);
-      }}
-    >
-      {arrastando && !importando && (
-        <div className="pointer-events-none fixed inset-0 z-40 grid place-items-center bg-fundo/80 backdrop-blur-sm">
-          <p className="rounded-3xl border-2 border-dashed border-rosa px-8 py-6 text-lg font-semibold text-rosa">
-            📥 Solte aqui para importar o extrato
-          </p>
-        </div>
-      )}
+    <div className="space-y-5">
       {/* Números do mês */}
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Numero rotulo="Entrou" valor={r.entrou} cor="text-entrada" />
@@ -144,22 +115,6 @@ export default function Lancamentos() {
           </Link>
           .
         </p>
-      )}
-
-      <button
-        onClick={() => setImportando(true)}
-        className="w-full rounded-full border border-rosa/50 py-2.5 text-sm font-medium text-rosa hover:bg-rosa/10"
-      >
-        📥 Importar extrato do banco (OFX ou CSV) · ou arraste o arquivo aqui
-      </button>
-      {importando && (
-        <ImportarExtrato
-          arquivoInicial={arquivo}
-          onFechar={() => {
-            setImportando(false);
-            setArquivo(null);
-          }}
-        />
       )}
 
       <div className="space-y-3">

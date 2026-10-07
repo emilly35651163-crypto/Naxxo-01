@@ -27,6 +27,7 @@ import FormPagarFixo from "@/components/FormPagarFixo";
 import FormLancamento from "@/components/FormLancamento";
 import ItemLancamento from "@/components/ItemLancamento";
 import EstadoVazio from "@/components/EstadoVazio";
+import BotaoImportarExtrato from "@/components/BotaoImportarExtrato";
 import { ativoNoMes, descreverCobranca, situacaoDoFixo } from "@/lib/fixos";
 import { faturaAberta, faturasAtrasadas, limiteUsado, resumoDaFatura, type ItemFatura, type SituacaoFatura } from "@/lib/cartoes";
 import { cartoesDeCredito, ehVale, iconeDaConta, saldoDaConta, temCredito } from "@/lib/contas";
@@ -102,6 +103,8 @@ export default function Contas() {
         <Numero rotulo="Limite disponível" valor={totalDisponivel} />
         <Numero rotulo="Limite usado" valor={totalUsado} vermelho={totalUsado > 0} />
       </section>
+
+      {contas.length > 0 && <BotaoImportarExtrato />}
 
       {semConta.length > 0 && contas.length > 0 && (
         <section className="flex flex-wrap items-center gap-2 rounded-2xl border border-amber-300/40 bg-amber-300/10 p-3 text-sm">
