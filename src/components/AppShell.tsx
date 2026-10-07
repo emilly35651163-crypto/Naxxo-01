@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { usePerfil, usePreferencias } from "@/lib/store";
 import { useLembretes } from "@/lib/lembretes";
+import { useEstadoNuvem } from "@/lib/nuvem";
 import Logo from "./Logo";
 import SeletorMes from "./SeletorMes";
 import NavInferior, { ITENS_MENU, itemAtivo } from "./NavInferior";
@@ -34,6 +35,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const perfil = usePerfil();
   const emBoasVindas = caminho === "/boas-vindas";
+  const emEntrar = caminho === "/entrar";
+  // Com a nuvem ligada: primeiro entrar e trazer os dados; só depois decidir se vai para o questionário
+  const nuvem = useEstadoNuvem();
+  const dadosProntos = nuvem === "pronto";
   const pagina = ITENS_MENU.find((item) => item.href === itemAtivo(caminho)) ?? undefined;
   useTema();
   useLembretes(!!perfil?.concluido);
@@ -45,13 +50,18 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       rotulo && caminho !== "/" ? `${rotulo} · NAXXO Finanças` : emBoasVindas ? "Boas-vindas · NAXXO Finanças" : "NAXXO Finanças";
   }, [rotulo, caminho, emBoasVindas]);
 
+  // Sem login (nuvem ligada): vai para a tela de entrar
+  useEffect(() => {
+    if (nuvem === "fora" && !emEntrar) router.replace("/entrar");
+  }, [nuvem, emEntrar, router]);
+
   // Quem ainda não respondeu o questionário vai primeiro para as boas-vindas
   useEffect(() => {
-    if (perfil && !perfil.concluido && !emBoasVindas) router.replace("/boas-vindas");
-  }, [perfil, emBoasVindas, router]);
+    if (dadosProntos && perfil && !perfil.concluido && !emBoasVindas && !emEntrar) router.replace("/boas-vindas");
+  }, [dadosProntos, perfil, emBoasVindas, emEntrar, router]);
 
-  // O questionário ocupa a tela inteira, sem menu
-  if (emBoasVindas)
+  // Entrar e o questionário ocupam a tela inteira, sem menu
+  if (emEntrar || (emBoasVindas && dadosProntos))
     return (
       <>
         {children}
@@ -60,7 +70,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     );
 
   // Enquanto carrega (ou enquanto vai para as boas-vindas): o logo, em vez de uma tela vazia
-  if (!perfil?.concluido)
+  if (!dadosProntos || !perfil?.concluido)
     return (
       <div className="grid min-h-dvh place-items-center" aria-busy="true" aria-label="Carregando">
         <div className="flex flex-col items-center gap-4 motion-safe:animate-pulse">

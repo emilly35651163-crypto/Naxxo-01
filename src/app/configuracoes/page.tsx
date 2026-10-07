@@ -27,6 +27,7 @@ import { NECESSIDADES_PADRAO } from "@/lib/analise";
 import { pedirPermissaoDeNotificacao } from "@/lib/lembretes";
 import { comDesfazer, mostrarAviso } from "@/lib/avisos";
 import { CampoValor, Chip } from "@/components/Campos";
+import { emailLogado, nuvemAtiva, sair } from "@/lib/nuvem";
 
 const AUTOMATICAS = ["Fatura do cartão", "Guardar (metas)"];
 
@@ -72,6 +73,23 @@ export default function Configuracoes() {
 
   return (
     <div className="space-y-6">
+      {nuvemAtiva && (
+        <Secao titulo="☁️ Sua conta">
+          <p className="text-sm">
+            Conectada como <b>{emailLogado()}</b>
+          </p>
+          <p className="mt-1 text-xs text-suave">
+            Seus dados ficam guardados na nuvem: entre com o mesmo e-mail em qualquer aparelho.
+          </p>
+          <button
+            onClick={() => void sair()}
+            className="mt-3 rounded-full border border-white/15 px-4 py-2 text-sm text-suave hover:text-white"
+          >
+            Sair da conta
+          </button>
+        </Secao>
+      )}
+
       {/* Você */}
       <Secao titulo="👤 Você">
         <label className="block space-y-1.5">

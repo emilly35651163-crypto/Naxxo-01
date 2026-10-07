@@ -583,6 +583,28 @@ function inscrever(ouvinte: () => void) {
  * Um conjunto de dados salvo no navegador com a chave informada.
  * Com salvar = false, fica só na memória e some ao recarregar a página.
  */
+/**
+ * Quem quer saber quando algo é salvo (a sincronização com a nuvem).
+ * Fica de fora do resto do app: sem login, nada muda.
+ */
+type OuvinteDeGravacao = { aoGravar: (chave: string, valor: unknown) => void; aoApagarTudo: (manter: string[]) => void };
+let ouvinteDeGravacao: OuvinteDeGravacao | null = null;
+let silencioso = false; // gravando o que veio da nuvem: não manda de volta
+
+export function definirOuvinteDeGravacao(ouvinte: OuvinteDeGravacao | null) {
+  ouvinteDeGravacao = ouvinte;
+}
+
+/** Grava os dados que vieram da nuvem sem avisar a nuvem de novo. */
+export function gravarDaNuvem(foto: Record<string, unknown>) {
+  silencioso = true;
+  try {
+    restaurarDados(foto);
+  } finally {
+    silencioso = false;
+  }
+}
+
 type Registro = { chave: string; ler: () => unknown; gravarCru: (valor: unknown) => void; esquecer: () => void; salvar: boolean };
 const registro: Registro[] = [];
 
@@ -609,6 +631,7 @@ function criarDado<T>(chave: string, padrao: T, salvar = true) {
     } catch {
       // Sem acesso ao localStorage (ex.: janela anônima): os dados ficam só até fechar a aba.
     }
+    if (!silencioso) ouvinteDeGravacao?.aoGravar(chave, novo);
     avisar();
   }
 
@@ -683,7 +706,8 @@ export function importarBackup(texto: string): string | null {
 }
 
 /** Apaga tudo (volta ao começo, com o questionário). `manter`: chaves que ficam (ex.: a lista do mercado). */
-export function apagarTudo(manter: string[] = []) {
+export function apagarTudo(manter: string[] = [], tambemNaNuvem = true) {
+  if (tambemNaNuvem && !silencioso) ouvinteDeGravacao?.aoApagarTudo(manter);
   for (const r of registro.filter((x) => !manter.includes(x.chave))) {
     try {
       localStorage.removeItem(r.chave);
