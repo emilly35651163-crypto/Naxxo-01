@@ -22,9 +22,8 @@ export default function FormColarLista({ onFechar }: { onFechar: () => void }) {
   const prefs = usePreferencias();
   const [texto, setTexto] = useState("");
   const [comprei, setComprei] = useState(false); // começa em "Só na lista": colar costuma ser para montar a lista
-  const [precoDaLinha, setPrecoDaLinha] = useState(true);
   const [contaId, setContaId] = useState(contas.find((c) => c.id === prefs.ultimaConta)?.id ?? contas[0]?.id ?? "");
-  const itens = lerListaColada(texto, precoDaLinha);
+  const itens = lerListaColada(texto);
   // Itens que aparecem duas vezes no texto (pode ter sido sem querer)
   const linhas = texto
     .split(/\r?\n/)
@@ -71,26 +70,9 @@ export default function FormColarLista({ onFechar }: { onFechar: () => void }) {
 
         {itens.length > 0 && (
           <>
-            <div className="space-y-1">
-              <span className="text-xs text-suave">Os preços são…</span>
-              <div
-                className="grid grid-cols-2 gap-1 rounded-full bg-fundo p-1 text-sm"
-                role="radiogroup"
-                aria-label="Os preços são"
-              >
-                {[true, false].map((v) => (
-                  <button
-                    key={String(v)}
-                    role="radio"
-                    aria-checked={precoDaLinha === v}
-                    onClick={() => setPrecoDaLinha(v)}
-                    className={`rounded-full py-2 ${precoDaLinha === v ? "bg-white font-semibold text-fundo" : "text-suave"}`}
-                  >
-                    {v ? "Total da linha (nota)" : "De cada unidade"}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <p className="text-xs text-suave">
+              Confira a conta de cada item: “6,88” sozinho é o total; “6,88 cada” ou “de 6,88” é o preço de cada um.
+            </p>
             {repetidas.length > 0 && (
               <p className="rounded-2xl border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-xs">
                 ⚠️ Aparece duas vezes: <b>{repetidas.join(", ")}</b>. Se foi sem querer, apague uma das linhas.
