@@ -437,3 +437,19 @@ export function compraDoExtrato(
     importado: true,
   };
 }
+
+/**
+ * A pessoa colocou o arquivo no espaço do cartão, mas ele não se identificou como cartão (CSV de outro banco).
+ * Se a maioria vier como "entrada", o banco usa compra positiva: inverte. As categorias são refeitas.
+ */
+export function comoCartao(extrato: Extrato): Extrato {
+  if (extrato.ehCartao) return extrato;
+  const entradas = extrato.linhas.filter((l) => l.tipo === "entrada").length;
+  const inverter = entradas > extrato.linhas.length / 2;
+  const linhas = extrato.linhas.map((l) => {
+    const tipo: Tipo = inverter ? (l.tipo === "entrada" ? "saida" : "entrada") : l.tipo;
+    const { descricao, parcela } = separarParcela(l.descricao);
+    return { ...l, tipo, descricao, categoria: categoriaPelaDescricao(l.descricao, tipo), ...(parcela ? { parcela } : {}) };
+  });
+  return { linhas, ehCartao: true };
+}

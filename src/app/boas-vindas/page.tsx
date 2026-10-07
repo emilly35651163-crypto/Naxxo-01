@@ -28,10 +28,13 @@ import { alvoDaReserva } from "@/lib/orientacoes";
 import { rendaMensal } from "@/lib/renda";
 import { brl, lerValor, valorParaCampo } from "@/lib/formato";
 import BoasVindasExtratos, {
+  bancosPreenchidos,
+  bancoVazio,
   criarTudoDosExtratos,
-  problemaDosExtratos,
+  problemaDosBancos,
   salarioDosExtratos,
-  type ArquivoExtrato,
+  totalDeMovimentacoes,
+  type BancoExtrato,
 } from "@/components/BoasVindasExtratos";
 import { lerRascunhoQuitar, RASCUNHO_QUITAR_VAZIO, type RascunhoQuitar } from "@/components/CamposQuitar";
 
@@ -130,9 +133,10 @@ export default function BoasVindas() {
   const [reservaGuardado, setReservaGuardado] = useState("");
   const [reservaAlvo, setReservaAlvo] = useState("");
   // Os extratos: a base de tudo (contas, cartões, gastos e a sugestão do salário)
-  const [arquivos, setArquivos] = useState<ArquivoExtrato[]>([]);
+  const [arquivos, setArquivos] = useState<BancoExtrato[]>(() => [bancoVazio()]);
   const salarioAchado = salarioDosExtratos(arquivos);
-  const bancos = [...new Set(arquivos.map((a) => a.banco.trim()).filter(Boolean))];
+  const bancos = bancosPreenchidos(arquivos).map((b) => b.banco.trim());
+  const usandoExtratos = bancos.length > 0;
 
   // A etapa "sonhos" só aparece para quem quer juntar dinheiro para algo ou quitar dívidas
   const querJuntar = objetivos.includes("juntar");
@@ -182,7 +186,7 @@ export default function BoasVindas() {
 
   /** "Pular" / "Fazer depois": nada pela metade fica salvo. */
   function pular() {
-    if (etapa === "extratos") setArquivos([]);
+    if (etapa === "extratos") setArquivos([bancoVazio()]);
     if (etapa === "renda") setFontes((atuais) => atuais.filter((f) => rascunhoParaFonte(f) !== null));
     if (etapa === "sonhos")
       setSonhos((atuais) =>
@@ -194,7 +198,7 @@ export default function BoasVindas() {
   function continuar() {
     if (etapa === "objetivos" && objetivos.length === 0) return setErro({ texto: "Escolha pelo menos um objetivo." });
     if (etapa === "extratos") {
-      const problema = problemaDosExtratos(arquivos);
+      const problema = problemaDosBancos(arquivos);
       if (problema) return setErro({ texto: problema });
     }
     if (etapa === "situacao") {
@@ -208,8 +212,7 @@ export default function BoasVindas() {
           (f) => SITUACOES.some((s) => situacoes.includes(s.id) && s.fonte?.nome === f.nome) || f.nome === "",
         );
         const lista = [...mantidas, ...novas];
-        const comSugestao = preencherComSalario(lista);
-        return comSugestao.length > 0 || semRenda ? comSugestao : [preencherComSalario([RASCUNHO_FONTE_VAZIO])[0]];
+        return lista.length > 0 || semRenda ? lista : [RASCUNHO_FONTE_VAZIO];
       });
     }
     if (etapa === "renda") {
@@ -240,15 +243,14 @@ export default function BoasVindas() {
     irPara(etapas[indice + 1]);
   }
 
-  /** Coloca o salário achado no extrato na primeira entrada fixa que ainda está sem valor. */
-  function preencherComSalario(lista: RascunhoFonte[]) {
-    if (!salarioAchado) return lista;
-    const i = lista.findIndex((f) => f.forma === "fixo" && !lerValor(f.valor));
-    if (i < 0 || lista.some((f) => Math.abs(lerValor(f.valor) - salarioAchado.valor) < 0.01)) return lista;
-    return lista.map((f, j) =>
-      j === i ? { ...f, valor: valorParaCampo(salarioAchado.valor), dia: f.dia || String(salarioAchado.dia) } : f,
+  /** "Usar este valor": o salário achado no extrato vai para a entrada escolhida. */
+  function usarSalario(i: number) {
+    if (!salarioAchado) return;
+    setFontes((atuais) =>
+      atuais.map((f, j) => (j === i ? { ...f, valor: valorParaCampo(salarioAchado.valor), dia: String(salarioAchado.dia) } : f)),
     );
   }
+  const salarioJaUsado = !!salarioAchado && fontes.some((f) => Math.abs(lerValor(f.valor) - salarioAchado.valor) < 0.01);
 
   // Ao dar erro, leva até o campo que falta
   useEffect(() => {
@@ -467,11 +469,11 @@ export default function BoasVindas() {
         {etapa === "extratos" && (
           <>
             <Titulo
-              titulo="Comece pelos seus extratos"
-              texto="Jogue aqui o extrato de cada conta e a fatura de cada cartão. Com eles eu monto suas contas, cartões, gastos e até acho o seu salário."
+              titulo="Suas contas e cartões"
+              texto="Primeiro o banco; depois o extrato da conta e o do cartão de crédito. Com eles eu monto suas contas, cartões e gastos, e acho o seu salário."
             />
             <BoasVindasExtratos
-              arquivos={arquivos}
+              bancos={arquivos}
               onChange={(novos) => {
                 setArquivos(novos);
                 setErro(null);
@@ -513,11 +515,25 @@ export default function BoasVindas() {
               titulo="O que entra?"
               texto="Salário, freelas, vendas… e os benefícios que vêm junto, como vale-transporte e vale-refeição. A conta onde cai você escolhe depois, ao cadastrar as contas."
             />
-            {salarioAchado && (
-              <p className="mb-4 rounded-2xl border border-entrada/30 bg-entrada/10 px-4 py-3 text-sm">
-                ✨ Achei no extrato{salarioAchado.banco ? ` do ${salarioAchado.banco}` : ""}: <b>{salarioAchado.descricao}</b>,{" "}
-                <b>{brl(salarioAchado.valor)}</b> no dia {salarioAchado.dia}. Já deixei preenchido. Confira e ajuste se precisar.
-              </p>
+            {salarioAchado && !salarioJaUsado && (
+              <div className="mb-4 space-y-2 rounded-2xl border border-entrada/30 bg-entrada/10 px-4 py-3 text-sm">
+                <p>
+                  ✨ Achei no extrato{salarioAchado.banco ? ` do ${salarioAchado.banco}` : ""}: <b>{salarioAchado.descricao}</b>,{" "}
+                  <b>{brl(salarioAchado.valor)}</b> no dia {salarioAchado.dia}. É de alguma dessas entradas?
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {fontes.map((f, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => usarSalario(i)}
+                      className="rounded-full border border-entrada/40 px-3 py-1 text-xs text-entrada hover:bg-entrada/10"
+                    >
+                      Usar em {f.nome || `Entrada ${i + 1}`}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
             <div className="space-y-4">
               {fontes.map((f, i) => (
@@ -644,8 +660,8 @@ export default function BoasVindas() {
                 <p className="text-xs text-suave sm:col-span-2">
                   {sugestao.alvo > 0 ? (
                     <>
-                      💡 Sugestão: <b className="text-white">{brl(sugestao.alvo)}</b> (3 meses do seu salário). Em branco, usamos
-                      esse valor.
+                      💡 Sugestão: <b className="text-white">{brl(sugestao.alvo)}</b> (3 meses do que você recebe). Em branco,
+                      usamos esse valor.
                     </>
                   ) : (
                     "Sem renda informada, defina um valor que faça sentido para você (dá para mudar depois)."
@@ -669,8 +685,8 @@ export default function BoasVindas() {
                   .join(", ")}
               </LinhaResumo>
               <LinhaResumo icone="🏦" rotulo="Contas e cartões (dos extratos)" onClick={() => irPara("extratos")}>
-                {bancos.length > 0
-                  ? `${bancos.join(", ")} · ${arquivos.reduce((t, a) => t + a.extrato.linhas.length, 0)} movimentações`
+                {usandoExtratos
+                  ? `${bancos.join(", ")} · ${totalDeMovimentacoes(arquivos)} movimentações`
                   : "Vou cadastrar depois"}
               </LinhaResumo>
               <LinhaResumo icone="💰" rotulo="O que entra por mês" onClick={() => irPara(semRenda ? "situacao" : "renda")}>
@@ -699,7 +715,7 @@ export default function BoasVindas() {
               </LinhaResumo>
             </ul>
             <p className="mt-4 rounded-2xl bg-roxo/10 px-4 py-3 text-sm text-suave">
-              {arquivos.length > 0
+              {usandoExtratos
                 ? "🏦 Suas contas e cartões vão ser criados com tudo dos extratos. Depois é só conferir na aba Contas."
                 : "🏦 Próximo passo: cadastrar suas contas (banco, carteira, vale) com o saldo de hoje. Assim tudo o que entra e sai cai no lugar certo."}
             </p>
@@ -718,20 +734,14 @@ export default function BoasVindas() {
           {etapa === "inicio"
             ? "Começar"
             : etapa === "pronto"
-              ? arquivos.length > 0
+              ? usandoExtratos
                 ? "Montar meu app"
                 : "Cadastrar minhas contas"
               : "Continuar"}
         </button>
         {(etapa === "renda" || etapa === "sonhos" || etapa === "extratos") && (
           <button type="button" onClick={pular} className="w-full py-1 text-sm text-rosa">
-            {etapa === "renda"
-              ? "Pular"
-              : etapa === "extratos"
-                ? arquivos.length
-                  ? "Não usar extratos"
-                  : "Não tenho agora"
-                : "Fazer depois"}
+            {etapa === "renda" ? "Pular" : etapa === "extratos" ? "Cadastrar depois" : "Fazer depois"}
           </button>
         )}
       </div>

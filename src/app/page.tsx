@@ -14,13 +14,22 @@ export default function Inicio() {
   const dados = useDados();
   const mes = useMes();
   const perfil = usePerfil();
-  const [confirmando, setConfirmando] = useState<Previsto | null>(null);
+  // "Recebi" de um grupo (ex.: estágio + vale-transporte no mesmo dia): confirma um de cada vez
+  const [fila, setFila] = useState<Previsto[]>([]);
+  const confirmando = fila[0] ?? null;
 
   const saldo = saldoTotal(dados.cartoes, dados.lancamentos);
   const vales = saldoDosVales(dados.cartoes, dados.lancamentos);
   const r = resumoDoMes(mes, dados);
   const previstos = previstosDoMes(mes, dados);
   const aReceber = previstos.filter((p) => p.tipo === "entrada");
+  // Da mesma renda e no mesmo dia (ex.: estágio + vale-transporte): uma linha só; em dias diferentes, separado
+  const grupos: Previsto[][] = [];
+  for (const p of aReceber) {
+    const grupo = p.fonte && grupos.find((g) => g[0].fonte?.id === p.fonte!.id && g[0].data === p.data);
+    if (grupo) grupo.push(p);
+    else grupos.push([p]);
+  }
   const proximas = previstos.filter((p) => p.tipo === "saida" && p.origem !== "guardar").slice(0, 5);
   const nomeDoMes = nomeMes(mes).split(" ")[0].toLowerCase();
 
@@ -49,27 +58,36 @@ export default function Inicio() {
         <p className="mt-1 font-display text-2xl font-bold tabular-nums text-entrada">{brl(r.entrou)}</p>
         {aReceber.length > 0 ? (
           <ul className="mt-3 space-y-2 text-sm">
-            {aReceber.map((p) => (
-              <li key={p.chave} className="flex items-center gap-2">
-                <span className="min-w-0 flex-1 truncate">
-                  {p.icone} {p.nome}
-                  <span className="text-xs text-suave"> · {formatarData(p.data)}</span>
-                </span>
-                <span className="tabular-nums text-suave">{brl(p.valor)}</span>
-                {p.data <= hojeISO() ? (
-                  <button
-                    onClick={() => setConfirmando(p)}
-                    className="rounded-full bg-entrada/15 px-3 py-1 text-xs font-semibold text-entrada"
-                  >
-                    Recebi
-                  </button>
-                ) : (
-                  <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-suave">
-                    {diasAte(p.data) === 1 ? "amanhã" : `em ${diasAte(p.data)} dias`}
+            {grupos.map((grupo) => {
+              // O salário/estágio primeiro, os vales depois
+              const g = [...grupo].sort((a, b) => Number(a.origem === "benefício") - Number(b.origem === "benefício"));
+              const p = g[0];
+              const nome =
+                g.length === 1
+                  ? `${p.icone} ${p.nome}`
+                  : `${g.map((x) => x.icone).join("")} ${g.map((x) => x.nome.replace(` · ${p.fonte?.nome}`, "")).join(" + ")}`;
+              return (
+                <li key={p.chave} className="flex items-center gap-2">
+                  <span className="min-w-0 flex-1 truncate">
+                    {nome}
+                    <span className="text-xs text-suave"> · {formatarData(p.data)}</span>
                   </span>
-                )}
-              </li>
-            ))}
+                  <span className="tabular-nums text-suave">{brl(g.reduce((t, x) => t + x.valor, 0))}</span>
+                  {p.data <= hojeISO() ? (
+                    <button
+                      onClick={() => setFila(g)}
+                      className="rounded-full bg-entrada/15 px-3 py-1 text-xs font-semibold text-entrada"
+                    >
+                      Recebi
+                    </button>
+                  ) : (
+                    <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-suave">
+                      {diasAte(p.data) === 1 ? "amanhã" : `em ${diasAte(p.data)} dias`}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         ) : (
           <p className="mt-1 text-xs text-suave">
@@ -123,7 +141,9 @@ export default function Inicio() {
         </p>
       </section>
 
-      {confirmando && <ConfirmarPrevisto previsto={confirmando} onFechar={() => setConfirmando(null)} />}
+      {confirmando && (
+        <ConfirmarPrevisto key={confirmando.chave} previsto={confirmando} onFechar={() => setFila((f) => f.slice(1))} />
+      )}
     </div>
   );
 }

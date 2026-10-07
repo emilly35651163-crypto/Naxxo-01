@@ -31,19 +31,17 @@ export function rendaEmDinheiro(fontes: FonteRenda[]) {
 
 /**
  * A regra da reserva de emergência (uma só, usada no questionário e na Trilha): 3 meses.
- * Sem gastos conhecidos: 3 meses do salário fixo. Com gastos: 3 meses do que a pessoa gasta.
+ * Sem gastos conhecidos: 3 meses de tudo o que entra em dinheiro (salário, estágio, bolsa… sem os vales). Com gastos: 3 meses do que a pessoa gasta.
  */
 export function alvoDaReserva(fontes: FonteRenda[], fixos: GastoFixo[], metas: Pick<Meta, "tipo" | "parcela">[], saidaMedia = 0) {
   const renda = rendaEmDinheiro(fontes);
   const rendaVariavel = fontes.some((f) => f.forma !== "fixo");
-  // Salário fixo (sem freela e sem vale): a base mais realista enquanto os gastos não são conhecidos
-  const salarioFixo = rendaEmDinheiro(fontes.filter((f) => f.forma === "fixo"));
   const meses = 3;
   const gastoFixo = fixos.reduce((total, f) => total + valorPorMes(f), 0);
   const parcelas = metas.filter((m) => m.tipo === "quitar" && m.parcela).reduce((t, m) => t + (m.parcela ?? 0), 0);
   const gastoMensal = Math.max(gastoFixo + parcelas, saidaMedia);
   const provisoria = !(gastoMensal > 0);
-  const base = provisoria ? salarioFixo || renda : gastoMensal;
+  const base = provisoria ? renda : gastoMensal;
   return { alvo: Math.round(base * meses), meses, gastoMensal, renda, rendaVariavel, provisoria };
 }
 
