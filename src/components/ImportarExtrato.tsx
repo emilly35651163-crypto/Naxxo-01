@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   adicionarCompras,
   adicionarLancamentos,
@@ -27,7 +27,7 @@ async function lerArquivo(arquivo: File) {
 type Linha = LinhaExtrato & { marcada: boolean; aviso?: string };
 
 // Importar o extrato do banco (OFX ou CSV): mostra tudo antes, a pessoa desmarca o que não quer e importa.
-export default function ImportarExtrato({ onFechar }: { onFechar: () => void }) {
+export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar: () => void; arquivoInicial?: File | null }) {
   const contas = useCartoes();
   const lancamentos = useLancamentos();
   const compras = useCompras();
@@ -37,6 +37,7 @@ export default function ImportarExtrato({ onFechar }: { onFechar: () => void }) 
   const [contaId, setContaId] = useState("");
   const [erro, setErro] = useState("");
   const [nomeArquivo, setNomeArquivo] = useState("");
+  const [arrastando, setArrastando] = useState(false);
 
   const opcoes = ehCartao ? cartoesDeCredito(contas) : contas;
   const conta = opcoes.find((c) => c.id === contaId);
@@ -56,9 +57,14 @@ export default function ImportarExtrato({ onFechar }: { onFechar: () => void }) 
 
   async function escolherArquivo(arquivo: File | undefined) {
     if (!arquivo) return;
+    const texto = await lerArquivo(arquivo);
     setErro("");
     setNomeArquivo(arquivo.name);
-    const extrato = lerExtrato(await lerArquivo(arquivo));
+    if (/^%PDF/.test(texto)) {
+      setLinhas(null);
+      return setErro("Esse é o PDF do extrato. Baixe de novo escolhendo OFX ou CSV (o PDF não dá para ler).");
+    }
+    const extrato = lerExtrato(texto);
     if (extrato.linhas.length === 0) {
       setLinhas(null);
       return setErro("Não encontrei movimentações nesse arquivo. Ele precisa ser o extrato em OFX ou CSV.");
@@ -69,6 +75,13 @@ export default function ImportarExtrato({ onFechar }: { onFechar: () => void }) 
     setContaId(id);
     setLinhas(preparar(extrato.linhas, extrato.ehCartao, id));
   }
+
+  // Arquivo arrastado direto para a tela de Lançamentos
+  useEffect(() => {
+    // (depois de montar: os estados mudam quando o arquivo termina de ser lido)
+    if (arquivoInicial) void Promise.resolve(arquivoInicial).then(escolherArquivo);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [arquivoInicial]);
 
   function trocarConta(id: string) {
     setContaId(id);
@@ -135,8 +148,23 @@ export default function ImportarExtrato({ onFechar }: { onFechar: () => void }) 
           antes de importar.
         </div>
 
-        <label className="block cursor-pointer rounded-2xl border border-dashed border-rosa/50 px-4 py-5 text-center text-sm text-rosa hover:bg-rosa/5">
-          {nomeArquivo ? `📄 ${nomeArquivo} (trocar)` : "📂 Escolher arquivo do extrato"}
+        <label
+          onDragOver={(e) => {
+            e.preventDefault();
+            setArrastando(true);
+          }}
+          onDragLeave={() => setArrastando(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setArrastando(false);
+            void escolherArquivo(e.dataTransfer.files[0]);
+          }}
+          className={`block cursor-pointer rounded-2xl border border-dashed px-4 py-5 text-center text-sm text-rosa hover:bg-rosa/5 ${
+            arrastando ? "border-rosa bg-rosa/15" : "border-rosa/50"
+          }`}
+        >
+          {nomeArquivo ? `📄 ${nomeArquivo} (trocar)` : "📂 Escolha ou arraste aqui o arquivo do extrato"}
           <input
             type="file"
             accept=".ofx,.csv,.txt,.qfx"
