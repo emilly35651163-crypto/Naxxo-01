@@ -127,7 +127,9 @@ export default function FormLancamento({
   const futuro = data > hojeISO();
   const vezes = Math.max(Number(parcelas) || 1, 1);
   const repeticoes = entrada ? REPETICOES.filter((r) => r.id !== "ano" && r.id !== "outro") : REPETICOES;
-  const categorias = categoriasDe(tipo, personalizadas).filter((c) => !AUTOMATICAS.includes(c.nome));
+  const categorias = categoriasDe(tipo, personalizadas).filter(
+    (c) => !AUTOMATICAS.includes(c.nome) && (c.nome !== "Outros" || categoria === "Outros"),
+  );
   const subcategorias = subcategoriasDe(tipo, categoria, personalizadas);
   const ehPagamento = !!lancamento && (!!lancamento.pagamentoFaturaId || !!lancamento.efeito);
 
@@ -431,7 +433,7 @@ export default function FormLancamento({
                 ativo={novaCategoria === "categoria"}
                 onClick={() => setNovaCategoria(novaCategoria === "categoria" ? null : "categoria")}
               >
-                + Nova
+                ＋ Criar categoria
               </Chip>
             </div>
             {(subcategorias.length > 0 || novaCategoria === "sub") && (

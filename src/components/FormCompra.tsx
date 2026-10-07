@@ -2,19 +2,23 @@
 
 import { useState } from "react";
 import {
+  adicionarCategoria,
   adicionarCompra,
   atualizarCompra,
   CATEGORIAS,
+  categoriasDe,
   compraParaDebito,
   adicionarLancamento,
   removerCompra,
+  useCartoes,
+  useCategoriasPersonalizadas,
   useCompras,
   useMetas,
   type Cartao,
   type CompraCartao,
   type Meta,
 } from "@/lib/store";
-import { hojeISO, lerValor } from "@/lib/formato";
+import { hojeISO, lerValor, valorParaCampo } from "@/lib/formato";
 import { dataPelasParcelasPagas } from "@/lib/cartoes";
 import Modal from "./Modal";
 import { Campo, CampoValor, Chip } from "./Campos";
@@ -73,10 +77,6 @@ export function EscolhaCompraOuAssinatura({ valor, onChange }: { valor: TipoNoCa
   );
 }
 
-function paraTexto(valor: number) {
-  return String(Math.round(valor * 100) / 100).replace(".", ",");
-}
-
 // Incluir no cartão: uma compra (nova, ou trazida de uma meta de quitar) ou uma assinatura.
 // Com `compra`, edita uma compra que já existe.
 export default function FormCompra({
@@ -100,13 +100,14 @@ export default function FormCompra({
   const metasDisponiveis = metas.filter((m) => m.tipo === "quitar" && !compras.some((c) => c.metaId === m.id));
 
   const [metaId, setMetaId] = useState<string | null>(compra?.metaId ?? null);
-  const [valor, setValor] = useState(compra ? paraTexto(compra.valorTotal) : "");
+  const [valor, setValor] = useState(compra ? valorParaCampo(compra.valorTotal) : "");
   const [descricao, setDescricao] = useState(compra?.descricao ?? "");
   const [categoria, setCategoria] = useState(compra?.categoria ?? CATEGORIAS_COMPRA[0].nome);
   const [data, setData] = useState(compra?.data ?? hojeISO());
   const [credito, setCredito] = useState<RascunhoCredito>({
     cartaoId: compra?.cartaoId ?? cartaoInicial?.id ?? cartoes[0]?.id ?? "",
-    parcelas: String(compra?.parcelas ?? 1),
+    parcelado: (compra?.parcelas ?? 1) > 1,
+    parcelas: (compra?.parcelas ?? 1) > 1 ? String(compra?.parcelas) : "",
     pagas: compra?.parcelasPagas ? String(compra.parcelasPagas) : "",
   });
   // A data acompanha as parcelas pagas, até a pessoa mudar a data na mão (ao editar, a data já é a da compra)
@@ -115,7 +116,33 @@ export default function FormCompra({
   // Débito ou crédito (começa no crédito do cartão escolhido)
   const [forma, setForma] = useState(`credito:${compra?.cartaoId ?? cartaoInicial?.id ?? cartoes[0]?.id ?? ""}`);
   const noDebito = !lerEscolha(forma).credito;
+  const contas = useCartoes();
+  const personalizadas = useCategoriasPersonalizadas();
+  // "Outros" sai: no lugar dele, a pessoa cria a categoria que precisar
+  const categorias = categoriasDe("saida", personalizadas).filter(
+    (c) => c.nome !== "Fatura do cartão" && (c.nome !== "Outros" || categoria === "Outros"),
+  );
+  const [criando, setCriando] = useState(false);
+  const [nomeNova, setNomeNova] = useState("");
   const [erro, setErro] = useState("");
+
+  function criarCategoria() {
+    const texto = nomeNova.trim();
+    if (texto) {
+      adicionarCategoria({ tipo: "saida", nome: texto, icone: "🏷️" });
+      setCategoria(categoriasDe("saida").find((c) => c.nome.toLowerCase() === texto.toLowerCase())?.nome ?? texto);
+    }
+    setNomeNova("");
+    setCriando(false);
+  }
+
+  function trocarForma(noCredito: boolean) {
+    if (noCredito === !noDebito) return;
+    const id = lerEscolha(forma).id;
+    if (noCredito) setForma(`credito:${cartoes.some((c) => c.id === id) ? id : credito.cartaoId || cartoes[0]?.id || ""}`);
+    else setForma(`debito:${contas.some((c) => c.id === id) ? id : (contas[0]?.id ?? "")}`);
+    setErro("");
+  }
 
   function mudarCredito(novo: RascunhoCredito) {
     setCredito(novo);
@@ -131,8 +158,9 @@ export default function FormCompra({
     setMetaId(meta.id);
     setDescricao(meta.nome);
     setCategoria("Compras");
-    setValor(String((meta.parcela ?? 0) * (meta.parcelas ?? 1)).replace(".", ","));
-    setCredito({ ...credito, parcelas: String(meta.parcelas ?? 1), pagas: pagas ? String(pagas) : "" });
+    setValor(valorParaCampo((meta.parcela ?? 0) * (meta.parcelas ?? 1)));
+    const vezes = meta.parcelas ?? 1;
+    setCredito({ ...credito, parcelado: vezes > 1, parcelas: vezes > 1 ? String(vezes) : "", pagas: pagas ? String(pagas) : "" });
     setData(dataPelasParcelasPagas(pagas));
     setDataManual(false);
     setErro("");
@@ -147,7 +175,10 @@ export default function FormCompra({
       if (problema) return setErro(problema);
       return onFechar();
     }
-    if (!(numero > 0)) return setErro("Digite o valor total da compra.");
+    const parceladoNoCredito = !noDebito && credito.parcelado;
+    if (parceladoNoCredito && !(lerRascunhoCredito(credito).parcelas > 1)) return setErro("Em quantas vezes?");
+    if (!(numero > 0))
+      return setErro(parceladoNoCredito ? "Digite o valor da parcela ou o total." : "Digite o valor total da compra.");
     if (!data) return setErro("Escolha a data da compra.");
     if (noDebito) {
       const contaId = lerEscolha(forma).id;
@@ -229,31 +260,52 @@ export default function FormCompra({
               />
             </Campo>
 
-            <Campo rotulo="Valor total da compra">
-              <CampoValor valor={valor} onChange={setValor} />
-            </Campo>
-
-            <EscolhaConta
-              valor={forma}
-              onChange={(nova) => {
-                setForma(nova);
-                const e = lerEscolha(nova);
-                if (e.credito) mudarCredito({ ...credito, cartaoId: e.id });
-              }}
-              modo="ambos"
-              rotulo="Como pagou?"
-            />
+            <div className="space-y-1.5">
+              <span className="text-xs text-suave">Como pagou?</span>
+              <div className="grid grid-cols-2 gap-1 rounded-full bg-fundo p-1">
+                {[false, true].map((c) => (
+                  <button
+                    key={String(c)}
+                    type="button"
+                    onClick={() => trocarForma(c)}
+                    disabled={c && cartoes.length === 0}
+                    className={`rounded-full py-1.5 text-sm font-medium transition-colors disabled:opacity-40 ${
+                      !noDebito === c ? "bg-white text-fundo" : "text-suave hover:text-white"
+                    }`}
+                  >
+                    {c ? "💳 Crédito" : "🏦 Débito / Pix"}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {noDebito ? (
-              <p className="rounded-2xl bg-roxo/10 px-4 py-3 text-xs text-suave">
-                {compra
-                  ? "🏦 Vai sair da fatura e virar uma saída da conta."
-                  : data < hojeISO()
-                    ? "🏦 No débito, com data antes de hoje: fica registrado, mas não muda o saldo de hoje (já tinha saído)."
-                    : "🏦 Sai do saldo da conta."}
-              </p>
+              <>
+                <Campo rotulo="Valor total da compra">
+                  <CampoValor valor={valor} onChange={setValor} />
+                </Campo>
+                <EscolhaConta valor={forma} onChange={setForma} rotulo="De qual banco?" />
+                <p className="rounded-2xl bg-roxo/10 px-4 py-3 text-xs text-suave">
+                  {compra
+                    ? "🏦 Vai sair da fatura e virar uma saída da conta."
+                    : data < hojeISO()
+                      ? "🏦 No débito, com data antes de hoje: fica registrado, mas não muda o saldo de hoje (já tinha saído)."
+                      : "🏦 Sai do saldo da conta."}
+                </p>
+              </>
             ) : (
-              <CamposCredito cartoes={cartoes} rascunho={credito} onChange={mudarCredito} valorTotal={numero} data={data} />
+              <CamposCredito
+                key={metaId ?? ""}
+                cartoes={cartoes}
+                rascunho={credito}
+                onChange={(novo) => {
+                  mudarCredito(novo);
+                  setForma(`credito:${novo.cartaoId}`);
+                }}
+                valor={valor}
+                onValor={setValor}
+                data={data}
+              />
             )}
 
             <CampoDataCompra
@@ -268,12 +320,39 @@ export default function FormCompra({
             <div className="space-y-1.5">
               <span className="text-xs text-suave">Categoria</span>
               <div className="flex flex-wrap gap-2">
-                {CATEGORIAS_COMPRA.map((c) => (
+                {categorias.map((c) => (
                   <Chip key={c.nome} ativo={categoria === c.nome} onClick={() => setCategoria(c.nome)}>
                     {c.icone} {c.nome}
                   </Chip>
                 ))}
+                <Chip ativo={criando} onClick={() => setCriando(!criando)}>
+                  ＋ Criar categoria
+                </Chip>
               </div>
+              {criando && (
+                <div className="flex gap-2">
+                  <input
+                    autoFocus
+                    value={nomeNova}
+                    onChange={(e) => setNomeNova(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        criarCategoria();
+                      }
+                    }}
+                    placeholder="Ex.: Pet, Beleza, Presentes"
+                    className="campo py-2 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={criarCategoria}
+                    className="shrink-0 rounded-full border border-rosa/50 px-4 text-sm text-rosa"
+                  >
+                    Criar
+                  </button>
+                </div>
+              )}
             </div>
           </>
         )}
