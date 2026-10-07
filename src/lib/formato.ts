@@ -58,6 +58,7 @@ export const OPCOES_DIA_RECEBIMENTO = [
 ];
 
 export function nomeDoDia(dia: string) {
+  if (dia.endsWith("p")) return `Dia ${dia.slice(0, -1)} (ou o próximo dia útil)`;
   return OPCOES_DIA_RECEBIMENTO.find((o) => o.valor === dia)?.nome ?? "";
 }
 
@@ -134,6 +135,11 @@ export function dataDoRecebimento(dia: string, mes: string) {
       numero++;
       if (diaUtil(new Date(ano, m - 1, numero))) contados++;
     }
+  } else if (dia.endsWith("p")) {
+    // "20p": dia 20; se for fim de semana ou feriado, passa para o próximo dia útil (pode virar o mês)
+    const d = new Date(ano, m - 1, Math.min(Number(dia.slice(0, -1)), ultimoDia));
+    while (!diaUtil(d)) d.setDate(d.getDate() + 1);
+    return `${d.getFullYear()}-${doisDigitos(d.getMonth() + 1)}-${doisDigitos(d.getDate())}`;
   } else {
     numero = Math.min(Number(dia), ultimoDia);
   }
