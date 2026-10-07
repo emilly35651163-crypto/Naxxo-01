@@ -70,6 +70,11 @@ export function descreverCobranca(fixo: GastoFixo) {
     return dias % 7 === 0 ? `a cada ${dias / 7 === 1 ? "semana" : `${dias / 7} semanas`}` : `a cada ${dias} dias`;
   }
   const frequencia = FREQUENCIAS.find((f) => f.id === (fixo.frequencia ?? "mensal"))!;
+  // No cartão, o que importa é a fatura, não o dia
+  if (fixo.pagamento === "cartao")
+    return frequencia.meses === 1
+      ? "todo mês"
+      : `${frequencia.nome.toLowerCase()} · ${nomeMesCurto(fixo.mesReferencia ?? fixo.desde)}`;
   if (frequencia.meses === 1) return `todo dia ${fixo.dia}`;
   return `${frequencia.nome.toLowerCase()} · ${nomeMesCurto(fixo.mesReferencia ?? fixo.desde)}, dia ${fixo.dia}`;
 }

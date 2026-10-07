@@ -39,6 +39,7 @@ export type Lancamento = {
   parteRenda?: ParteRenda; // recebimento de uma fonte: salário, adiantamento, 13º, férias ou benefício
   // Já estava dentro do saldo informado da conta (ex.: criou a conta depois do salário cair): conta como recebido, não soma de novo
   jaNoSaldo?: boolean;
+  extratoId?: string; // veio do extrato do banco: a linha de lá (para não importar duas vezes)
 };
 
 /** As partes de uma renda que caem em datas diferentes. */
@@ -172,6 +173,7 @@ export type CompraCartao = {
   competencia?: string; // gasto fixo pago no crédito: de qual mês é a conta
   compraMercadoId?: string; // quando é uma ida ao mercado no crédito
   subcategoria?: string;
+  extratoId?: string; // veio do extrato do cartão
 };
 
 export type PagamentoFatura = {
@@ -735,6 +737,12 @@ export function useLancamentos() {
   return useSyncExternalStore(inscrever, lancamentos.ler, () => SEM_LANCAMENTOS);
 }
 
+/** Vários de uma vez (ex.: importar extrato): grava uma vez só. */
+export function adicionarLancamentos(novos: Omit<Lancamento, "id">[]) {
+  const criadoEm = agoraLocal();
+  lancamentos.gravar([...novos.map((n) => ({ ...n, id: novoId(), criadoEm })), ...lancamentos.ler()]);
+}
+
 export function adicionarLancamento(novo: Omit<Lancamento, "id">) {
   const id = novoId();
   lancamentos.gravar([{ ...novo, id, criadoEm: agoraLocal() }, ...lancamentos.ler()]);
@@ -1195,6 +1203,10 @@ const compras = criarDado<CompraCartao[]>("naxxo:compras", SEM_COMPRAS);
 
 export function useCompras() {
   return useSyncExternalStore(inscrever, compras.ler, () => SEM_COMPRAS);
+}
+
+export function adicionarCompras(novas: Omit<CompraCartao, "id">[]) {
+  compras.gravar([...novas.map((n) => ({ ...n, id: novoId() })), ...compras.ler()]);
 }
 
 export function adicionarCompra(nova: Omit<CompraCartao, "id">) {

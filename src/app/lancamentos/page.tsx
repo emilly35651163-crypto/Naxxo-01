@@ -18,6 +18,7 @@ import { useDados } from "@/lib/dados";
 import ItemLancamento from "@/components/ItemLancamento";
 import ConfirmarPrevisto from "@/components/ConfirmarPrevisto";
 import EstadoVazio from "@/components/EstadoVazio";
+import ImportarExtrato from "@/components/ImportarExtrato";
 
 const FILTROS: { valor: Tipo | "tudo"; rotulo: string }[] = [
   { valor: "tudo", rotulo: "Tudo" },
@@ -54,6 +55,7 @@ export default function Lancamentos() {
   const [valorMax, setValorMax] = useState("");
   const [confirmando, setConfirmando] = useState<Previsto | null>(null);
   const [faturaAberta, setFaturaAberta] = useState<string | null>(null);
+  const [importando, setImportando] = useState(false);
 
   // Busca sem acento: "acucar" acha "Açúcar"
   const termo = semAcento(busca);
@@ -116,6 +118,14 @@ export default function Lancamentos() {
           .
         </p>
       )}
+
+      <button
+        onClick={() => setImportando(true)}
+        className="w-full rounded-full border border-rosa/50 py-2.5 text-sm font-medium text-rosa hover:bg-rosa/10"
+      >
+        📥 Importar extrato do banco (OFX ou CSV)
+      </button>
+      {importando && <ImportarExtrato onFechar={() => setImportando(false)} />}
 
       <div className="space-y-3">
         <div className="space-y-3 lg:flex lg:items-center lg:gap-4 lg:space-y-0">

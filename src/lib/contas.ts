@@ -40,7 +40,7 @@ export function cartoesDeCredito(contas: Conta[]) {
 }
 
 /** Quando o saldo foi informado (data e hora). Sem isso, conta a partir do cadastro. */
-function marcoDoSaldo(conta: Conta) {
+export function marcoDoSaldo(conta: Conta) {
   // Tudo em hora local (datas antigas em UTC são convertidas): perto da meia-noite não erra o dia
   return paraHoraLocal(conta.saldoAtualizadoEm) ?? `${conta.criadoEm}T00:00:00`;
 }

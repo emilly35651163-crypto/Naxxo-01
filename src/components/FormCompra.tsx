@@ -171,7 +171,7 @@ export default function FormCompra({
   function salvar(e: React.FormEvent) {
     e.preventDefault();
     if (tipo === "assinatura") {
-      const problema = salvarAssinatura(assinatura, lerValor(assinatura.valor));
+      const problema = salvarAssinatura(assinatura, lerValor(assinatura.valor), cartoes);
       if (problema) return setErro(problema);
       return onFechar();
     }

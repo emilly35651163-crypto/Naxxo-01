@@ -133,7 +133,7 @@ export function itensDaFatura(cartao: Cartao, fatura: string, { compras, fixos }
       valor: fixo.valor,
       detalhe: `${fixo.categoria === "assinaturas" ? "assinatura" : "fixo"}${
         fixo.frequencia && fixo.frequencia !== "mensal" ? ` ${fixo.frequencia}` : ""
-      } · dia ${fixo.dia}`,
+      }`,
       fixoId: fixo.id,
     });
   }

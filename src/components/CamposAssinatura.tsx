@@ -2,50 +2,53 @@
 
 import { adicionarGastoFixo, FREQUENCIAS, SUGESTOES_FIXO, type Cartao, type Frequencia } from "@/lib/store";
 import { mesAtual } from "@/lib/formato";
-import { Campo, CampoSelect, CampoValor, Chip, DIAS_DO_MES } from "./Campos";
+import { dataDeFechamento, faturaAberta } from "@/lib/cartoes";
+import { Campo, CampoValor, Chip } from "./Campos";
 import CampoMes from "./CampoMes";
 
 // Campos de uma assinatura no cartão (Netflix, Spotify…): não tem parcelas nem fim.
-// Pode ser mensal, semestral ou anual.
+// Pode ser mensal, semestral ou anual. Basta o mês da fatura em que cobra: o dia o app calcula.
 
 export type RascunhoAssinatura = {
   nome: string;
   icone: string;
   valor: string;
-  dia: string;
   cartaoId: string;
   frequencia: Frequencia;
-  mesReferencia: string; // semestral/anual: mês da próxima cobrança
-  desde: string; // começou (ou começa) em qual mês
+  mesReferencia: string; // mês da fatura da próxima cobrança ("" = a fatura aberta agora)
 };
 
 export function assinaturaVazia(cartaoId: string): RascunhoAssinatura {
-  return { nome: "", icone: "📺", valor: "", dia: "", cartaoId, frequencia: "mensal", mesReferencia: "", desde: mesAtual() };
+  return { nome: "", icone: "📺", valor: "", cartaoId, frequencia: "mensal", mesReferencia: "" };
 }
 
 const SUGESTOES = SUGESTOES_FIXO.filter((s) => s.categoria === "assinaturas");
 
 /** Valida e salva a assinatura como gasto fixo pago no cartão. Devolve uma mensagem de erro, ou null se deu certo. */
-export function salvarAssinatura(r: RascunhoAssinatura, valor: number) {
+export function salvarAssinatura(r: RascunhoAssinatura, valor: number, cartoes: Cartao[]) {
   if (!r.nome.trim()) return "Qual é a assinatura?";
   if (!(valor > 0)) return "Digite o valor.";
-  if (!r.dia) return "Escolha o dia da cobrança.";
-  if (r.frequencia !== "mensal" && !r.mesReferencia) return "Escolha o mês da próxima cobrança.";
-  if (!r.cartaoId) return "Escolha o cartão.";
+  const cartao = cartoes.find((c) => c.id === r.cartaoId);
+  if (!cartao) return "Escolha o cartão.";
+  // Um dia antes do fechamento dessa fatura: a cobrança cai certinho nela
+  const fatura = r.mesReferencia || faturaAberta(cartao);
+  const d = new Date(`${dataDeFechamento(cartao, fatura)}T12:00:00`);
+  d.setDate(d.getDate() - 1);
+  const mes = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   adicionarGastoFixo({
     nome: r.nome.trim(),
     icone: r.icone,
     categoria: "assinaturas",
     valor,
     varia: false,
-    dia: Number(r.dia),
+    dia: d.getDate(),
     pagamento: "cartao",
     cartaoId: r.cartaoId,
-    desde: r.desde || mesAtual(),
+    desde: mes,
     // Começa num mês futuro: só entra nas faturas a partir dele (as faturas antigas já fecharam)
-    criadoEm: r.desde > mesAtual() ? `${r.desde}-01` : undefined,
+    criadoEm: mes > mesAtual() ? `${mes}-01` : undefined,
     frequencia: r.frequencia,
-    mesReferencia: r.frequencia !== "mensal" ? r.mesReferencia : undefined,
+    mesReferencia: r.frequencia !== "mensal" ? mes : undefined,
   });
   return null;
 }
@@ -67,6 +70,8 @@ export default function CamposAssinatura({
 }) {
   const mudar = (mudancas: Partial<RascunhoAssinatura>) => onChange({ ...r, ...mudancas });
   const frequencia = FREQUENCIAS.find((f) => f.id === r.frequencia)!;
+  const cartao = cartoes.find((c) => c.id === r.cartaoId);
+  const mes = r.mesReferencia || (cartao ? faturaAberta(cartao) : mesAtual());
 
   return (
     <div className="space-y-4">
@@ -115,18 +120,8 @@ export default function CamposAssinatura({
         </div>
       )}
 
-      {r.frequencia !== "mensal" && (
-        <Campo rotulo="Mês da próxima cobrança">
-          <CampoMes valor={r.mesReferencia} onChange={(mesReferencia) => mudar({ mesReferencia })} />
-        </Campo>
-      )}
-
-      <Campo rotulo={r.frequencia === "mensal" ? "Cobra todo dia" : "Dia da cobrança"}>
-        <CampoSelect valor={r.dia} onChange={(dia) => mudar({ dia })} opcoes={DIAS_DO_MES} placeholder="Dia" />
-      </Campo>
-
-      <Campo rotulo="Começou (ou começa) em">
-        <CampoMes valor={r.desde} onChange={(desde) => mudar({ desde: desde || mesAtual() })} />
+      <Campo rotulo="Mês da próxima cobrança">
+        <CampoMes key={r.cartaoId} valor={mes} onChange={(mesReferencia) => mudar({ mesReferencia })} />
       </Campo>
 
       <p className="rounded-2xl bg-roxo/10 px-4 py-3 text-xs text-suave">
