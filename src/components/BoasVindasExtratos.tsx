@@ -22,7 +22,14 @@ import {
   type Extrato,
 } from "@/lib/extrato";
 import { Campo, CampoSelect, CampoValor, Chip, DIAS_DO_MES } from "./Campos";
-import ComprasManuais, { comprasManuaisParaCartao, type CompraManual } from "./ComprasManuais";
+import ComprasManuais, {
+  comprasDosPrints,
+  comprasManuaisParaCartao,
+  type CompraManual,
+  type StatusDoPrint,
+} from "./ComprasManuais";
+import { ehImagem } from "@/lib/ocr";
+import { lerValor as lerValorDoCampo } from "@/lib/formato";
 
 // Questionário → "Suas contas e cartões": primeiro o banco; dentro dele, o extrato da conta e o do cartão de crédito.
 // Com isso o app monta as contas (com saldo), os cartões (com compras e parcelas) e o que entrou e saiu.
@@ -165,13 +172,25 @@ function ZonaArquivo({
   arquivo,
   onArquivo,
   onTirar,
+  onPrints,
+  aceitaPrints,
 }: {
   titulo: string;
   ajuda: string;
   arquivo: ArquivoLido | null;
   onArquivo: (f: File) => void;
   onTirar: () => void;
+  /** Aceita prints também (o cartão): as imagens vão para cá */
+  onPrints?: (imagens: File[]) => void;
+  aceitaPrints?: boolean;
 }) {
+  function receberArquivos(lista: FileList | null | undefined) {
+    const arquivos = Array.from(lista ?? []);
+    const imagens = arquivos.filter(ehImagem);
+    if (imagens.length && onPrints) onPrints(imagens);
+    const doc = arquivos.find((f) => !ehImagem(f));
+    if (doc) onArquivo(doc);
+  }
   const [arrastando, setArrastando] = useState(false);
   if (arquivo) {
     const datas = arquivo.extrato.linhas.map((l) => l.data).sort();
@@ -201,22 +220,26 @@ function ZonaArquivo({
       onDrop={(e) => {
         e.preventDefault();
         setArrastando(false);
-        const f = e.dataTransfer.files[0];
-        if (f) onArquivo(f);
+        receberArquivos(e.dataTransfer.files);
       }}
       className={`block cursor-pointer rounded-2xl border border-dashed px-3 py-4 text-center text-sm transition-colors hover:bg-rosa/5 ${
         arrastando ? "border-rosa bg-rosa/15" : "border-rosa/40"
       }`}
     >
       <span className="block font-medium text-rosa">📂 {titulo}</span>
+      {aceitaPrints && (
+        <span className="my-1 inline-block rounded-full bg-entrada/15 px-2 py-0.5 text-[0.65rem] font-semibold text-entrada">
+          📸 aceita prints
+        </span>
+      )}
       <span className="block text-xs text-suave">{ajuda}</span>
       <input
         type="file"
-        accept=".ofx,.csv,.txt,.qfx"
+        accept={onPrints ? ".ofx,.csv,.txt,.qfx,image/*" : ".ofx,.csv,.txt,.qfx"}
+        multiple={!!onPrints}
         className="sr-only"
         onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) onArquivo(f);
+          receberArquivos(e.target.files);
           e.target.value = "";
         }}
       />
@@ -229,9 +252,44 @@ export default function BoasVindasExtratos({
   onChange,
 }: {
   bancos: BancoExtrato[];
-  onChange: (novos: BancoExtrato[]) => void;
+  /** Aceita a lista nova ou uma função (a leitura dos prints termina depois e precisa da lista mais recente) */
+  onChange: (novos: BancoExtrato[] | ((atuais: BancoExtrato[]) => BancoExtrato[])) => void;
 }) {
   const [avisos, setAvisos] = useState<Record<number, string>>({});
+  const [prints, setPrints] = useState<Record<number, StatusDoPrint>>({});
+
+  /** Lê os prints da fatura e junta as compras achadas à lista do banco (para conferir). */
+  async function lerPrints(id: number, imagens: File[]) {
+    const status = (s: Partial<StatusDoPrint>) =>
+      setPrints((p) => ({ ...p, [id]: { ...(p[id] ?? { lendo: "", aviso: "", texto: "" }), ...s } }));
+    status({ lendo: "Preparando…", aviso: "", texto: "" });
+    try {
+      const { compras, texto } = await comprasDosPrints(imagens, (lendo) => status({ lendo }));
+      onChange((atuais) =>
+        atuais.map((b) =>
+          b.id === id
+            ? {
+                ...b,
+                temCartao: true,
+                comprasManuais: [
+                  ...b.comprasManuais.filter((c) => c.descricao.trim() || lerValorDoCampo(c.valor) > 0),
+                  ...compras,
+                ],
+              }
+            : b,
+        ),
+      );
+      status({
+        lendo: "",
+        texto: compras.length ? "" : texto,
+        aviso: compras.length
+          ? `Achei ${compras.length} compra${compras.length > 1 ? "s" : ""}. Confira nome, valor e parcelas (fundo amarelo).`
+          : "Não achei compras nesse print. Abra “Ver o que o leitor leu” e me mande, ou adicione à mão.",
+      });
+    } catch {
+      status({ lendo: "", aviso: "Não consegui ler o print agora. Confira a internet e tente de novo, ou adicione à mão." });
+    }
+  }
 
   function mudar(id: number, mudancas: Partial<BancoExtrato>) {
     onChange(bancos.map((b) => (b.id === id ? { ...b, ...mudancas } : b)));
@@ -332,13 +390,20 @@ export default function BoasVindasExtratos({
               <p className="text-sm font-semibold">💳 Cartão de crédito</p>
               <ZonaArquivo
                 titulo="Extrato / fatura do cartão"
-                ajuda="OFX ou CSV · escolha ou arraste aqui"
+                ajuda="OFX, CSV ou prints da fatura · escolha ou arraste aqui"
+                aceitaPrints
                 arquivo={b.cartao}
                 onArquivo={(f) => void receber(b, "cartao", f)}
                 onTirar={() => mudar(b.id, { cartao: null })}
+                onPrints={(imagens) => void lerPrints(b.id, imagens)}
               />
               {!b.cartao && (
-                <ComprasManuais lista={b.comprasManuais} onChange={(comprasManuais) => mudar(b.id, { comprasManuais })} />
+                <ComprasManuais
+                  lista={b.comprasManuais}
+                  onChange={(comprasManuais) => mudar(b.id, { comprasManuais })}
+                  onPrints={(imagens) => void lerPrints(b.id, imagens)}
+                  status={prints[b.id] ?? { lendo: "", aviso: "", texto: "" }}
+                />
               )}
               <div className="grid gap-3 sm:grid-cols-3">
                 <Campo rotulo="Limite do cartão">

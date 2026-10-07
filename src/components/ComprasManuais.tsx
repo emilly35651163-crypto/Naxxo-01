@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { brl, lerValor, soNumeros, somarMeses, dataDoRecebimento, valorParaCampo } from "@/lib/formato";
 import { dataPelasParcelasPagas } from "@/lib/cartoes";
 import { comprasDoTextoDoPrint } from "@/lib/print";
+import { lerTextoDosPrints } from "@/lib/ocr";
 import type { CompraCartao } from "@/lib/store";
 import { CampoValor } from "./Campos";
 
@@ -43,56 +43,46 @@ export function comprasManuaisParaCartao(lista: CompraManual[], cartaoId: string
     });
 }
 
-export default function ComprasManuais({ lista, onChange }: { lista: CompraManual[]; onChange: (nova: CompraManual[]) => void }) {
-  const [lendo, setLendo] = useState("");
-  const [aviso, setAviso] = useState("");
+/** Lê os prints e devolve as compras achadas (para a pessoa conferir) e o texto lido. */
+export async function comprasDosPrints(arquivos: File[], aoAvancar: (texto: string) => void) {
+  const textos = await lerTextoDosPrints(arquivos, aoAvancar, (texto) => comprasDoTextoDoPrint(texto).length > 0);
+  const compras: CompraManual[] = textos.flatMap((texto) =>
+    comprasDoTextoDoPrint(texto).map((c) => {
+      const numero = c.parcela?.numero ?? 1;
+      return {
+        id: proximoId++,
+        descricao: c.descricao,
+        valor: valorParaCampo(c.valor),
+        parcelas: String(c.parcela?.total ?? 1),
+        pagas: numero > 1 ? String(numero - 1) : "",
+        // A data do dia da compra vale como está; a da parcela N volta N-1 meses
+        data:
+          c.data && numero > 1 && !c.dataDaCompra
+            ? dataDoRecebimento(String(Number(c.data.slice(8, 10))), somarMeses(c.data.slice(0, 7), -(numero - 1)))
+            : c.data,
+        doPrint: true,
+      };
+    }),
+  );
+  return { compras, texto: textos.join("\n\n— próximo print —\n\n") };
+}
 
+export type StatusDoPrint = { lendo: string; aviso: string; texto: string };
+
+export default function ComprasManuais({
+  lista,
+  onChange,
+  onPrints,
+  status,
+}: {
+  lista: CompraManual[];
+  onChange: (nova: CompraManual[]) => void;
+  onPrints: (arquivos: File[]) => void;
+  status: StatusDoPrint;
+}) {
+  const { lendo, aviso, texto } = status;
   const mudar = (id: number, mudancas: Partial<CompraManual>) =>
     onChange(lista.map((c) => (c.id === id ? { ...c, ...mudancas } : c)));
-
-  async function lerPrints(arquivos: FileList | null) {
-    if (!arquivos?.length) return;
-    setAviso("");
-    const achadas: CompraManual[] = [];
-    try {
-      // O leitor de imagem é grande: só carrega quando a pessoa usa
-      const { createWorker } = await import("tesseract.js");
-      setLendo("Preparando o leitor…");
-      const leitor = await createWorker("por");
-      let n = 0;
-      for (const arquivo of Array.from(arquivos)) {
-        setLendo(`Lendo o print ${++n} de ${arquivos.length}…`);
-        const { data } = await leitor.recognize(arquivo);
-        for (const c of comprasDoTextoDoPrint(data.text)) {
-          const numero = c.parcela?.numero ?? 1;
-          achadas.push({
-            id: proximoId++,
-            descricao: c.descricao,
-            valor: valorParaCampo(c.valor),
-            parcelas: String(c.parcela?.total ?? 1),
-            pagas: numero > 1 ? String(numero - 1) : "",
-            // A parcela N caiu N-1 meses depois da compra
-            data:
-              c.data && numero > 1
-                ? dataDoRecebimento(String(Number(c.data.slice(8, 10))), somarMeses(c.data.slice(0, 7), -(numero - 1)))
-                : c.data,
-            doPrint: true,
-          });
-        }
-      }
-      await leitor.terminate();
-    } catch {
-      setAviso("Não consegui ler o print agora. Confira a internet e tente de novo, ou adicione à mão.");
-    }
-    setLendo("");
-    if (!achadas.length) {
-      setAviso((a) => a || "Não achei compras nesse print. Tente um print mais de perto, só da lista de compras.");
-      return;
-    }
-    // Some as linhas vazias e junta o que veio do print
-    onChange([...lista.filter((c) => c.descricao.trim() || lerValor(c.valor) > 0), ...achadas]);
-    setAviso(`Achei ${achadas.length} compra${achadas.length > 1 ? "s" : ""}. Confira nome, valor e parcelas (marcadas com 📸).`);
-  }
 
   const total = lista.reduce((t, c) => t + (lerValor(c.valor) || 0), 0);
 
@@ -109,7 +99,7 @@ export default function ComprasManuais({ lista, onChange }: { lista: CompraManua
             className="sr-only"
             disabled={!!lendo}
             onChange={(e) => {
-              void lerPrints(e.target.files);
+              if (e.target.files?.length) onPrints(Array.from(e.target.files));
               e.target.value = "";
             }}
           />
@@ -117,6 +107,12 @@ export default function ComprasManuais({ lista, onChange }: { lista: CompraManua
       </div>
       {lendo && <p className="animate-pulse text-xs text-rosa">🔎 {lendo}</p>}
       {aviso && <p className="text-xs text-amber-300">{aviso}</p>}
+      {texto && (
+        <details className="text-xs text-suave">
+          <summary className="cursor-pointer">Ver o que o leitor leu no print</summary>
+          <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap rounded-lg bg-fundo p-2">{texto}</pre>
+        </details>
+      )}
 
       {lista.length > 0 && (
         <div className="hidden grid-cols-[1fr_7rem_3.5rem_3.5rem_1.5rem] gap-2 px-1 text-[0.65rem] text-suave sm:grid">

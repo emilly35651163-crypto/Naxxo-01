@@ -9,6 +9,8 @@ export type CompraDoPrint = {
   valor: number; // o valor que aparece (de uma parcela, se for parcelado)
   parcela?: { numero: number; total: number };
   data?: string; // "2026-10-05", quando o print mostra
+  /** A data é a do dia da compra (ex.: "Parcelas de compras anteriores · 25/08/2026"), não a da parcela */
+  dataDaCompra?: boolean;
 };
 
 const MESES: Record<string, number> = {
@@ -28,10 +30,10 @@ const MESES: Record<string, number> = {
 
 const semAcento = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
-const DINHEIRO = /(-|−)?\s*(?:R\$\s*)?(\d{1,3}(?:[.\s]\d{3})*,\d{2})(?!\d)/;
+const DINHEIRO = /(-|−)?\s*(?:R[$S5]\s*)?(\d{1,3}(?:[.\s]\d{3})*[,.]\d{2})(?![\d/])/;
 // Linhas que não são compras (resumo da fatura, limite, pagamentos…)
 const NAO_E_COMPRA =
-  /total|fatura|limite|disponivel|pagamento|pago|saldo|vencimento|fechamento|minimo|juros|iof|encargo|estorno|credito de|ajuste|anuidade gratis|resumo/;
+  /total|fatura|limite|disponivel|pagamento|pago|saldo|vencimento|fechamento|minimo|estorno|credito de|ajuste|anuidade gratis|resumo/;
 
 function lerDataDoPrint(texto: string, hoje: Date): string | undefined {
   const t = semAcento(texto);
@@ -86,11 +88,13 @@ function limparNome(texto: string) {
     .replace(/\b\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\b/g, " ")
     .replace(/\b\d{1,2}:\d{2}\b/g, " ")
     .replace(/[|•·>›<‹©®™@#*_=~"“”]+/g, " ")
+    .replace(/\blof\b/gi, "IOF") // o leitor confunde o I com l
     .replace(/\s+/g, " ")
     .trim();
 }
 
 const temLetras = (t: string) => (t.match(/[a-zà-ú]/gi) ?? []).length >= 3;
+const DIAS_DA_SEMANA = /\b(domingo|segunda|terca|quarta|quinta|sexta|sabado)(-feira)?\b|\b(dom|seg|ter|qua|qui|sex|sab)\b\.?/g;
 
 /** Texto lido do print → compras. */
 export function comprasDoTextoDoPrint(texto: string, hoje = new Date()): CompraDoPrint[] {
@@ -104,9 +108,11 @@ export function comprasDoTextoDoPrint(texto: string, hoje = new Date()): CompraD
     const linha = linhas[i];
     const valorAchado = linha.match(DINHEIRO);
     if (!valorAchado) {
-      // Linha só com data: vale para as compras de baixo
+      // Linha só com data ("04 de outubro, domingo"): vale para as compras de baixo
       const data = lerDataDoPrint(linha, hoje);
-      if (data && !temLetras(limparNome(linha))) dataAtual = data;
+      if (data && !temLetras(semAcento(limparNome(linha)).replace(DIAS_DA_SEMANA, ""))) dataAtual = data;
+      // "Parcelas de compras anteriores": daqui para baixo a data de cada uma vem na própria compra
+      else if (/parcelas de compras|compras anteriores/.test(semAcento(linha))) dataAtual = undefined;
       continue;
     }
     if (valorAchado[1]) continue; // valor negativo: estorno/pagamento
@@ -121,11 +127,19 @@ export function comprasDoTextoDoPrint(texto: string, hoje = new Date()): CompraD
     }
     const contexto = [vizinha, linha, linhas[i + 1] && !DINHEIRO.test(linhas[i + 1]) ? linhas[i + 1] : ""];
     if (!temLetras(nome) || NAO_E_COMPRA.test(semAcento(`${nome} ${linha}`))) continue;
+    // Data completa nas linhas de baixo (ex.: "25/08/2026 Pode antecipar"): é o dia da compra
+    const debaixo = [linhas[i + 1], linhas[i + 2]].filter((l) => l && !DINHEIRO.test(l));
+    const dataCompleta = debaixo.map((l) => l.match(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/)).find(Boolean);
     compras.push({
       descricao: nome.slice(0, 60),
       valor,
-      parcela: lerParcela(contexto),
-      data: lerDataDoPrint(`${vizinha} ${linha}`, hoje) ?? dataAtual,
+      parcela: lerParcela([...contexto, linhas[i + 2] && !DINHEIRO.test(linhas[i + 2]) ? linhas[i + 2] : ""]),
+      ...(dataCompleta
+        ? {
+            data: `${dataCompleta[3]}-${dataCompleta[2].padStart(2, "0")}-${dataCompleta[1].padStart(2, "0")}`,
+            dataDaCompra: true,
+          }
+        : { data: lerDataDoPrint(`${vizinha} ${linha}`, hoje) ?? dataAtual }),
     });
   }
   return compras;
