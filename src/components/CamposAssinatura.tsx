@@ -93,7 +93,7 @@ export default function CamposAssinatura({
       <div className="space-y-1.5">
         <span className="text-xs text-suave">De quanto em quanto tempo cobra?</span>
         <div className="flex flex-wrap gap-2">
-          {FREQUENCIAS.map((f) => (
+          {FREQUENCIAS.filter((f) => f.id !== "personalizada").map((f) => (
             <Chip key={f.id} ativo={r.frequencia === f.id} onClick={() => mudar({ frequencia: f.id })}>
               {f.nome}
             </Chip>

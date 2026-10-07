@@ -6,7 +6,7 @@ import { adicionarGastoFixo, iconeDaCategoria, type Cartao, type CategoriaFixo }
 import { mesAtual, somarDias, somarMeses } from "./formato";
 import { dataDeFechamento, faturaDaData } from "./cartoes";
 
-export type Repetir = { modo: "mes" | "dias"; intervalo: number; vezes: number | null; varia: boolean };
+export type Repetir = { modo: "mes" | "ano" | "dias"; intervalo: number; vezes: number | null; varia: boolean };
 
 const CATEGORIA_DO_FIXO: Record<string, CategoriaFixo> = {
   Moradia: "moradia",
@@ -20,7 +20,9 @@ const CATEGORIA_DO_FIXO: Record<string, CategoriaFixo> = {
 /** Último mês em que cobra, contando esta vez (vezes = null: sem fim). */
 function ultimoMes(data: string, r: Repetir) {
   if (!r.vezes || r.vezes < 1) return undefined;
-  return r.modo === "mes" ? somarMeses(data.slice(0, 7), r.vezes - 1) : somarDias(data, (r.vezes - 1) * r.intervalo).slice(0, 7);
+  if (r.modo === "mes") return somarMeses(data.slice(0, 7), r.vezes - 1);
+  if (r.modo === "ano") return somarMeses(data.slice(0, 7), 12 * (r.vezes - 1));
+  return somarDias(data, (r.vezes - 1) * r.intervalo).slice(0, 7);
 }
 
 /**
@@ -47,6 +49,8 @@ export function criarRepeticao(dados: {
     varia: repetir.varia,
     dia: Number(data.slice(8, 10)),
     ate: ultimoMes(data, repetir),
+    // Todo ano: cobra sempre neste mesmo mês
+    ...(repetir.modo === "ano" ? { frequencia: "anual" as const, mesReferencia: data.slice(0, 7) } : {}),
   };
   if (cartao) {
     // No cartão, esta compra já está na fatura dela: o gasto fixo começa na fatura seguinte

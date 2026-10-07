@@ -27,6 +27,7 @@ import EscolhaConta, { lerEscolha } from "./EscolhaConta";
 import CamposAssinatura, { assinaturaVazia, salvarAssinatura, type RascunhoAssinatura } from "./CamposAssinatura";
 import { comDesfazer, mostrarAviso } from "@/lib/avisos";
 import { criarRepeticao } from "@/lib/repeticao";
+import EscolhaRepeticao, { lerRepeticao, type Repeticao } from "./EscolhaRepeticao";
 
 // "Fatura do cartão" não faz sentido como categoria de uma compra
 export const CATEGORIAS_COMPRA = CATEGORIAS.saida.filter((c) => c.nome !== "Fatura do cartão");
@@ -127,7 +128,8 @@ export default function FormCompra({
   const [nomeNova, setNomeNova] = useState("");
   const [erro, setErro] = useState("");
   // Editando uma compra à vista: dá para dizer que ela vai se repetir (ex.: gasolina a cada 15 dias)
-  const [repete, setRepete] = useState<"nao" | "mes" | "dias">("nao");
+  const [repete, setRepete] = useState<Repeticao>("nao");
+  const [varia, setVaria] = useState(false);
   const [aCadaDias, setACadaDias] = useState("15");
   const [vezesTotal, setVezesTotal] = useState("");
 
@@ -220,20 +222,9 @@ export default function FormCompra({
     else adicionarCompra(dados);
     const cartao = cartoes.find((c) => c.id === credito.cartaoId);
     if (compra && repete !== "nao" && parcelas === 1 && cartao) {
-      if (repete === "dias" && !(Number(aCadaDias) > 0)) return setErro("A cada quantos dias?");
-      criarRepeticao({
-        nome: dados.descricao,
-        categoria,
-        valor: numero,
-        data,
-        cartao,
-        repetir: {
-          modo: repete,
-          intervalo: Number(aCadaDias) || 30,
-          vezes: Number(vezesTotal) || null,
-          varia: repete === "dias",
-        },
-      });
+      const repetir = lerRepeticao(repete, aCadaDias, vezesTotal, varia);
+      if (!repetir) return setErro("A cada quantos dias?");
+      criarRepeticao({ nome: dados.descricao, categoria, valor: numero, data, cartao, repetir });
       mostrarAviso({ texto: "🔁 As próximas vezes ficam previstas no cartão" });
     }
     onFechar();
@@ -381,48 +372,18 @@ export default function FormCompra({
         )}
 
         {compra && tipo === "compra" && !noDebito && lerRascunhoCredito(credito).parcelas === 1 && (
-          <div className="space-y-1.5">
-            <span className="text-xs text-suave">Vai se repetir nos próximos meses?</span>
-            <div className="flex flex-wrap gap-2">
-              {(
-                [
-                  ["nao", "Não"],
-                  ["mes", "Todo mês"],
-                  ["dias", "A cada X dias"],
-                ] as const
-              ).map(([id, nome]) => (
-                <Chip key={id} ativo={repete === id} onClick={() => setRepete(id)}>
-                  {nome}
-                </Chip>
-              ))}
-            </div>
-            {repete !== "nao" && (
-              <div className="flex flex-wrap items-center gap-2 pt-1 text-sm">
-                {repete === "dias" && (
-                  <>
-                    a cada
-                    <input
-                      inputMode="numeric"
-                      value={aCadaDias}
-                      onChange={(e) => setACadaDias(e.target.value.replace(/\D/g, "").slice(0, 3))}
-                      aria-label="A cada quantos dias"
-                      className="campo w-16 px-2 py-1.5 text-center"
-                    />
-                    dias ·
-                  </>
-                )}
-                quantas vezes ao todo?
-                <input
-                  inputMode="numeric"
-                  value={vezesTotal}
-                  onChange={(e) => setVezesTotal(e.target.value.replace(/\D/g, "").slice(0, 3))}
-                  placeholder="sem fim"
-                  aria-label="Quantas vezes ao todo"
-                  className="campo w-24 px-2 py-1.5 text-center"
-                />
-              </div>
-            )}
-          </div>
+          <EscolhaRepeticao
+            titulo="Vai se repetir nos próximos meses?"
+            repete={repete}
+            onRepete={setRepete}
+            aCadaDias={aCadaDias}
+            onACadaDias={setACadaDias}
+            vezesTotal={vezesTotal}
+            onVezesTotal={setVezesTotal}
+            varia={varia}
+            onVaria={setVaria}
+            valor={numero}
+          />
         )}
 
         {erro && <p className="text-sm text-saida">{erro}</p>}

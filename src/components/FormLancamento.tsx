@@ -28,19 +28,18 @@ import {
   type Tipo,
 } from "@/lib/store";
 import {
-  brl,
   formatarData,
   hojeISO,
   lerValor,
   mesAtual,
   nomeMes,
-  soNumeros,
   somarDias,
   somarMeses,
   valorParaCampo,
   mascaraDinheiro,
 } from "@/lib/formato";
 import { criarRepeticao } from "@/lib/repeticao";
+import EscolhaRepeticao, { lerRepeticao, type Repeticao } from "./EscolhaRepeticao";
 import { faturaDaData } from "@/lib/cartoes";
 import { comDesfazer, mostrarAviso } from "@/lib/avisos";
 import Modal from "./Modal";
@@ -57,16 +56,6 @@ const CATEGORIA_DO_FIXO: Record<string, CategoriaFixo> = {
   Educação: "educacao",
   Transporte: "transporte",
 };
-
-type Repeticao = "nao" | "semana" | "quinzena" | "mes" | "ano" | "outro";
-const REPETICOES: { id: Repeticao; nome: string }[] = [
-  { id: "nao", nome: "Só desta vez" },
-  { id: "semana", nome: "Toda semana" },
-  { id: "quinzena", nome: "A cada 15 dias" },
-  { id: "mes", nome: "Todo mês" },
-  { id: "ano", nome: "Todo ano" },
-  { id: "outro", nome: "A cada…" },
-];
 
 // Categorias que não se escolhem à mão (vêm de outros lugares do app)
 const AUTOMATICAS = ["Fatura do cartão", "Guardar (metas)"];
@@ -142,7 +131,6 @@ export default function FormLancamento({
   const numero = lerValor(valor);
   const futuro = data > hojeISO();
   const vezes = Math.max(Number(parcelas) || 1, 1);
-  const repeticoes = entrada ? REPETICOES.filter((r) => r.id !== "ano" && r.id !== "outro") : REPETICOES;
   const categorias = categoriasDe(tipo, personalizadas).filter(
     (c) => !AUTOMATICAS.includes(c.nome) && (c.nome !== "Outros" || categoria === "Outros"),
   );
@@ -252,21 +240,9 @@ export default function FormLancamento({
       }
       let ligacao = {};
       if (podeRepetirAoEditar && repete !== "nao") {
-        const intervalo = repete === "semana" ? 7 : repete === "quinzena" ? 15 : repete === "outro" ? Number(aCadaDias) : 0;
-        if (repete === "outro" && !(intervalo > 0)) return falhar("A cada quantos dias?", "dias");
-        const fixoId = criarRepeticao({
-          nome,
-          categoria,
-          valor: numero,
-          data,
-          contaId,
-          repetir: {
-            modo: repete === "mes" ? "mes" : "dias",
-            intervalo: repete === "ano" ? 365 : intervalo,
-            vezes: Number(vezesTotal) || null,
-            varia,
-          },
-        });
+        const repetir = lerRepeticao(repete, aCadaDias, vezesTotal, varia);
+        if (!repetir) return falhar("A cada quantos dias?", "dias");
+        const fixoId = criarRepeticao({ nome, categoria, valor: numero, data, contaId, repetir });
         ligacao = { gastoFixoId: fixoId, competencia: data.slice(0, 7) };
       }
       atualizarLancamento(lancamento.id, {
@@ -599,58 +575,20 @@ export default function FormLancamento({
         {noCredito && repete === "nao" && <EscolhaParcelas valor={parcelas} onChange={setParcelas} valorTotal={numero} />}
 
         {mostrarRepeticao && (
-          <div className="space-y-1.5">
-            <span className="text-xs text-suave">
-              {entrada ? "Vai entrar de novo?" : lancamento ? "Vai se repetir nos próximos meses?" : "Vai se repetir?"}
-            </span>
-            <div className="flex flex-wrap gap-2">
-              {repeticoes.map((r) => (
-                <Chip key={r.id} ativo={repete === r.id} onClick={() => setRepete(r.id)}>
-                  {entrada && r.id !== "nao" ? `${r.nome} (renda)` : r.nome}
-                </Chip>
-              ))}
-            </div>
-            {repete === "outro" && (
-              <div className="flex items-center gap-2 pt-1 text-sm">
-                a cada
-                <input
-                  inputMode="numeric"
-                  value={aCadaDias}
-                  aria-label="A cada quantos dias"
-                  onChange={(e) => setACadaDias(soNumeros(e.target.value, false))}
-                  className={`campo w-16 px-2 py-1.5 text-center ${erro?.campo === "dias" ? "campo-erro" : ""}`}
-                />
-                dias
-              </div>
-            )}
-            {repete !== "nao" && !entrada && (
-              <div className="flex flex-wrap items-center gap-2 pt-1 text-sm">
-                Quantas vezes ao todo, contando esta?
-                <input
-                  inputMode="numeric"
-                  value={vezesTotal}
-                  onChange={(e) => setVezesTotal(soNumeros(e.target.value, false).slice(0, 3))}
-                  placeholder="sem fim"
-                  aria-label="Quantas vezes ao todo"
-                  className="campo w-24 px-2 py-1.5 text-center"
-                />
-                {Number(vezesTotal) > 1 && numero > 0 && (
-                  <span className="text-xs text-suave">= {brl(numero * Number(vezesTotal))} no total</span>
-                )}
-              </div>
-            )}
-            {repete !== "nao" && (
-              <label className="flex cursor-pointer items-center gap-2 pt-1 text-sm">
-                <input
-                  type="checkbox"
-                  checked={varia}
-                  onChange={(e) => setVaria(e.target.checked)}
-                  className="size-4 accent-rosa"
-                />
-                O valor muda a cada vez
-              </label>
-            )}
-          </div>
+          <EscolhaRepeticao
+            titulo={entrada ? "Vai entrar de novo?" : lancamento ? "Vai se repetir nos próximos meses?" : "Vai se repetir?"}
+            repete={repete}
+            onRepete={setRepete}
+            aCadaDias={aCadaDias}
+            onACadaDias={setACadaDias}
+            vezesTotal={vezesTotal}
+            onVezesTotal={setVezesTotal}
+            varia={varia}
+            onVaria={setVaria}
+            valor={numero}
+            entrada={entrada}
+            erroDias={erro?.campo === "dias"}
+          />
         )}
 
         {/* Hoje ou antes: já foi pago/recebido ou ainda não? (um boleto que vence hoje ainda está "a pagar") */}

@@ -14,16 +14,17 @@ export async function GET(request: Request) {
   const secreta = process.env.SUPABASE_SECRET_KEY;
   if (process.env.VERCEL || !["localhost", "127.0.0.1"].includes(host)) return new Response("Não encontrado", { status: 404 });
   if (!url || !secreta)
-    return Response.json(
-      { erro: "Falta a chave: coloque SUPABASE_URL e SUPABASE_SECRET_KEY no arquivo .env.local" },
-      { status: 400 },
-    );
+    return Response.json({ etapa: "sem-chave", erro: "Falta a chave secreta no arquivo .env.local" }, { status: 400 });
 
   const supabase = createClient(url, secreta, { auth: { persistSession: false, autoRefreshToken: false } });
 
   // Contas de login (até 1000)
   const { data: usuarios, error: erroUsuarios } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-  if (erroUsuarios) return Response.json({ erro: `Supabase recusou a chave: ${erroUsuarios.message}` }, { status: 400 });
+  if (erroUsuarios)
+    return Response.json(
+      { etapa: "chave-recusada", erro: `O Supabase não aceitou a chave (${erroUsuarios.message})` },
+      { status: 400 },
+    );
 
   // Os dados de cada pessoa (para saber se está usando de verdade)
   const { data: linhas, error: erroDados } = await supabase.from("dados").select("user_id, chave, valor, atualizado_em");
@@ -53,7 +54,7 @@ export async function GET(request: Request) {
   return Response.json({
     pessoas,
     // Sem permissão na tabela: mostra os logins mesmo assim, com o aviso de como liberar
-    avisoDados: erroDados ? `Não consegui ler os dados de uso (${erroDados.message}). Rode o SQL do painel no Supabase.` : null,
+    avisoDados: erroDados ? `Ainda não consigo ver o uso de cada pessoa (${erroDados.message}).` : null,
     geradoEm: new Date().toISOString(),
   });
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Tutorial, { type Etapa } from "./Tutorial";
 
 // Painel de controle (localhost): quantas pessoas criaram conta, quem está usando e o quanto.
 // Os dados vêm de /api/painel, que só funciona no seu computador (com a chave secreta no .env.local).
@@ -34,6 +35,7 @@ export default function Painel() {
   const [geradoEm, setGeradoEm] = useState("");
   const [carregando, setCarregando] = useState(false);
   const [agora, setAgora] = useState(0);
+  const [etapa, setEtapa] = useState<Etapa | null>(null);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -42,11 +44,13 @@ export default function Painel() {
       const j = r.status === 404 ? { erro: "O painel só funciona no seu computador (localhost)." } : await r.json();
       if (j.erro) {
         setErro(j.erro);
+        setEtapa(j.etapa ?? null);
         setPessoas(null);
       } else {
         setErro("");
         setPessoas(j.pessoas);
         setAviso(j.avisoDados ?? "");
+        setEtapa(j.avisoDados ? "sem-permissao" : "pronto");
         setGeradoEm(j.geradoEm);
         setAgora(Date.now());
       }
@@ -97,20 +101,9 @@ export default function Painel() {
         </button>
       </div>
 
-      {erro && (
-        <div className="cartao space-y-2 border-saida/50 p-5 text-sm">
-          <p className="font-semibold text-saida">⚠️ {erro}</p>
-          <p className="text-suave">
-            No arquivo <b className="text-white">.env.local</b> (na pasta do projeto) precisam estar:
-          </p>
-          <pre className="overflow-auto rounded-xl bg-fundo p-3 text-xs">
-            SUPABASE_URL=https://jwxzfuuebrhbcqokxxmi.supabase.co{"\n"}SUPABASE_SECRET_KEY=sb_secret_… (Supabase → Project
-            Settings → API Keys)
-          </pre>
-          <p className="text-suave">Depois de salvar, reinicie o npm run dev.</p>
-        </div>
-      )}
+      {erro && !etapa && <p className="cartao border-saida/50 p-4 text-sm text-saida">⚠️ {erro}</p>}
       {aviso && <p className="cartao border-amber-300/40 p-4 text-sm text-amber-300">⚠️ {aviso}</p>}
+      {etapa && etapa !== "pronto" && <Tutorial etapa={etapa} onTestar={() => void carregar()} testando={carregando} />}
 
       {numeros && (
         <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
