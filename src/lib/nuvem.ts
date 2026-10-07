@@ -12,7 +12,10 @@ const URL_SUPABASE = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const CHAVE_PUBLICA = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 /** Sem as chaves (ex.: rodando sem configurar), o app funciona como antes, só no navegador. */
-export const nuvemAtiva = !!URL_SUPABASE && !!CHAVE_PUBLICA;
+/** Endereços com login e nuvem. Nos outros (naxxo-01.vercel.app, localhost), o app funciona só no navegador, sem login. */
+const ENDERECOS_COM_LOGIN = ["naxxo.com.br", "www.naxxo.com.br"];
+const temChaves = !!URL_SUPABASE && !!CHAVE_PUBLICA;
+export const nuvemAtiva = temChaves && typeof window !== "undefined" && ENDERECOS_COM_LOGIN.includes(window.location.hostname);
 export const supabase = nuvemAtiva ? createClient(URL_SUPABASE!, CHAVE_PUBLICA!) : null;
 
 export type EstadoNuvem = "carregando" | "fora" | "sincronizando" | "pronto";
@@ -33,7 +36,7 @@ export function useEstadoNuvem() {
       return () => ouvintes.delete(o);
     },
     () => estado,
-    () => (nuvemAtiva ? "carregando" : "pronto") as EstadoNuvem,
+    () => (temChaves ? "carregando" : "pronto") as EstadoNuvem,
   );
 }
 
