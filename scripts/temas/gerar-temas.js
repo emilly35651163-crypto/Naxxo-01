@@ -91,6 +91,9 @@ tematico("bolhas", "Bolhas", "Azul", "claro", "Bolhas de sabão",
   "radial-gradient(circle at 88% 30%, rgb(255 255 255 / 0.9) 0 3px, transparent 4px), radial-gradient(circle at 88% 45%, transparent 13px, rgb(147 197 253 / 0.7) 14px, rgb(249 168 212 / 0.5) 15.5px, transparent 17px), radial-gradient(circle at 76% 70%, transparent 6px, rgb(103 232 249 / 0.7) 7px, transparent 8.5px), linear-gradient(180deg, rgb(255 255 255 / 0.85), rgb(219 239 255 / 0.75))",
   "rgb(56 189 248 / 0.3)");
 
+// Ordem na tela: Elétrico por último entre os azuis (o desenho é gerado acima, na mesma ordem de sempre)
+T.splice(T.findIndex((x) => x.id === "bolhas") + 1, 0, ...T.splice(T.findIndex((x) => x.id === "eletrico"), 1));
+
 // ---------- Roxo ----------
 sobrio("roxo-escuro", "Roxo escuro", "Roxo", "escuro", "Berinjela e preto",
   V("#0c0618", "#170d2a", "#21143a", "#a99bc9", "#f3eeff", "#a78bfa", "#8b5cf6", "#c4b5fd", "linear-gradient(135deg, #7c3aed, #4c1d95)", "rgb(167 139 250 / 0.3)", "rgb(139 92 246 / 0.2)", "rgb(167 139 250 / 0.08)"));
