@@ -41,7 +41,7 @@ export const TEMAS: Tema[] = [
   { id: "azul-claro", nome: "Azul claro", cor: "Azul", base: "claro", estilo: "sobrio", descricao: "Azul-céu", bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #bcd6f1 70%, #0369a1 140%)", barra: "#cfe4f8" },
   { id: "bolhas", nome: "Bolhas", cor: "Azul", base: "claro", estilo: "tematico", descricao: "Bolhas de sabão", bolinha: "var(--cena-bolhas) 18% 7% / 320% no-repeat", barra: "#e3f0ff" },
   { id: "eletrico", nome: "Elétrico", cor: "Azul", base: "claro", estilo: "tematico", descricao: "Raios num céu azul vivo", bolinha: "var(--cena-eletrico) 50% 20% / 320% no-repeat", barra: "#e3efff" },
-  { id: "roxo-escuro", nome: "Roxo escuro", cor: "Roxo", base: "escuro", estilo: "sobrio", descricao: "Berinjela e preto", bolinha: "radial-gradient(circle at 32% 30%, #8b5cf6, #0c0618 78%)", barra: "#0c0618" },
+  { id: "roxo-escuro", nome: "Roxo escuro", cor: "Roxo", base: "escuro", estilo: "sobrio", descricao: "Roxo neon e preto", bolinha: "radial-gradient(circle at 32% 30%, #6d1a99, #10051a 78%)", barra: "#10051a" },
   { id: "universo", nome: "Universo", cor: "Roxo", base: "escuro", estilo: "tematico", descricao: "Nebulosa, estrelas e planeta", bolinha: "var(--cena-universo) 70% 74% / 320% no-repeat", barra: "#05030f" },
   { id: "roxo-claro", nome: "Roxo claro", cor: "Roxo", base: "claro", estilo: "sobrio", descricao: "Lilás e branco", bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #ddd0f7 70%, #6d28d9 140%)", barra: "#e9e0fb" },
   { id: "gatinho", nome: "Gatinho", cor: "Roxo", base: "claro", estilo: "tematico", descricao: "Gatinho branco dormindo no lilás", bolinha: "var(--cena-gatinho) 50% 68% / 320% no-repeat", barra: "#e9e0fb" },

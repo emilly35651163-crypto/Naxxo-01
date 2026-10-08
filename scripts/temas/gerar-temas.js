@@ -95,8 +95,9 @@ tematico("bolhas", "Bolhas", "Azul", "claro", "Bolhas de sabão",
 T.splice(T.findIndex((x) => x.id === "bolhas") + 1, 0, ...T.splice(T.findIndex((x) => x.id === "eletrico"), 1));
 
 // ---------- Roxo ----------
-sobrio("roxo-escuro", "Roxo escuro", "Roxo", "escuro", "Berinjela e preto",
-  V("#0c0618", "#170d2a", "#21143a", "#a99bc9", "#f3eeff", "#a78bfa", "#8b5cf6", "#c4b5fd", "linear-gradient(135deg, #7c3aed, #4c1d95)", "rgb(167 139 250 / 0.3)", "rgb(139 92 246 / 0.2)", "rgb(167 139 250 / 0.08)"));
+// Roxo escuro neon (puxado para #6d1a99), como o rosa escuro
+sobrio("roxo-escuro", "Roxo escuro", "Roxo", "escuro", "Roxo neon e preto",
+  V("#10051a", "#1c0a2c", "#2a0f40", "#b69bcc", "#f9eeff", "#c84dff", "#6d1a99", "#e08bff", "linear-gradient(135deg, #a32de6, #6d1a99 60%, #4a0f6b)", "rgb(200 77 255 / 0.4)", "rgb(200 77 255 / 0.22)", "rgb(109 26 153 / 0.14)"));
 tematico("universo", "Universo", "Roxo", "escuro", "Nebulosa, estrelas e planeta",
   V("#05030f", "#120a26", "#1b1036", "#b4a6d8", "#f5f0ff", "#c084fc", "#8b5cf6", "#60a5fa", "linear-gradient(135deg, #9333ea, #4f46e5)", "rgb(192 132 252 / 0.3)"),
   cenas.universo(), "radial-gradient(circle at 18% 30%, #fff 0 1px, transparent 2px), radial-gradient(circle at 58% 22%, #fff 0 1px, transparent 2px), radial-gradient(circle at 84% 62%, #fff 0 1.5px, transparent 2.5px), linear-gradient(180deg, rgb(124 58 237 / 0.4), rgb(18 10 38 / 0.88))", "rgb(192 132 252 / 0.3)");

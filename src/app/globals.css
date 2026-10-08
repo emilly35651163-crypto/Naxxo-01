@@ -656,20 +656,20 @@ body::before {
   --topo-borda: rgb(37 99 235 / 0.5);
 }
 
-/* Roxo escuro (escuro sóbrio): Berinjela e preto */
+/* Roxo escuro (escuro sóbrio): Roxo neon e preto */
 :root[data-paleta="roxo-escuro"] {
-  --color-texto: #f3eeff;
-  --color-fundo: #0c0618;
-  --color-superficie: #170d2a;
-  --color-superficie-2: #21143a;
-  --color-suave: #a99bc9;
-  --color-rosa: #a78bfa;
-  --color-roxo: #8b5cf6;
-  --color-azul: #c4b5fd;
-  --botao: linear-gradient(135deg, #7c3aed, #4c1d95);
-  --brilho-botao: rgb(167 139 250 / 0.3);
-  --brilho-1: rgb(139 92 246 / 0.2);
-  --brilho-2: rgb(167 139 250 / 0.08);
+  --color-texto: #f9eeff;
+  --color-fundo: #10051a;
+  --color-superficie: #1c0a2c;
+  --color-superficie-2: #2a0f40;
+  --color-suave: #b69bcc;
+  --color-rosa: #c84dff;
+  --color-roxo: #6d1a99;
+  --color-azul: #e08bff;
+  --botao: linear-gradient(135deg, #a32de6, #6d1a99 60%, #4a0f6b);
+  --brilho-botao: rgb(200 77 255 / 0.4);
+  --brilho-1: rgb(200 77 255 / 0.22);
+  --brilho-2: rgb(109 26 153 / 0.14);
 }
 
 /* Universo (escuro temático): Nebulosa, estrelas e planeta */
