@@ -168,7 +168,7 @@ body::before {
 }
 
 /* Nos temas com cena no fundo, os títulos de seção ganham um contorno da cor do fundo (para ler bem por cima do desenho) */
-:root[data-paleta] .titulo-secao { text-shadow: 0 0 8px var(--color-fundo), 0 0 3px var(--color-fundo), 0 0 1px var(--color-fundo); }
+:root[data-estilo="tematico"] .titulo-secao { text-shadow: 0 0 8px var(--color-fundo), 0 0 3px var(--color-fundo), 0 0 1px var(--color-fundo); }
 
 /* Temas claros: contornos na cor do tema (para cada claro ter personalidade e não parecer só branco) */
 :root[data-tema="claro"] .cartao {
@@ -813,6 +813,7 @@ body::before {
   --brilho-botao: rgb(255 255 255 / 0.12);
   --brilho-1: transparent;
   --brilho-2: transparent;
+  --topo: color-mix(in srgb, #1c1c1f 92%, transparent);
   --fundo-desenho: radial-gradient(60rem 40rem at 80% -10%, rgb(255 255 255 / 0.09), transparent 60%), linear-gradient(180deg, #1c1c1f 0%, #0b0b0c 55%, #050506 100%);
   --fundo-tamanho: 100% 100%;
   --fundo-repetir: no-repeat;
@@ -832,6 +833,7 @@ body::before {
   --brilho-botao: rgb(255 255 255 / 0.15);
   --brilho-1: transparent;
   --brilho-2: transparent;
+  --topo: color-mix(in srgb, #50545c 92%, transparent);
   --fundo-desenho: radial-gradient(60rem 40rem at 20% -10%, rgb(255 255 255 / 0.14), transparent 60%), linear-gradient(180deg, #4a4e56 0%, #34373d 50%, #24262b 100%);
   --fundo-tamanho: 100% 100%;
   --fundo-repetir: no-repeat;
@@ -852,6 +854,7 @@ body::before {
   --brilho-botao: rgb(24 24 27 / 0.2);
   --brilho-1: transparent;
   --brilho-2: transparent;
+  --topo: color-mix(in srgb, #ffffff 92%, transparent);
   --fundo-desenho: radial-gradient(60rem 40rem at 80% -10%, rgb(255 255 255 / 1), transparent 60%), linear-gradient(180deg, #ffffff 0%, #ececee 55%, #d9d9dd 100%);
   --fundo-tamanho: 100% 100%;
   --fundo-repetir: no-repeat;

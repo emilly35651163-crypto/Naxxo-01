@@ -118,13 +118,13 @@ tematico("barbiecore", "Barbiecore", "Rosa", "claro", "Neon rosa, cartões e cet
 // ---------- Neutros (escuro, médio e claro): sóbrios, com degradê para dar profundidade ----------
 tema({ id: "neutro-escuro", nome: "Escuro", cor: "Neutros", base: "escuro", estilo: "sobrio", descricao: "Preto com degradê",
   v: V("#0b0b0c", "#18181a", "#232326", "#a1a1aa", "#fafafa", "#e4e4e7", "#a1a1aa", "#d4d4d8", "linear-gradient(135deg, #52525b, #18181b)", "rgb(255 255 255 / 0.12)"),
-  degrade: "radial-gradient(60rem 40rem at 80% -10%, rgb(255 255 255 / 0.09), transparent 60%), linear-gradient(180deg, #1c1c1f 0%, #0b0b0c 55%, #050506 100%)" });
+  degrade: "radial-gradient(60rem 40rem at 80% -10%, rgb(255 255 255 / 0.09), transparent 60%), linear-gradient(180deg, #1c1c1f 0%, #0b0b0c 55%, #050506 100%)", topoCor: "#1c1c1f" });
 tema({ id: "neutro-medio", nome: "Médio", cor: "Neutros", base: "escuro", estilo: "sobrio", descricao: "Cinza com degradê",
   v: V("#34373d", "#3f434a", "#4a4f57", "#c3c8d0", "#f6f7f9", "#f1f3f6", "#c3c8d0", "#e2e5ea", "linear-gradient(135deg, #6b7280, #374151)", "rgb(255 255 255 / 0.15)"),
-  degrade: "radial-gradient(60rem 40rem at 20% -10%, rgb(255 255 255 / 0.14), transparent 60%), linear-gradient(180deg, #4a4e56 0%, #34373d 50%, #24262b 100%)" });
+  degrade: "radial-gradient(60rem 40rem at 20% -10%, rgb(255 255 255 / 0.14), transparent 60%), linear-gradient(180deg, #4a4e56 0%, #34373d 50%, #24262b 100%)", topoCor: "#50545c" });
 tema({ id: "neutro-claro", nome: "Claro", cor: "Neutros", base: "claro", estilo: "sobrio", descricao: "Branco com degradê",
   v: V("#f4f4f5", "#ffffff", "#e4e4e7", "#52525b", "#18181b", "#27272a", "#3f3f46", "#52525b", "linear-gradient(135deg, #3f3f46, #18181b)", "rgb(24 24 27 / 0.2)"),
-  degrade: "radial-gradient(60rem 40rem at 80% -10%, rgb(255 255 255 / 1), transparent 60%), linear-gradient(180deg, #ffffff 0%, #ececee 55%, #d9d9dd 100%)" });
+  degrade: "radial-gradient(60rem 40rem at 80% -10%, rgb(255 255 255 / 1), transparent 60%), linear-gradient(180deg, #ffffff 0%, #ececee 55%, #d9d9dd 100%)", topoCor: "#ffffff" });
 
 // ---------- CSS ----------
 const pasta = P + "public/temas/";
@@ -166,7 +166,8 @@ ${t.base === "claro" ? `  --color-white: ${v.texto};\n` : ""}  --color-texto: ${
   --brilho-botao: ${v.brilhoBotao};
   --brilho-1: ${v.b1};
   --brilho-2: ${v.b2};
-${t.degrade ? `  --fundo-desenho: ${t.degrade};
+${t.degrade ? `  --topo: color-mix(in srgb, ${t.topoCor} 92%, transparent);
+  --fundo-desenho: ${t.degrade};
   --fundo-tamanho: 100% 100%;
   --fundo-repetir: no-repeat;
 ` : ""}${t.estilo === "tematico" ? `  --fundo-desenho: var(--cena-${t.id});
@@ -210,7 +211,7 @@ export type Tema = {
 export const TEMAS: Tema[] = [
   { id: "escuro", nome: "NAXXO escuro", cor: "NAXXO", base: "escuro", estilo: "sobrio", descricao: "O original", bolinha: "radial-gradient(circle at 32% 30%, #2b3150, #0b0f1a 72%)", barra: "#0b0f1a" },
   { id: "claro", nome: "NAXXO claro", cor: "NAXXO", base: "claro", estilo: "sobrio", descricao: "O original, de dia", bolinha: "linear-gradient(135deg, #fde3f6, #ece2ff 60%, #e3ecff)", barra: "#f6f0fb" },
-${T.map((t) => `  { id: "${t.id}", nome: ${JSON.stringify(t.nome)}, cor: "${t.cor}", base: "${t.base}", estilo: "${t.estilo}", descricao: ${JSON.stringify(t.descricao)}, bolinha: ${JSON.stringify(t.estilo === "tematico" ? `var(--cena-${t.id}) ${FOCO[t.id] ?? "50% 30%"} / 320% no-repeat` : bolinhaSobria(t))}, barra: "${t.base === "claro" ? (t.estilo === "tematico" ? t.v.sup2 : t.v.fundo) : t.v.fundo}" },`).join("\n")}
+${T.map((t) => `  { id: "${t.id}", nome: ${JSON.stringify(t.nome)}, cor: "${t.cor}", base: "${t.base}", estilo: "${t.estilo}", descricao: ${JSON.stringify(t.descricao)}, bolinha: ${JSON.stringify(t.estilo === "tematico" ? `var(--cena-${t.id}) ${FOCO[t.id] ?? "50% 30%"} / 320% no-repeat` : bolinhaSobria(t))}, barra: "${t.topoCor ?? (t.base === "claro" ? (t.estilo === "tematico" ? t.v.sup2 : t.v.fundo) : t.v.fundo)}" },`).join("\n")}
 ];
 
 /** Os grupos da tela de escolha, na ordem */

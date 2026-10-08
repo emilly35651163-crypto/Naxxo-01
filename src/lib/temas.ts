@@ -381,7 +381,7 @@ export const TEMAS: Tema[] = [
     descricao: "Preto com degradê",
     bolinha:
       "radial-gradient(120% 120% at 80% -10%, rgb(255 255 255 / 0.09), transparent 60%), linear-gradient(180deg, #1c1c1f 0%, #0b0b0c 55%, #050506 100%)",
-    barra: "#0b0b0c",
+    barra: "#1c1c1f",
   },
   {
     id: "neutro-medio",
@@ -392,7 +392,7 @@ export const TEMAS: Tema[] = [
     descricao: "Cinza com degradê",
     bolinha:
       "radial-gradient(120% 120% at 20% -10%, rgb(255 255 255 / 0.14), transparent 60%), linear-gradient(180deg, #4a4e56 0%, #34373d 50%, #24262b 100%)",
-    barra: "#34373d",
+    barra: "#50545c",
   },
   {
     id: "neutro-claro",
@@ -403,7 +403,7 @@ export const TEMAS: Tema[] = [
     descricao: "Branco com degradê",
     bolinha:
       "radial-gradient(120% 120% at 80% -10%, rgb(255 255 255 / 1), transparent 60%), linear-gradient(180deg, #ffffff 0%, #ececee 55%, #d9d9dd 100%)",
-    barra: "#f4f4f5",
+    barra: "#ffffff",
   },
 ];
 

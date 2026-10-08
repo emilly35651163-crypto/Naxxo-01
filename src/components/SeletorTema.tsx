@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { mudarPreferencias, usePreferencias } from "@/lib/store";
-import { BOLINHA_AUTO, GRUPOS_TEMA, TEMAS, temaPorId } from "@/lib/temas";
+import { BOLINHA_AUTO, GRUPOS_TEMA, TEMAS, temaPorId, type EscolhaTema } from "@/lib/temas";
 
 // "Temas" em Configurações: fechado, mostra o tema atual. Aberto, as cores (Oficial NAXXO, Azul…);
 // tocando numa cor, aparecem só as bolinhas das versões dela (escuro, claro, temáticos).
@@ -13,6 +13,16 @@ export default function SeletorTema() {
   const [grupo, setGrupo] = useState(atual?.cor ?? "NAXXO");
 
   const versoes = TEMAS.filter((t) => t.cor === grupo);
+
+  // No app instalado no iPhone, a barra de cima (onde fica a hora) só pega a cor nova quando o app recarrega
+  function escolher(id: EscolhaTema) {
+    mudarPreferencias({ tema: id });
+    const instalado =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    // Espera salvar na conta (leva menos de 1 s) e recarrega
+    if (instalado) setTimeout(() => window.location.reload(), 1200);
+  }
   const nomeAtual = tema === "auto" ? "Automático" : (atual?.nome ?? "NAXXO escuro");
 
   return (
@@ -61,16 +71,11 @@ export default function SeletorTema() {
                 fundo={t.bolinha}
                 nome={t.estilo === "tematico" ? t.nome : t.base === "escuro" ? "Escuro" : "Claro"}
                 ativo={tema === t.id}
-                onClick={() => mudarPreferencias({ tema: t.id })}
+                onClick={() => escolher(t.id)}
               />
             ))}
             {grupo === "NAXXO" && (
-              <Bolinha
-                fundo={BOLINHA_AUTO}
-                nome="Automático"
-                ativo={tema === "auto"}
-                onClick={() => mudarPreferencias({ tema: "auto" })}
-              />
+              <Bolinha fundo={BOLINHA_AUTO} nome="Automático" ativo={tema === "auto"} onClick={() => escolher("auto")} />
             )}
           </div>
         </div>

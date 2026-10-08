@@ -5,8 +5,8 @@ import AppShell from "@/components/AppShell";
 import { TEMAS } from "@/lib/temas";
 
 // Aplica o tema salvo antes de a página aparecer (sem piscar o tema padrão ao abrir)
-const BASES = Object.fromEntries(TEMAS.map((t) => [t.id, [t.base, t.cor === "NAXXO" ? "" : t.id, t.barra]]));
-const SCRIPT_TEMA = `try{var p=JSON.parse(localStorage.getItem("naxxo:preferencias")||"{}"),b=${JSON.stringify(BASES)}[p.tema],r=document.documentElement;r.dataset.tema=b?b[0]:(p.tema==="auto"&&matchMedia("(prefers-color-scheme: light)").matches?"claro":"escuro");if(b&&b[1])r.dataset.paleta=b[1];var m=document.querySelector("meta[name='theme-color']");if(m)m.setAttribute("content",b?b[2]:r.dataset.tema==="claro"?"#f6f0fb":"#0b0f1a")}catch(e){}`;
+const BASES = Object.fromEntries(TEMAS.map((t) => [t.id, [t.base, t.cor === "NAXXO" ? "" : t.id, t.barra, t.estilo]]));
+const SCRIPT_TEMA = `try{var p=JSON.parse(localStorage.getItem("naxxo:preferencias")||"{}"),b=${JSON.stringify(BASES)}[p.tema],r=document.documentElement;r.dataset.tema=b?b[0]:(p.tema==="auto"&&matchMedia("(prefers-color-scheme: light)").matches?"claro":"escuro");if(b&&b[1])r.dataset.paleta=b[1];r.dataset.estilo=b?b[3]:"sobrio";var m=document.querySelector("meta[name='theme-color']");if(m)m.setAttribute("content",b?b[2]:r.dataset.tema==="claro"?"#f6f0fb":"#0b0f1a")}catch(e){}`;
 
 const inter = Inter({
   variable: "--font-inter",
