@@ -167,6 +167,22 @@ body::before {
   }
 }
 
+/* Nos temas com cena no fundo, os títulos de seção ganham um contorno da cor do fundo (para ler bem por cima do desenho) */
+:root[data-paleta] .titulo-secao { text-shadow: 0 0 8px var(--color-fundo), 0 0 3px var(--color-fundo), 0 0 1px var(--color-fundo); }
+
+/* Temas claros: contornos na cor do tema (para cada claro ter personalidade e não parecer só branco) */
+:root[data-tema="claro"] .cartao {
+  border-color: color-mix(in srgb, var(--color-rosa) 55%, transparent);
+  border-width: 1.5px;
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--color-rosa) 10%, transparent);
+}
+:root[data-tema="claro"] .campo {
+  border-color: color-mix(in srgb, var(--color-rosa) 35%, transparent);
+}
+:root[data-tema="claro"] .topo {
+  border-bottom-color: color-mix(in srgb, var(--color-rosa) 45%, transparent);
+}
+
 /* ================= Temas por cor (Configurações → Temas) =================
  * data-tema = base (escuro/claro: letras claras ou escuras); data-paleta = a cor e o estilo.
  * "rosa" é a cor de destaque principal do app (botões, links, ícones); "roxo" e "azul" acompanham.
@@ -174,22 +190,22 @@ body::before {
  * Gerado pelo gerador de temas: as cenas ficam em --cena-<id> (usadas também nas bolinhas da escolha).
  */
 :root {
-  --cena-fogo: url("/temas/fogo.svg");
-  --cena-cereja: url("/temas/cereja.svg");
-  --cena-outono: url("/temas/outono.svg");
-  --cena-borboletas: url("/temas/borboletas.svg");
-  --cena-abelha: url("/temas/abelha.svg");
-  --cena-girassol: url("/temas/girassol.svg");
-  --cena-floresta: url("/temas/floresta.svg");
-  --cena-natureza: url("/temas/natureza.svg");
-  --cena-mar-profundo: url("/temas/mar-profundo.svg");
-  --cena-eletrico: url("/temas/eletrico.svg");
-  --cena-tecnologia: url("/temas/tecnologia.svg");
-  --cena-bolhas: url("/temas/bolhas.svg");
-  --cena-universo: url("/temas/universo.svg");
-  --cena-gatinho: url("/temas/gatinho.svg");
-  --cena-glitter: url("/temas/glitter.svg");
-  --cena-boneca: url("/temas/boneca.svg");
+  --cena-fogo: url("/temas/fogo.svg?v=313030fe");
+  --cena-cereja: url("/temas/cereja.svg?v=fbddd7e3");
+  --cena-outono: url("/temas/outono.svg?v=ada4d8cf");
+  --cena-borboletas: url("/temas/borboletas.svg?v=65d6078d");
+  --cena-abelha: url("/temas/abelha.svg?v=806ebaa5");
+  --cena-girassol: url("/temas/girassol.svg?v=ccb687f5");
+  --cena-floresta: url("/temas/floresta.svg?v=d5cb0de3");
+  --cena-natureza: url("/temas/natureza.svg?v=787d1327");
+  --cena-mar-profundo: url("/temas/mar-profundo.svg?v=112be221");
+  --cena-eletrico: url("/temas/eletrico.svg?v=772f2f13");
+  --cena-tecnologia: url("/temas/tecnologia.svg?v=be9fcb47");
+  --cena-bolhas: url("/temas/bolhas.svg?v=45ebb476");
+  --cena-universo: url("/temas/universo.svg?v=fd2a22f6");
+  --cena-gatinho: url("/temas/gatinho.svg?v=532a6aa7");
+  --cena-glitter: url("/temas/glitter.svg?v=0dfabdf9");
+  --cena-barbiecore: url("/temas/barbiecore.svg?v=b1845126");
 }
 
 /* Vermelho escuro (escuro sóbrio): Vermelho fechado e preto */
@@ -520,7 +536,7 @@ body::before {
   --brilho-2: rgb(56 189 248 / 0.08);
 }
 
-/* Mar profundo (escuro temático): Luz descendo pela água */
+/* Mar profundo (escuro temático): Águas-vivas e peixes de luz */
 :root[data-paleta="mar-profundo"] {
   --color-texto: #e6fbff;
   --color-fundo: #031628;
@@ -542,26 +558,27 @@ body::before {
   --topo-borda: rgb(127 196 255 / 0.25);
 }
 
-/* Elétrico (escuro temático): Peixes de luz num céu estrelado */
+/* Elétrico (claro temático): Raios num céu azul vivo */
 :root[data-paleta="eletrico"] {
-  --color-texto: #eef6ff;
-  --color-fundo: #040b22;
-  --color-superficie: #08143a;
-  --color-superficie-2: #0d1d4d;
-  --color-suave: #9fb8e6;
-  --color-rosa: #6cc4ff;
-  --color-roxo: #3a8dff;
-  --color-azul: #bfe8ff;
-  --botao: linear-gradient(135deg, #2b7fff, #1d4ed8 60%, #1e3a8a);
-  --brilho-botao: rgb(108 196 255 / 0.35);
+  --color-white: #0b1f4a;
+  --color-texto: #0b1f4a;
+  --color-fundo: #5d9bff;
+  --color-superficie: #ffffff;
+  --color-superficie-2: #e3efff;
+  --color-suave: #173a7a;
+  --color-rosa: #1d4ed8;
+  --color-roxo: #0b3fb8;
+  --color-azul: #2563eb;
+  --botao: linear-gradient(135deg, #2563eb, #1d4ed8 60%, #1e3a8a);
+  --brilho-botao: rgb(37 99 235 / 0.35);
   --brilho-1: transparent;
   --brilho-2: transparent;
   --fundo-desenho: var(--cena-eletrico);
   --fundo-tamanho: cover;
   --fundo-posicao: center top;
   --fundo-repetir: no-repeat;
-  --topo: radial-gradient(circle at 20% 35%, #fff 0 1px, transparent 2px), radial-gradient(circle at 64% 22%, #cfe8ff 0 1.5px, transparent 2.5px), radial-gradient(circle at 86% 62%, #fff 0 1px, transparent 2px), linear-gradient(180deg, rgb(43 127 255 / 0.32), rgb(4 11 34 / 0.9));
-  --topo-borda: rgb(108 196 255 / 0.3);
+  --topo: radial-gradient(18rem 5rem at 55% 0%, rgb(233 246 255 / 0.9), transparent 70%), linear-gradient(180deg, rgb(255 255 255 / 0.85), rgb(147 197 253 / 0.85));
+  --topo-borda: rgb(37 99 235 / 0.5);
 }
 
 /* Tecnologia (escuro temático): Circuitos azuis brilhando */
@@ -605,17 +622,17 @@ body::before {
 
 /* Bolhas (claro temático): Bolhas de sabão */
 :root[data-paleta="bolhas"] {
-  --color-white: #1a2350;
-  --color-texto: #1a2350;
-  --color-fundo: #b4c2f3;
+  --color-white: #0b2440;
+  --color-texto: #0b2440;
+  --color-fundo: #7fb4f8;
   --color-superficie: #ffffff;
-  --color-superficie-2: #e6eafd;
-  --color-suave: #4a5684;
-  --color-rosa: #4f46e5;
-  --color-roxo: #6d28d9;
-  --color-azul: #2563eb;
-  --botao: linear-gradient(135deg, #818cf8, #6366f1 60%, #4f46e5);
-  --brilho-botao: rgb(99 102 241 / 0.3);
+  --color-superficie-2: #e3f0ff;
+  --color-suave: #1f4a80;
+  --color-rosa: #1d4ed8;
+  --color-roxo: #0369a1;
+  --color-azul: #0284c7;
+  --botao: linear-gradient(135deg, #3b9dff, #1d6fe0 60%, #1d4ed8);
+  --brilho-botao: rgb(59 157 255 / 0.35);
   --brilho-1: transparent;
   --brilho-2: transparent;
   --fundo-desenho: var(--cena-bolhas);
@@ -759,8 +776,8 @@ body::before {
   --brilho-2: rgb(219 39 119 / 0.1);
 }
 
-/* Boneca (claro temático): Parede rosa, neon e cartões */
-:root[data-paleta="boneca"] {
+/* Barbiecore (claro temático): Neon rosa, cartões e cetim */
+:root[data-paleta="barbiecore"] {
   --color-white: #3a0d26;
   --color-texto: #3a0d26;
   --color-fundo: #f4b0c9;
@@ -774,7 +791,7 @@ body::before {
   --brilho-botao: rgb(240 106 164 / 0.35);
   --brilho-1: transparent;
   --brilho-2: transparent;
-  --fundo-desenho: var(--cena-boneca);
+  --fundo-desenho: var(--cena-barbiecore);
   --fundo-tamanho: cover;
   --fundo-posicao: center top;
   --fundo-repetir: no-repeat;
@@ -782,40 +799,46 @@ body::before {
   --topo-borda: rgb(240 106 164 / 0.35);
 }
 
-/* Preto (escuro sóbrio): Preto e branco */
-:root[data-paleta="preto"] {
+/* Escuro (escuro sóbrio): Preto com degradê */
+:root[data-paleta="neutro-escuro"] {
   --color-texto: #fafafa;
-  --color-fundo: #0a0a0a;
-  --color-superficie: #141414;
-  --color-superficie-2: #1e1e1e;
-  --color-suave: #a3a3a3;
-  --color-rosa: #e5e5e5;
-  --color-roxo: #a3a3a3;
-  --color-azul: #d4d4d4;
-  --botao: linear-gradient(135deg, #404040, #171717);
+  --color-fundo: #0b0b0c;
+  --color-superficie: #18181a;
+  --color-superficie-2: #232326;
+  --color-suave: #a1a1aa;
+  --color-rosa: #e4e4e7;
+  --color-roxo: #a1a1aa;
+  --color-azul: #d4d4d8;
+  --botao: linear-gradient(135deg, #52525b, #18181b);
   --brilho-botao: rgb(255 255 255 / 0.12);
   --brilho-1: transparent;
   --brilho-2: transparent;
+  --fundo-desenho: radial-gradient(60rem 40rem at 80% -10%, rgb(255 255 255 / 0.09), transparent 60%), linear-gradient(180deg, #1c1c1f 0%, #0b0b0c 55%, #050506 100%);
+  --fundo-tamanho: 100% 100%;
+  --fundo-repetir: no-repeat;
 }
 
-/* Cinza (escuro sóbrio): Grafite */
-:root[data-paleta="cinza"] {
-  --color-texto: #f4f5f7;
-  --color-fundo: #26282c;
-  --color-superficie: #30333a;
-  --color-superficie-2: #3b3f47;
-  --color-suave: #b4b9c2;
-  --color-rosa: #e2e5ea;
-  --color-roxo: #aeb4bf;
-  --color-azul: #cfd4dc;
-  --botao: linear-gradient(135deg, #5b616b, #3b3f47);
-  --brilho-botao: rgb(255 255 255 / 0.12);
+/* Médio (escuro sóbrio): Cinza com degradê */
+:root[data-paleta="neutro-medio"] {
+  --color-texto: #f6f7f9;
+  --color-fundo: #34373d;
+  --color-superficie: #3f434a;
+  --color-superficie-2: #4a4f57;
+  --color-suave: #c3c8d0;
+  --color-rosa: #f1f3f6;
+  --color-roxo: #c3c8d0;
+  --color-azul: #e2e5ea;
+  --botao: linear-gradient(135deg, #6b7280, #374151);
+  --brilho-botao: rgb(255 255 255 / 0.15);
   --brilho-1: transparent;
   --brilho-2: transparent;
+  --fundo-desenho: radial-gradient(60rem 40rem at 20% -10%, rgb(255 255 255 / 0.14), transparent 60%), linear-gradient(180deg, #4a4e56 0%, #34373d 50%, #24262b 100%);
+  --fundo-tamanho: 100% 100%;
+  --fundo-repetir: no-repeat;
 }
 
-/* Branco (claro sóbrio): Branco e cinza */
-:root[data-paleta="branco"] {
+/* Claro (claro sóbrio): Branco com degradê */
+:root[data-paleta="neutro-claro"] {
   --color-white: #18181b;
   --color-texto: #18181b;
   --color-fundo: #f4f4f5;
@@ -829,4 +852,7 @@ body::before {
   --brilho-botao: rgb(24 24 27 / 0.2);
   --brilho-1: transparent;
   --brilho-2: transparent;
+  --fundo-desenho: radial-gradient(60rem 40rem at 80% -10%, rgb(255 255 255 / 1), transparent 60%), linear-gradient(180deg, #ffffff 0%, #ececee 55%, #d9d9dd 100%);
+  --fundo-tamanho: 100% 100%;
+  --fundo-repetir: no-repeat;
 }

@@ -73,12 +73,12 @@ tematico("natureza", "Natureza", "Verde", "claro", "Colinas e folhas",
 // ---------- Azul (cenas já aprovadas) ----------
 sobrio("azul-escuro", "Azul escuro", "Azul", "escuro", "Azul-marinho e preto",
   V("#050b18", "#0c1628", "#13223c", "#8ea3c2", "#eaf2ff", "#38bdf8", "#3b82f6", "#60a5fa", "linear-gradient(135deg, #0369a1, #1d4ed8 60%, #1e40af)", "rgb(56 189 248 / 0.25)", "rgb(59 130 246 / 0.16)", "rgb(56 189 248 / 0.08)"));
-tematico("mar-profundo", "Mar profundo", "Azul", "escuro", "Luz descendo pela água",
+tematico("mar-profundo", "Mar profundo", "Azul", "escuro", "Águas-vivas e peixes de luz",
   V("#031628", "#062236", "#0b2f48", "#8cc3d4", "#e6fbff", "#22d3ee", "#0ea5e9", "#2dd4bf", "linear-gradient(135deg, #0e7490, #0369a1 60%, #155e75)", "rgb(34 211 238 / 0.3)"),
   cenas.marProfundo(), "linear-gradient(180deg, rgb(61 139 255 / 0.25), rgb(2 10 28 / 0.9)), radial-gradient(16rem 5rem at 40% 100%, rgb(127 196 255 / 0.25), transparent 70%)", "rgb(127 196 255 / 0.25)");
-tematico("eletrico", "Elétrico", "Azul", "escuro", "Peixes de luz num céu estrelado",
-  V("#040b22", "#08143a", "#0d1d4d", "#9fb8e6", "#eef6ff", "#6cc4ff", "#3a8dff", "#bfe8ff", "linear-gradient(135deg, #2b7fff, #1d4ed8 60%, #1e3a8a)", "rgb(108 196 255 / 0.35)"),
-  cenas.eletrico(), "radial-gradient(circle at 20% 35%, #fff 0 1px, transparent 2px), radial-gradient(circle at 64% 22%, #cfe8ff 0 1.5px, transparent 2.5px), radial-gradient(circle at 86% 62%, #fff 0 1px, transparent 2px), linear-gradient(180deg, rgb(43 127 255 / 0.32), rgb(4 11 34 / 0.9))", "rgb(108 196 255 / 0.3)");
+tematico("eletrico", "Elétrico", "Azul", "claro", "Raios num céu azul vivo",
+  V("#5d9bff", "#ffffff", "#e3efff", "#173a7a", "#0b1f4a", "#1d4ed8", "#0b3fb8", "#2563eb", "linear-gradient(135deg, #2563eb, #1d4ed8 60%, #1e3a8a)", "rgb(37 99 235 / 0.35)"),
+  cenas.eletrico(), "radial-gradient(18rem 5rem at 55% 0%, rgb(233 246 255 / 0.9), transparent 70%), linear-gradient(180deg, rgb(255 255 255 / 0.85), rgb(147 197 253 / 0.85))", "rgb(37 99 235 / 0.5)");
 tematico("tecnologia", "Tecnologia", "Azul", "escuro", "Circuitos azuis brilhando",
   V("#03112e", "#071c44", "#0b2a5e", "#9cc0e8", "#eaf6ff", "#5fd4ff", "#3fa9ff", "#8fe8ff", "linear-gradient(135deg, #0ea5e9, #1d4ed8 60%, #1e3a8a)", "rgb(95 212 255 / 0.35)"),
   cenas.tecnologia(), "repeating-linear-gradient(90deg, transparent 0 46px, rgb(63 169 255 / 0.25) 46px 47px), linear-gradient(180deg, rgb(63 169 255 / 0.3), rgb(3 17 46 / 0.9))", "rgb(95 212 255 / 0.4)");
@@ -86,7 +86,7 @@ tematico("tecnologia", "Tecnologia", "Azul", "escuro", "Circuitos azuis brilhand
 sobrio("azul-claro", "Azul claro", "Azul", "claro", "Azul-céu",
   V("#cfe4f8", "#eef6ff", "#bcd6f1", "#3f5878", "#0d1d33", "#0369a1", "#1d4ed8", "#0284c7", "linear-gradient(135deg, #0284c7, #1d4ed8)", "rgb(2 132 199 / 0.3)", "rgb(56 189 248 / 0.25)", "rgb(59 130 246 / 0.14)"));
 tematico("bolhas", "Bolhas", "Azul", "claro", "Bolhas de sabão",
-  V("#b4c2f3", "#ffffff", "#e6eafd", "#4a5684", "#1a2350", "#4f46e5", "#6d28d9", "#2563eb", "linear-gradient(135deg, #818cf8, #6366f1 60%, #4f46e5)", "rgb(99 102 241 / 0.3)"),
+  V("#7fb4f8", "#ffffff", "#e3f0ff", "#1f4a80", "#0b2440", "#1d4ed8", "#0369a1", "#0284c7", "linear-gradient(135deg, #3b9dff, #1d6fe0 60%, #1d4ed8)", "rgb(59 157 255 / 0.35)"),
   cenas.bolhas(),
   "radial-gradient(circle at 88% 30%, rgb(255 255 255 / 0.9) 0 3px, transparent 4px), radial-gradient(circle at 88% 45%, transparent 13px, rgb(147 197 253 / 0.7) 14px, rgb(249 168 212 / 0.5) 15.5px, transparent 17px), radial-gradient(circle at 76% 70%, transparent 6px, rgb(103 232 249 / 0.7) 7px, transparent 8.5px), linear-gradient(180deg, rgb(255 255 255 / 0.85), rgb(219 239 255 / 0.75))",
   "rgb(56 189 248 / 0.3)");
@@ -111,17 +111,20 @@ tematico("glitter", "Glitter", "Rosa", "escuro", "Brilhos rosa e dourado",
   cenas.glitter(), "radial-gradient(circle at 20% 35%, #ffe08a 0 1.5px, transparent 2.5px), radial-gradient(circle at 63% 25%, #ffd6f5 0 1.5px, transparent 2.5px), radial-gradient(circle at 86% 65%, #ffe08a 0 2px, transparent 3px), linear-gradient(180deg, rgb(255 78 216 / 0.32), rgb(42 10 34 / 0.88))", "rgb(255 122 217 / 0.35)");
 sobrio("rosa-claro", "Rosa claro", "Rosa", "claro", "Rosa-bebê e branco",
   V("#fde0f0", "#fff5fb", "#fbcfe6", "#7a4563", "#3a0d26", "#be185d", "#9d174d", "#db2777", "linear-gradient(135deg, #db2777, #be185d)", "rgb(219 39 119 / 0.3)", "rgb(244 114 182 / 0.22)", "rgb(219 39 119 / 0.1)"));
-tematico("boneca", "Boneca", "Rosa", "claro", "Parede rosa, neon e cartões",
+tematico("barbiecore", "Barbiecore", "Rosa", "claro", "Neon rosa, cartões e cetim",
   V("#f4b0c9", "#fff5f9", "#fbd3e2", "#7a3a58", "#3a0d26", "#d6336c", "#be185d", "#ec4899", "linear-gradient(135deg, #f06aa4, #d6336c)", "rgb(240 106 164 / 0.35)"),
-  cenas.boneca(), "radial-gradient(circle at 90% 50%, rgb(255 227 240 / 0.95) 0 2px, transparent 3px), linear-gradient(180deg, rgb(255 240 246 / 0.92), rgb(247 184 207 / 0.88))", "rgb(240 106 164 / 0.35)");
+  cenas.barbiecore(), "radial-gradient(circle at 90% 50%, rgb(255 227 240 / 0.95) 0 2px, transparent 3px), linear-gradient(180deg, rgb(255 240 246 / 0.92), rgb(247 184 207 / 0.88))", "rgb(240 106 164 / 0.35)");
 
-// ---------- Neutros (só sóbrios: preto, cinza e branco, profissionais) ----------
-sobrio("preto", "Preto", "Neutros", "escuro", "Preto e branco",
-  V("#0a0a0a", "#141414", "#1e1e1e", "#a3a3a3", "#fafafa", "#e5e5e5", "#a3a3a3", "#d4d4d4", "linear-gradient(135deg, #404040, #171717)", "rgb(255 255 255 / 0.12)"));
-sobrio("cinza", "Cinza", "Neutros", "escuro", "Grafite",
-  V("#26282c", "#30333a", "#3b3f47", "#b4b9c2", "#f4f5f7", "#e2e5ea", "#aeb4bf", "#cfd4dc", "linear-gradient(135deg, #5b616b, #3b3f47)", "rgb(255 255 255 / 0.12)"));
-sobrio("branco", "Branco", "Neutros", "claro", "Branco e cinza",
-  V("#f4f4f5", "#ffffff", "#e4e4e7", "#52525b", "#18181b", "#27272a", "#3f3f46", "#52525b", "linear-gradient(135deg, #3f3f46, #18181b)", "rgb(24 24 27 / 0.2)"));
+// ---------- Neutros (escuro, médio e claro): sóbrios, com degradê para dar profundidade ----------
+tema({ id: "neutro-escuro", nome: "Escuro", cor: "Neutros", base: "escuro", estilo: "sobrio", descricao: "Preto com degradê",
+  v: V("#0b0b0c", "#18181a", "#232326", "#a1a1aa", "#fafafa", "#e4e4e7", "#a1a1aa", "#d4d4d8", "linear-gradient(135deg, #52525b, #18181b)", "rgb(255 255 255 / 0.12)"),
+  degrade: "radial-gradient(60rem 40rem at 80% -10%, rgb(255 255 255 / 0.09), transparent 60%), linear-gradient(180deg, #1c1c1f 0%, #0b0b0c 55%, #050506 100%)" });
+tema({ id: "neutro-medio", nome: "Médio", cor: "Neutros", base: "escuro", estilo: "sobrio", descricao: "Cinza com degradê",
+  v: V("#34373d", "#3f434a", "#4a4f57", "#c3c8d0", "#f6f7f9", "#f1f3f6", "#c3c8d0", "#e2e5ea", "linear-gradient(135deg, #6b7280, #374151)", "rgb(255 255 255 / 0.15)"),
+  degrade: "radial-gradient(60rem 40rem at 20% -10%, rgb(255 255 255 / 0.14), transparent 60%), linear-gradient(180deg, #4a4e56 0%, #34373d 50%, #24262b 100%)" });
+tema({ id: "neutro-claro", nome: "Claro", cor: "Neutros", base: "claro", estilo: "sobrio", descricao: "Branco com degradê",
+  v: V("#f4f4f5", "#ffffff", "#e4e4e7", "#52525b", "#18181b", "#27272a", "#3f3f46", "#52525b", "linear-gradient(135deg, #3f3f46, #18181b)", "rgb(24 24 27 / 0.2)"),
+  degrade: "radial-gradient(60rem 40rem at 80% -10%, rgb(255 255 255 / 1), transparent 60%), linear-gradient(180deg, #ffffff 0%, #ececee 55%, #d9d9dd 100%)" });
 
 // ---------- CSS ----------
 const pasta = P + "public/temas/";
@@ -130,8 +133,10 @@ for (const velho of fs.readdirSync(pasta)) fs.unlinkSync(pasta + velho);
 const cenaUri = {};
 for (const t of T)
   if (t.estilo === "tematico") {
-    fs.writeFileSync(pasta + t.id + ".svg", t.cena.replace(/\s+/g, " "));
-    cenaUri[t.id] = "/temas/" + t.id + ".svg";
+    const conteudo = t.cena.replace(/\s+/g, " ");
+    fs.writeFileSync(pasta + t.id + ".svg", conteudo);
+    const versao = require("crypto").createHash("md5").update(conteudo).digest("hex").slice(0, 8);
+    cenaUri[t.id] = "/temas/" + t.id + ".svg?v=" + versao;
   }
 
 let css = `/* ================= Temas por cor (Configurações → Temas) =================
@@ -161,7 +166,10 @@ ${t.base === "claro" ? `  --color-white: ${v.texto};\n` : ""}  --color-texto: ${
   --brilho-botao: ${v.brilhoBotao};
   --brilho-1: ${v.b1};
   --brilho-2: ${v.b2};
-${t.estilo === "tematico" ? `  --fundo-desenho: var(--cena-${t.id});
+${t.degrade ? `  --fundo-desenho: ${t.degrade};
+  --fundo-tamanho: 100% 100%;
+  --fundo-repetir: no-repeat;
+` : ""}${t.estilo === "tematico" ? `  --fundo-desenho: var(--cena-${t.id});
   --fundo-tamanho: cover;
   --fundo-posicao: center top;
   --fundo-repetir: no-repeat;
@@ -178,8 +186,8 @@ fs.writeFileSync(g, gcss);
 
 // ---------- temas.ts ----------
 // Onde fica o desenho principal de cada cena (para a bolinha mostrar ele)
-const FOCO = { fogo: "80% 40%", cereja: "30% 18%", outono: "15% 30%", borboletas: "18% 9%", abelha: "20% 14%", girassol: "10% 6%", floresta: "68% 26%", natureza: "50% 80%", "mar-profundo": "48% 35%", eletrico: "56% 26%", tecnologia: "50% 70%", bolhas: "18% 7%", universo: "70% 74%", gatinho: "50% 68%", glitter: "50% 40%", boneca: "28% 16%" };
-const bolinhaSobria = (t) =>
+const FOCO = { fogo: "80% 40%", cereja: "30% 18%", outono: "15% 30%", borboletas: "18% 9%", abelha: "20% 14%", girassol: "10% 6%", floresta: "68% 26%", natureza: "50% 80%", "mar-profundo": "48% 35%", eletrico: "50% 20%", tecnologia: "50% 70%", bolhas: "18% 7%", universo: "70% 74%", gatinho: "50% 68%", glitter: "50% 40%", barbiecore: "28% 16%" };
+const bolinhaSobria = (t) => t.degrade ? t.degrade.replace(/60rem 40rem/g, "120% 120%") :
   t.base === "escuro" ? `radial-gradient(circle at 32% 30%, ${t.v.roxo}, ${t.v.fundo} 78%)` : `radial-gradient(circle at 32% 30%, #ffffff, ${t.v.sup2} 70%, ${t.v.rosa} 140%)`;
 const ts = `// Os temas do app. Cada cor tem 4 versões: escuro sóbrio, escuro temático, claro sóbrio, claro temático.
 // Sóbrio = só as cores. Temático = as cores + uma cena parada no fundo e na barra de cima (sem animação).

@@ -34,10 +34,10 @@ export type IdTema =
   | "rosa-escuro"
   | "glitter"
   | "rosa-claro"
-  | "boneca"
-  | "preto"
-  | "cinza"
-  | "branco";
+  | "barbiecore"
+  | "neutro-escuro"
+  | "neutro-medio"
+  | "neutro-claro";
 export type EscolhaTema = IdTema | "auto";
 
 export type Tema = {
@@ -228,17 +228,17 @@ export const TEMAS: Tema[] = [
     cor: "Azul",
     base: "escuro",
     estilo: "tematico",
-    descricao: "Luz descendo pela água",
+    descricao: "Águas-vivas e peixes de luz",
     bolinha: "var(--cena-mar-profundo) 48% 35% / 320% no-repeat",
   },
   {
     id: "eletrico",
     nome: "Elétrico",
     cor: "Azul",
-    base: "escuro",
+    base: "claro",
     estilo: "tematico",
-    descricao: "Peixes de luz num céu estrelado",
-    bolinha: "var(--cena-eletrico) 56% 26% / 320% no-repeat",
+    descricao: "Raios num céu azul vivo",
+    bolinha: "var(--cena-eletrico) 50% 20% / 320% no-repeat",
   },
   {
     id: "tecnologia",
@@ -331,40 +331,43 @@ export const TEMAS: Tema[] = [
     bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #fbcfe6 70%, #be185d 140%)",
   },
   {
-    id: "boneca",
-    nome: "Boneca",
+    id: "barbiecore",
+    nome: "Barbiecore",
     cor: "Rosa",
     base: "claro",
     estilo: "tematico",
-    descricao: "Parede rosa, neon e cartões",
-    bolinha: "var(--cena-boneca) 28% 16% / 320% no-repeat",
+    descricao: "Neon rosa, cartões e cetim",
+    bolinha: "var(--cena-barbiecore) 28% 16% / 320% no-repeat",
   },
   {
-    id: "preto",
-    nome: "Preto",
+    id: "neutro-escuro",
+    nome: "Escuro",
     cor: "Neutros",
     base: "escuro",
     estilo: "sobrio",
-    descricao: "Preto e branco",
-    bolinha: "radial-gradient(circle at 32% 30%, #a3a3a3, #0a0a0a 78%)",
+    descricao: "Preto com degradê",
+    bolinha:
+      "radial-gradient(120% 120% at 80% -10%, rgb(255 255 255 / 0.09), transparent 60%), linear-gradient(180deg, #1c1c1f 0%, #0b0b0c 55%, #050506 100%)",
   },
   {
-    id: "cinza",
-    nome: "Cinza",
+    id: "neutro-medio",
+    nome: "Médio",
     cor: "Neutros",
     base: "escuro",
     estilo: "sobrio",
-    descricao: "Grafite",
-    bolinha: "radial-gradient(circle at 32% 30%, #aeb4bf, #26282c 78%)",
+    descricao: "Cinza com degradê",
+    bolinha:
+      "radial-gradient(120% 120% at 20% -10%, rgb(255 255 255 / 0.14), transparent 60%), linear-gradient(180deg, #4a4e56 0%, #34373d 50%, #24262b 100%)",
   },
   {
-    id: "branco",
-    nome: "Branco",
+    id: "neutro-claro",
+    nome: "Claro",
     cor: "Neutros",
     base: "claro",
     estilo: "sobrio",
-    descricao: "Branco e cinza",
-    bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #e4e4e7 70%, #27272a 140%)",
+    descricao: "Branco com degradê",
+    bolinha:
+      "radial-gradient(120% 120% at 80% -10%, rgb(255 255 255 / 1), transparent 60%), linear-gradient(180deg, #ffffff 0%, #ececee 55%, #d9d9dd 100%)",
   },
 ];
 

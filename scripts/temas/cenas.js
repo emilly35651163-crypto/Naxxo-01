@@ -257,29 +257,51 @@ function floresta() {
   );
 }
 
-// Natureza: campo ensolarado de trevos, florzinhas brancas e amarelas, luz entrando
+// Natureza: mato verde e cheio, trevos, florzinhas-pompom de trevo, pedras com musgo, luz do sol em manchas
 function natureza() {
-  const trevo = (x, y, s, cor) =>
-    `<g transform='translate(${f(x)} ${f(y)}) scale(${f(s)}) rotate(${f(r(0, 120))})'>${[0, 120, 240].map((a) => `<path transform='rotate(${a})' d='M0 0 C -26 -10, -30 -44, -10 -48 C -2 -50, 0 -42, 0 -38 C 0 -42, 2 -50, 10 -48 C 30 -44, 26 -10, 0 0 Z' fill='${cor}'/>`).join("")}<path d='M0 0 L4 40' stroke='#3f7a22' stroke-width='3'/></g>`;
-  const margarida = (x, y, s, cor) =>
-    `<g transform='translate(${f(x)} ${f(y)}) scale(${f(s)})'>${Array.from({ length: 12 }, (_, i) => `<ellipse transform='rotate(${i * 30})' cy='-12' rx='4' ry='11' fill='${cor}'/>`).join("")}<circle r='6' fill='#f2c230'/></g>`;
-  const trevos = Array.from({ length: 70 }, () => { const y = r(1000, 2050); return trevo(r(-30, 1030), y, r(0.8, 1.8) * (y / 1600), escolher(["#5fae3a", "#74c24a", "#4b9a2e", "#8ad35a", "#3f8a27"])); }).sort().join("");
-  const capim = Array.from({ length: 90 }, () => { const x = r(0, 1000), y = r(900, 2000), h = r(60, 180); return `<path d='M${f(x)} ${f(y)} q${f(r(-12, 12))} ${f(-h / 2)} ${f(r(-20, 20))} ${f(-h)}' stroke='${escolher(["#6fb84a", "#8fd060", "#4f9a30"])}' stroke-width='${f(r(2, 4))}' fill='none'/>`; }).join("");
-  const flores = Array.from({ length: 28 }, () => margarida(r(0, 1000), r(950, 1980), r(0.8, 1.4), rnd() > 0.7 ? "#ffd84a" : "#ffffff")).join("");
-  const folhaGrande = (x, y, rot, s) => `<path transform='translate(${f(x)} ${f(y)}) rotate(${f(rot)}) scale(${f(s)})' d='M0 0 C 60 -80, 200 -90, 260 0 C 200 70, 60 70, 0 0 Z M0 0 L250 0' fill='url(#folha)' stroke='#3f7a22' stroke-width='2'/>`;
+  const trevo = (x, y, s, cor, claro) =>
+    `<g transform='translate(${f(x)} ${f(y)}) scale(${f(s)}) rotate(${f(r(0, 120))})'>${[0, 120, 240].map((a) => `<path transform='rotate(${a})' d='M0 0 C -28 -8, -32 -46, -10 -50 C -2 -52, 0 -44, 0 -40 C 0 -44, 2 -52, 10 -50 C 32 -46, 28 -8, 0 0 Z' fill='${cor}'/><path transform='rotate(${a})' d='M0 -8 L0 -36' stroke='${claro}' stroke-width='2' opacity='.6'/>`).join("")}</g>`;
+  const pompom = (x, y, s) =>
+    `<g transform='translate(${f(x)} ${f(y)}) scale(${f(s)})'><path d='M0 0 L${f(r(-6, 6))} 120' stroke='#4c8a2a' stroke-width='3'/>${Array.from({ length: 18 }, (_, i) => `<ellipse transform='rotate(${i * 20})' cy='-9' rx='3.4' ry='9' fill='${i % 3 ? "#ffffff" : "#f2ead6"}'/>`).join("")}<circle r='5' fill='#e9f2c8'/></g>`;
+  const folhaLarga = (x, y, rot, s, cor) => `<path transform='translate(${f(x)} ${f(y)}) rotate(${f(rot)}) scale(${f(s)})' d='M0 0 C 50 -90, 190 -100, 250 0 C 190 80, 50 80, 0 0 Z' fill='${cor}'/><path transform='translate(${f(x)} ${f(y)}) rotate(${f(rot)}) scale(${f(s)})' d='M10 0 L240 0' stroke='#2f6a1a' stroke-width='2' opacity='.5'/>`;
+  const capim = Array.from({ length: 160 }, () => { const x = r(0, 1000), y = r(600, 2050), h = r(80, 260); return `<path d='M${f(x)} ${f(y)} q${f(r(-14, 14))} ${f(-h / 2)} ${f(r(-26, 26))} ${f(-h)}' stroke='${escolher(["#7cc24a", "#9ad55e", "#5fa836", "#b6e27a"])}' stroke-width='${f(r(2, 4.5))}' fill='none' opacity='.85'/>`; });
+  const trevos = Array.from({ length: 120 }, () => { const y = r(500, 2060); return { y, s: trevo(r(-30, 1030), y, r(0.7, 1.7) * (0.6 + y / 2400), escolher(["#5fae3a", "#74c24a", "#4b9a2e", "#8ad35a", "#3f8a27", "#9be06a"]), "#d9f5b8") }; }).sort((a, b) => a.y - b.y).map((x) => x.s).join("");
+  const pompons = Array.from({ length: 22 }, () => pompom(r(0, 1000), r(500, 1900), r(0.8, 1.3))).join("");
+  const amarelas = Array.from({ length: 16 }, () => `<g transform='translate(${f(r(0, 1000))} ${f(r(900, 1980))})'>${Array.from({ length: 6 }, (_, i) => `<ellipse transform='rotate(${i * 60})' cy='-8' rx='5' ry='8' fill='#ffd84a'/>`).join("")}<circle r='4' fill='#f29d0a'/></g>`).join("");
+  const pedra = (x, y, s) => `<g transform='translate(${x} ${y}) scale(${s})'><path d='M-150 40 C -160 -60, -60 -120, 30 -110 C 130 -100, 170 -20, 150 40 C 80 70, -80 70, -150 40 Z' fill='url(#pedra)'/><path d='M-130 -10 C -90 -90, 20 -120, 110 -60 C 60 -80, -40 -70, -130 -10 Z' fill='#6fae3e' opacity='.85'/></g>`;
   return svg(
-    lin("fundo", [[0, "#bfe59a"], [0.45, "#8ccc66"], [1, "#4f9a34"]]) + rad("sol", [[0, "#fffbd0", 0.9], [1, "#fffbd0", 0]], 0.65, 0.05, 0.6) +
-      lin("folha", [[0, "#9ad86a"], [1, "#4e9a2f"]], 0, 0, 1, 1) + blur("b14", 14),
-    `<rect width='1000' height='2000' fill='url(#fundo)'/><rect width='1000' height='1200' fill='url(#sol)'/>
-     <g filter='url(#b14)'>${pontos(20, ["#d8f5a8", "#b6e07c"], 30, 80, 0.4, 0.8, 0, 1000, 500, 1100)}</g>
-     ${capim}${trevos}${flores}${folhaGrande(-40, 120, 20, 1.1)}${folhaGrande(1040, 260, 160, 1)}
-     <g transform='translate(720 760) rotate(-12)'><path d='M0 0 C -20 -40, -70 -44, -68 -12 C -66 6, -30 6, 0 0 Z M0 0 C 20 -40, 70 -44, 68 -12 C 66 6, 30 6, 0 0 Z M0 4 C -16 26, -50 40, -48 18 Z M0 4 C 16 26, 50 40, 48 18 Z' fill='#fffdf5' stroke='#d9d2b8' stroke-width='1.5'/><ellipse rx='4' ry='16' fill='#5a4a2a'/></g>`,
+    lin("fundo", [[0, "#3f8a2a"], [0.4, "#5fa836"], [1, "#2f6e1c"]]) + rad("sol", [[0, "#fdffd0", 0.75], [1, "#fdffd0", 0]], 0.5, 0.35, 0.55) +
+      rad("pedra", [[0, "#a7a69a"], [1, "#5d5e55"]], 0.4, 0.3, 0.8) + blur("b16", 16) + blur("b3", 3),
+    `<rect width='1000' height='2000' fill='url(#fundo)'/>
+     <g filter='url(#b16)'>${pontos(30, ["#8fd25a", "#b8e67c", "#5aa232"], 40, 120, 0.5, 0.9)}</g>
+     <rect width='1000' height='2000' fill='url(#sol)'/>
+     ${pedra(120, 760, 1)}${pedra(820, 260, 0.7)}
+     <g filter='url(#b3)' opacity='.7'>${capim.slice(0, 80).join("")}</g>${capim.slice(80).join("")}
+     ${trevos}${pompons}${amarelas}
+     ${folhaLarga(-60, 80, 25, 1.2, "#7bc24a")}${folhaLarga(1060, 120, 155, 1.1, "#93d35a")}${folhaLarga(-40, 1950, -30, 1.1, "#4f9a2e")}${folhaLarga(1050, 1900, -150, 1.2, "#5fa836")}
+     <g transform='translate(640 1080) rotate(-10)' opacity='.95'><path d='M0 0 C -20 -40, -70 -44, -68 -12 C -66 6, -30 6, 0 0 Z M0 0 C 20 -40, 70 -44, 68 -12 C 66 6, 30 6, 0 0 Z M0 4 C -16 26, -50 40, -48 18 Z M0 4 C 16 26, 50 40, 48 18 Z' fill='#fffdf2'/><ellipse rx='3.5' ry='14' fill='#5a4a2a'/></g>
+     <g filter='url(#b16)'>${pontos(12, ["#fffbd0"], 20, 50, 0.25, 0.5, 0, 1000, 300, 1500)}</g>`,
   );
 }
 
 // ===================== AZUL =====================
 
-// Mar profundo: águas-vivas que brilham no escuro, partículas suspensas
+// Peixe koi feito de luz (usado no Mar profundo)
+function koiDeLuz(x, y, s, rot) {
+  const corpo = "M0 0 C 60 -40, 170 -50, 260 -10 C 300 6, 300 30, 260 44 C 170 80, 60 70, 0 40 C -40 60, -140 120, -260 90 C -180 50, -120 10, -110 -10 C -140 -40, -200 -110, -280 -130 C -160 -110, -70 -50, 0 0 Z";
+  const linhas = Array.from({ length: 20 }, (_, i) => {
+    const y0 = -30 + i * 3.4;
+    return `<path d='M250 ${f(y0 / 2 + 16)} C 160 ${f(y0 * 1.6)}, 40 ${f(y0 * 1.4)}, ${f(-120 - r(0, 140))} ${f(y0 * r(1.5, 3) + r(-40, 40))}' stroke='#bfe8ff' stroke-width='1.2' fill='none' opacity='${f(r(0.3, 0.75) * 100) / 100}'/>`;
+  }).join("");
+  return `<g transform='translate(${f(x)} ${f(y)}) rotate(${f(rot)}) scale(${s})'>
+    <g filter='url(#b14)' opacity='.75'><path d='${corpo}' fill='#3a8dff'/></g>
+    <path d='${corpo}' fill='url(#koi)' opacity='.65'/>${linhas}<path d='${corpo}' fill='none' stroke='#e6f7ff' stroke-width='2' opacity='.9'/>
+    <circle cx='240' cy='4' r='5' fill='#ffffff'/>
+    <g filter='url(#luz)'>${pontos(36, ["#ffffff", "#bfe8ff"], 0.8, 2.6, 0.5, 1, -250, 280, -110, 110)}</g>
+  </g>`;
+}
+
+// Mar profundo: águas-vivas que brilham e peixes koi de luz no fundo escuro do mar
 function marProfundo() {
   const agua = (x, y, s, op, borrado) => {
     const tentaculos = Array.from({ length: 16 }, (_, i) => {
@@ -287,7 +309,7 @@ function marProfundo() {
       return `<path d='M${f(x0)} 0 C ${f(x0 + r(-30, 30))} 200, ${f(x0 + r(-60, 60))} 400, ${f(x0 + r(-80, 80))} ${f(r(560, 760))}' stroke='#7fc4ff' stroke-width='1.6' fill='none' opacity='.55'/>`;
     }).join("");
     const bracos = [-26, 0, 26].map((x0) => `<path d='M${x0} 0 C ${x0 + 30} 120, ${x0 - 40} 240, ${x0 + 20} 380 C ${x0 + 50} 460, ${x0 - 20} 520, ${x0 + 10} 600' stroke='#9ed8ff' stroke-width='14' stroke-dasharray='10 6' fill='none' opacity='.45'/>`).join("");
-    return `<g transform='translate(${f(x)} ${f(y)}) scale(${f(s)})' opacity='${op}' ${borrado ? "filter='url(#b8)'" : "filter='url(#luz)'"}>
+    return `<g transform='translate(${f(x)} ${f(y)}) scale(${f(s)})' opacity='${op}' ${borrado ? "filter='url(#b8)'" : "filter='url(#luzForte)'"}>
       ${tentaculos}${bracos}
       <path d='M-130 0 C -130 -120, 130 -120, 130 0 C 100 14, 60 -4, 30 8 C 10 14, -10 14, -30 8 C -60 -4, -100 14, -130 0 Z' fill='url(#sino)'/>
       <path d='M-130 0 C -100 14, -60 -4, -30 8 C -10 14, 10 14, 30 8 C 60 -4, 100 14, 130 0' stroke='#d8f0ff' stroke-width='3' fill='none'/>
@@ -295,39 +317,45 @@ function marProfundo() {
     </g>`;
   };
   return svg(
-    lin("fundo", [[0, "#020a1c"], [0.5, "#010612"], [1, "#00030a"]]) + rad("sino", [[0, "#bfe6ff", 0.95], [0.6, "#3d8bff", 0.7], [1, "#1a4fd6", 0.4]], 0.5, 0.75, 0.75) +
-      blur("b8", 8) + brilho("luz", 10),
+    lin("fundo", [[0, "#031029"], [0.5, "#020a1c"], [1, "#00040d"]]) + rad("sino", [[0, "#bfe6ff", 0.95], [0.6, "#3d8bff", 0.7], [1, "#1a4fd6", 0.4]], 0.5, 0.75, 0.75) +
+      rad("koi", [[0, "#e6f7ff", 0.9], [0.6, "#6cc4ff", 0.6], [1, "#2b7fff", 0.2]], 0.7, 0.5, 0.8) + blur("b8", 8) + blur("b14", 14) + brilho("luzForte", 10) + brilho("luz", 3),
     `<rect width='1000' height='2000' fill='url(#fundo)'/>
-     ${agua(130, 320, 0.55, 0.45, true)}${agua(900, 520, 0.5, 0.4, true)}${agua(800, 1500, 0.6, 0.45, true)}${agua(120, 1350, 0.45, 0.35, true)}
-     ${agua(470, 700, 1.15, 0.95, false)}
-     ${pontos(120, ["#8fc7ff", "#cfe8ff"], 0.6, 2, 0.2, 0.7)}`,
+     ${agua(140, 300, 0.5, 0.45, true)}${agua(900, 560, 0.45, 0.4, true)}${agua(130, 1450, 0.45, 0.35, true)}
+     ${koiDeLuz(720, 1180, 0.85, -60)}${koiDeLuz(240, 1780, 0.75, 120)}
+     ${agua(480, 620, 1.05, 0.95, false)}
+     ${pontos(130, ["#8fc7ff", "#cfe8ff"], 0.6, 2, 0.2, 0.7)}`,
   );
 }
 
-// Elétrico: dois peixes koi feitos de luz nadando num céu estrelado
+// Elétrico (claro): raios brancos com brilho azul num céu azul vivo de tempestade
 function eletrico() {
-  const koi = (x, y, s, rot, espelho) => {
-    const corpo = "M0 0 C 60 -40, 170 -50, 260 -10 C 300 6, 300 30, 260 44 C 170 80, 60 70, 0 40 C -40 60, -140 120, -260 90 C -180 50, -120 10, -110 -10 C -140 -40, -200 -110, -280 -130 C -160 -110, -70 -50, 0 0 Z";
-    const linhas = Array.from({ length: 22 }, (_, i) => {
-      const y0 = -30 + i * 3.2;
-      return `<path d='M250 ${f(y0 / 2 + 16)} C 160 ${f(y0 * 1.6)}, 40 ${f(y0 * 1.4)}, ${f(-120 - r(0, 140))} ${f(y0 * r(1.5, 3) + r(-40, 40))}' stroke='#bfe8ff' stroke-width='1.2' fill='none' opacity='${f(r(0.3, 0.75) * 100) / 100}'/>`;
-    }).join("");
-    const nadadeira = "M120 30 C 140 90, 110 150, 60 170 C 80 120, 90 80, 80 40 Z M140 -20 C 170 -80, 150 -130, 110 -150 C 120 -100, 116 -60, 100 -24 Z";
-    return `<g transform='translate(${f(x)} ${f(y)}) rotate(${f(rot)}) scale(${espelho ? -s : s} ${s})'>
-      <g filter='url(#b14)' opacity='.8'><path d='${corpo}' fill='#3aa0ff'/></g>
-      <path d='${corpo}' fill='url(#koi)' opacity='.7'/><path d='${nadadeira}' fill='#9fd8ff' opacity='.45'/>
-      ${linhas}<path d='${corpo}' fill='none' stroke='#e6f7ff' stroke-width='2' opacity='.9'/>
-      <circle cx='240' cy='4' r='5' fill='#ffffff'/>
-      <g filter='url(#luz)'>${pontos(40, ["#ffffff", "#bfe8ff"], 0.8, 2.6, 0.5, 1, -250, 280, -110, 110)}</g>
-    </g>`;
+  // Raio: segmentos em zigue-zague, com galhos que saem e se dividem de novo
+  const raios = [];
+  const raio = (x, y, ang, comp, larg, nivel) => {
+    let d = `M${f(x)} ${f(y)}`;
+    let cx = x, cy = y;
+    const passos = Math.max(6, Math.round(comp / 28));
+    for (let i = 0; i < passos; i++) {
+      const a = ang + r(-0.55, 0.55);
+      cx += Math.cos(a) * (comp / passos);
+      cy += Math.sin(a) * (comp / passos);
+      d += ` L${f(cx)} ${f(cy)}`;
+      if (nivel < 3 && rnd() < 0.22 - nivel * 0.04) raio(cx, cy, ang + r(-0.9, 0.9), comp * r(0.3, 0.55), larg * 0.55, nivel + 1);
+    }
+    raios.push({ d, larg, nivel });
   };
+  raio(560, -20, Math.PI / 2 + 0.05, 2100, 9, 0);
+  raio(300, -20, Math.PI / 2 - 0.2, 1500, 5, 1);
+  raio(900, 200, Math.PI / 2 + 0.25, 1400, 5, 1);
+  raio(100, 600, Math.PI / 2 + 0.3, 1000, 3.5, 1);
+  raio(980, 1100, Math.PI / 2 + 0.5, 900, 3.5, 1);
+  const nuvens = Array.from({ length: 22 }, () => `<circle cx='${f(r(-50, 1050))}' cy='${f(r(0, 2000))}' r='${f(r(90, 220))}' fill='${escolher(["#3f7fe8", "#2f6fde", "#8cbcff", "#2a63cf"])}' opacity='${f(r(0.35, 0.7) * 100) / 100}'/>`).join("");
+  const desenho = raios.map(({ d, larg }) => `<path d='${d}' stroke='#e9f6ff' stroke-width='${f(larg)}' fill='none' stroke-linejoin='round' stroke-linecap='round'/>`).join("");
   return svg(
-    lin("ceu", [[0, "#06102e"], [0.5, "#040b22"], [1, "#020615"]]) + rad("koi", [[0, "#e6f7ff", 0.9], [0.6, "#6cc4ff", 0.6], [1, "#2b7fff", 0.2]], 0.7, 0.5, 0.8) +
-      blur("b14", 14) + brilho("luz", 3),
-    `<rect width='1000' height='2000' fill='url(#ceu)'/>
-     ${pontos(260, ["#ffffff", "#cfe0ff", "#9fc0ff"], 0.5, 1.8, 0.25, 1)}
-     <g filter='url(#luz)'>${Array.from({ length: 12 }, () => faisca(r(0, 1000), r(0, 2000), r(4, 10), "#e6f2ff", 0.9)).join("")}</g>
-     ${koi(560, 520, 1.2, 70, false)}${koi(440, 1450, 1.2, -110, false)}`,
+    lin("ceu", [[0, "#5d9bff"], [0.5, "#4f8ef7"], [1, "#7fb2ff"]]) + blur("b40", 40) + rad("clarao", [[0, "#bfe4ff", 0.7], [1, "#bfe4ff", 0]], 0.55, 0.05, 0.5) +
+      `<filter id='raio' x='-30%' y='-30%' width='160%' height='160%'><feGaussianBlur in='SourceGraphic' stdDeviation='10' result='b1'/><feGaussianBlur in='SourceGraphic' stdDeviation='3' result='b2'/><feFlood flood-color='#5cc8ff'/><feComposite in2='b1' operator='in' result='azul'/><feMerge><feMergeNode in='azul'/><feMergeNode in='azul'/><feMergeNode in='b2'/><feMergeNode in='SourceGraphic'/></feMerge></filter>`,
+    `<rect width='1000' height='2000' fill='url(#ceu)'/><g filter='url(#b40)'>${nuvens}</g><rect width='1000' height='1200' fill='url(#clarao)'/>
+     <g filter='url(#raio)'>${desenho}</g>${pontos(90, ["#cfeaff", "#ffffff"], 0.6, 2, 0.3, 0.8)}`,
   );
 }
 
@@ -357,22 +385,22 @@ function tecnologia() {
   );
 }
 
-// Bolhas: céu lilás-azulado com bolhas de sabão furta-cor (estilo ilustrado pastel)
+// Bolhas: céu azul com bolhas de sabão furta-cor (estilo ilustrado, puxado para o azul)
 function bolhas() {
   const bolha = (cx, cy, R) => `
   <g>
     <circle cx='${f(cx)}' cy='${f(cy)}' r='${f(R)}' fill='url(#miolo)'/>
-    <circle cx='${f(cx)}' cy='${f(cy)}' r='${f(R)}' fill='none' stroke='url(#arco)' stroke-width='${f(Math.max(2, R / 14))}' opacity='.85'/>
-    <path d='M${f(cx - R * 0.7)} ${f(cy - R * 0.2)} A ${f(R * 0.75)} ${f(R * 0.75)} 0 0 1 ${f(cx - R * 0.1)} ${f(cy - R * 0.72)}' stroke='#fff8ec' stroke-width='${f(Math.max(2, R / 9))}' stroke-linecap='round' fill='none' opacity='.9'/>
-    <circle cx='${f(cx + R * 0.45)} ' cy='${f(cy + R * 0.42)}' r='${f(R * 0.07)}' fill='#fff8ec' opacity='.7'/>
+    <circle cx='${f(cx)}' cy='${f(cy)}' r='${f(R)}' fill='none' stroke='url(#arco)' stroke-width='${f(Math.max(2, R / 14))}' opacity='.9'/>
+    <path d='M${f(cx - R * 0.7)} ${f(cy - R * 0.2)} A ${f(R * 0.75)} ${f(R * 0.75)} 0 0 1 ${f(cx - R * 0.1)} ${f(cy - R * 0.72)}' stroke='#ffffff' stroke-width='${f(Math.max(2, R / 9))}' stroke-linecap='round' fill='none' opacity='.9'/>
+    <circle cx='${f(cx + R * 0.45)}' cy='${f(cy + R * 0.42)}' r='${f(R * 0.07)}' fill='#ffffff' opacity='.75'/>
   </g>`;
   const grandes = [[180, 120, 230], [760, 420, 190], [90, 960, 150], [880, 1180, 260], [300, 1700, 210], [820, 1900, 140], [520, 980, 70]];
   const pequenas = Array.from({ length: 45 }, () => [r(0, 1000), r(0, 2000), r(8, 40)]);
   return svg(
-    lin("ceu", [[0, "#8fa5ec"], [0.5, "#a6b6f2"], [1, "#c0c9f6"]]) +
-      rad("miolo", [[0.55, "#ffffff", 0], [0.85, "#f7c6e8", 0.35], [1, "#fff3c8", 0.55]]) +
-      lin("arco", [[0, "#ffd1ee"], [0.3, "#fff1b8"], [0.6, "#c9b6ff"], [1, "#a8e6ff"]], 0, 0, 1, 1) + blur("b20", 20),
-    `<rect width='1000' height='2000' fill='url(#ceu)'/><g filter='url(#b20)'>${pontos(14, ["#ffd8f2", "#fff1c8"], 40, 120, 0.25, 0.5)}</g>
+    lin("ceu", [[0, "#4f8fef"], [0.5, "#6aa6f5"], [1, "#9cc6fb"]]) +
+      rad("miolo", [[0.55, "#ffffff", 0], [0.85, "#bfe6ff", 0.35], [1, "#e6f6ff", 0.6]]) +
+      lin("arco", [[0, "#a8e6ff"], [0.35, "#ffffff"], [0.6, "#7fd0ff"], [0.85, "#ffd1ee"], [1, "#9cc0ff"]], 0, 0, 1, 1) + blur("b20", 20),
+    `<rect width='1000' height='2000' fill='url(#ceu)'/><g filter='url(#b20)'>${pontos(14, ["#cfeaff", "#e8f6ff"], 40, 120, 0.25, 0.5)}</g>
      ${pequenas.map(([x, y, R]) => bolha(x, y, R)).join("")}${grandes.map(([x, y, R]) => bolha(x, y, R)).join("")}`,
   );
 }
@@ -437,8 +465,8 @@ function glitter() {
   );
 }
 
-// Boneca: parede rosa com coração de neon, cartões presos, foto de coqueiros, óculos e bolsa de cetim
-function boneca() {
+// Barbiecore: parede rosa com coração de neon, cartões presos, foto de coqueiros, óculos e bolsa de cetim
+function barbiecore() {
   const cartao = (x, y, w, h, rot, cor, conteudo) =>
     `<g transform='translate(${x} ${y}) rotate(${rot})'><rect x='6' y='8' width='${w}' height='${h}' fill='#b34a78' opacity='.18'/><rect width='${w}' height='${h}' fill='${cor}'/>${conteudo}<circle cx='${w / 2}' cy='10' r='9' fill='#f06aa4'/><circle cx='${w / 2 - 2}' cy='8' r='3' fill='#fff' opacity='.7'/></g>`;
   // estilo pode trocar a cor e o alinhamento (sem repetir atributo: o SVG não aceita)
@@ -447,7 +475,7 @@ function boneca() {
   return svg(
     lin("parede", [[0, "#f7b8cf"], [1, "#efa0bf"]]) + brilho("neon", 6) + lin("cetim", [[0, "#ffd3e4"], [0.5, "#f59cbf"], [1, "#e0779f"]], 0, 0, 1, 1) + lin("foto", [[0, "#f6a5c4"], [1, "#e0608f"]]),
     `<rect width='1000' height='2000' fill='url(#parede)'/>
-     <g filter='url(#neon)'><path d='M250 520 C 40 380, 60 150, 220 150 C 290 150, 330 200, 340 240 C 350 200, 390 150, 460 150 C 620 150, 640 380, 430 520 L 340 590 Z' fill='none' stroke='#ffe3f0' stroke-width='12' stroke-linejoin='round'/></g>
+     <g filter='url(#neon)'><path d='M250 520 C 40 380, 60 150, 220 150 C 290 150, 330 200, 340 240 C 350 200, 390 150, 460 150 C 620 150, 640 380, 430 520 L 340 590 Z' fill='none' stroke='#ffe3f0' stroke-width='12' stroke-linejoin='round'/><text x='340' y='380' font-family='Brush Script MT, Segoe Script, cursive' font-size='88' fill='#fff0f7' text-anchor='middle' transform='rotate(-6 340 380)'>Barbiecore</text></g>
      ${cartao(620, 150, 280, 340, 3, "#fbe1ea", texto(140, 160, "coisas boas", 30) + texto(140, 200, "levam tempo", 30) + `<path d='M100 250 H180' stroke='#d6336c' stroke-width='2'/>`)}
      ${cartao(120, 760, 300, 380, -2, "#f9d2e0", texto(150, 190, "você é", 38, "font-style='italic'") + texto(150, 240, "diferente", 38, "font-style='italic'"))}
      ${cartao(520, 640, 300, 360, 4, "url(#foto)", coqueiro(90, 330, 1) + coqueiro(180, 340, 0.8) + coqueiro(240, 330, 0.9))}
@@ -461,4 +489,4 @@ function boneca() {
   );
 }
 
-module.exports = { fogo, cereja, outono, borboletas, abelha, girassol, floresta, natureza, marProfundo, eletrico, tecnologia, bolhas, universo, gatinho, glitter, boneca };
+module.exports = { fogo, cereja, outono, borboletas, abelha, girassol, floresta, natureza, marProfundo, eletrico, tecnologia, bolhas, universo, gatinho, glitter, barbiecore };
