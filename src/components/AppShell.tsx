@@ -14,6 +14,7 @@ import NavInferior, { ITENS_MENU, itemAtivo } from "./NavInferior";
 import BarraLateral from "./BarraLateral";
 import FormLancamento from "./FormLancamento";
 import Avisos from "./Avisos";
+import AtualizarApp from "./AtualizarApp";
 import Icone from "./Icone";
 
 /** O tema escolhido em Configurações ("auto" segue o celular/computador). */
@@ -87,6 +88,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <>
         {children}
         <Avisos />
+        <AtualizarApp />
       </>
     );
 
@@ -171,6 +173,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       <NavInferior />
       <Avisos />
+      <AtualizarApp />
       {novoAberto && <FormLancamento onFechar={() => setNovoAberto(false)} />}
     </div>
   );
