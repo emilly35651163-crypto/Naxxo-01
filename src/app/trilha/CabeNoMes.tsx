@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { adicionarGastoFixo, useCartoes } from "@/lib/store";
+import { adicionarDesejo } from "@/lib/store";
 import { brl, lerValor, mesAtual, nomeMes, somarMeses, soNumeros } from "@/lib/formato";
-import { avaliarGastoMensal } from "@/lib/cabe";
+import { assumirGastoMensal, avaliarGastoMensal } from "@/lib/cabe";
 import { useDados } from "@/lib/dados";
 import { mostrarAviso } from "@/lib/avisos";
 import { CampoValor, Chip } from "@/components/Campos";
@@ -30,13 +30,14 @@ const mesCurto = (mes: string) => nomeMes(mes).split(" ")[0].toLowerCase();
 // Trilha → "Cabe no meu mês?": um gasto novo que se repete (academia, curso…) cabe sem me causar problema? Posso começar já?
 export default function CabeNoMes() {
   const dados = useDados();
-  const contas = useCartoes();
   const [nome, setNome] = useState("");
   const [icone, setIcone] = useState("🏋️");
   const [valor, setValor] = useState("");
   const [inicio, setInicio] = useState(mesAtual());
   const [vezes, setVezes] = useState("");
-  const [incluido, setIncluido] = useState(false);
+  const [feito, setFeito] = useState<null | "fixo" | "desejo">(null);
+  const incluido = !!feito;
+  const setIncluido = (v: boolean) => !v && setFeito(null);
 
   const numero = lerValor(valor);
   const a = numero > 0 ? avaliarGastoMensal(numero, inicio, Number(vezes) || null, dados) : null;
@@ -45,25 +46,16 @@ export default function CabeNoMes() {
   function incluir() {
     if (!a) return;
     const comeca = a.veredito === "depois" && a.aPartirDe ? a.aPartirDe : inicio;
-    const total = Number(vezes) || 0;
-    adicionarGastoFixo({
-      nome: nome.trim() || "Gasto mensal",
-      icone,
-      categoria: /academia|plano|saude|médic/i.test(nome)
-        ? "saude"
-        : /curso|escola|faculdade/i.test(nome)
-          ? "educacao"
-          : "outros",
-      valor: numero,
-      varia: false,
-      dia: 10,
-      pagamento: "debito",
-      contaId: contas.find((c) => c.tipo !== "vale")?.id,
-      desde: comeca,
-      ate: total > 0 ? somarMeses(comeca, total - 1) : undefined,
-    });
-    setIncluido(true);
+    assumirGastoMensal({ nome, icone, valor: numero, inicio: comeca, vezes: Number(vezes) || null });
+    setFeito("fixo");
     mostrarAviso({ texto: `${nome.trim() || "Gasto"} incluído a partir de ${mesCurto(comeca)} ✓` });
+  }
+
+  /** Ainda não: fica nos Desejos (mensal); quando começar, vira gasto fixo */
+  function guardarComoDesejo() {
+    adicionarDesejo({ nome: nome.trim() || "Gasto mensal", icone, valor: numero, mensal: { vezes: Number(vezes) || undefined } });
+    setFeito("desejo");
+    mostrarAviso({ texto: `${nome.trim() || "Gasto"} está nos seus desejos ✓` });
   }
 
   return (
@@ -186,15 +178,30 @@ export default function CabeNoMes() {
             ))}
           </ul>
           <p className="text-[0.65rem] text-suave">Quanto sobraria em cada mês já com o gasto novo.</p>
-          {a.veredito !== "nao" && !incluido && (
-            <button onClick={incluir} className="botao-gradiente w-full rounded-full py-2.5 text-sm font-semibold">
-              Incluir como gasto fixo
-              {a.veredito === "depois" && a.aPartirDe ? ` a partir de ${mesCurto(a.aPartirDe)}` : ""}
-            </button>
+          {!incluido && (
+            <div className="grid gap-2 sm:grid-cols-2">
+              {a.veredito !== "nao" && (
+                <button onClick={incluir} className="botao-gradiente rounded-full py-2.5 text-sm font-semibold">
+                  Incluir como gasto fixo
+                  {a.veredito === "depois" && a.aPartirDe ? ` a partir de ${mesCurto(a.aPartirDe)}` : ""}
+                </button>
+              )}
+              <button
+                onClick={guardarComoDesejo}
+                className="rounded-full border border-rosa/50 py-2.5 text-sm font-semibold text-rosa hover:bg-rosa/10"
+              >
+                Guardar como desejo
+              </button>
+            </div>
           )}
-          {incluido && (
+          {feito === "fixo" && (
             <p className="text-sm text-entrada">
               <Icone e="✅" /> Incluído nos seus gastos fixos (dá para mudar o dia em Contas).
+            </p>
+          )}
+          {feito === "desejo" && (
+            <p className="text-sm text-entrada">
+              <Icone e="✅" /> Está nos Desejos (aqui em cima). Quando começar, toque em “Comecei” e ele vira gasto fixo.
             </p>
           )}
         </div>

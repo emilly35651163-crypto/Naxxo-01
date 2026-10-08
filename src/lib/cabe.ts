@@ -2,6 +2,7 @@
 // Olha a previsão dos próximos meses (o que entra menos o que já sai) e tira o gasto novo de cada um.
 
 import { somarMeses } from "./formato";
+import { adicionarGastoFixo, lerCartoes } from "./store";
 import { previstosDoMes, resumoDoMes, type Dados } from "./previstos";
 
 export type Veredito = "cabe" | "aperta" | "depois" | "nao";
@@ -47,4 +48,25 @@ export function avaliarGastoMensal(valor: number, inicio: string, vezes: number 
 
   const falta = Math.max(...meses.map((m) => -m.depois));
   return { veredito: "nao", falta, cabeAte, meses: lista };
+}
+
+/** Assume o gasto: vira gasto fixo a partir do mês (todo dia 10, da primeira conta; dá para mudar em Contas). */
+export function assumirGastoMensal(g: { nome: string; icone: string; valor: number; inicio: string; vezes?: number | null }) {
+  const nome = g.nome.trim() || "Gasto mensal";
+  adicionarGastoFixo({
+    nome,
+    icone: g.icone,
+    categoria: /academia|plano|saude|saúde|medic|médic/i.test(nome)
+      ? "saude"
+      : /curso|escola|faculdade/i.test(nome)
+        ? "educacao"
+        : "outros",
+    valor: g.valor,
+    varia: false,
+    dia: 10,
+    pagamento: "debito",
+    contaId: lerCartoes().find((c) => c.tipo !== "vale")?.id,
+    desde: g.inicio,
+    ate: g.vezes && g.vezes > 0 ? somarMeses(g.inicio, g.vezes - 1) : undefined,
+  });
 }

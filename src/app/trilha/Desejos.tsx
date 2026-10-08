@@ -4,6 +4,8 @@ import { useState } from "react";
 import { adicionarDesejo, removerDesejo, useDesejos, type Desejo } from "@/lib/store";
 import { brl, lerValor } from "@/lib/formato";
 import { avaliarDesejo } from "@/lib/desejos";
+import { assumirGastoMensal, avaliarGastoMensal } from "@/lib/cabe";
+import { mesAtual, nomeMes } from "@/lib/formato";
 import { useDados } from "@/lib/dados";
 import { comDesfazer } from "@/lib/avisos";
 import { CampoValor } from "@/components/Campos";
@@ -30,6 +32,43 @@ export default function Desejos() {
   const [icone, setIcone] = useState("✨");
   const [valor, setValor] = useState("");
   const [comprando, setComprando] = useState<Desejo | null>(null);
+
+  /** Desejo mensal: cabe começar este mês? (a mesma conta do "Cabe no meu mês?") */
+  function avaliarMensal(d: Desejo) {
+    const a = avaliarGastoMensal(d.valor, mesAtual(), d.mensal?.vezes ?? null, dados);
+    const mes = (m?: string) => (m ? nomeMes(m).split(" ")[0].toLowerCase() : "");
+    if (a.veredito === "cabe")
+      return {
+        tipo: "agora" as const,
+        titulo: "✅ Cabe começar agora",
+        texto: "Mesmo com esse gasto todo mês, ainda sobra folga.",
+      };
+    if (a.veredito === "aperta")
+      return {
+        tipo: "esperar" as const,
+        titulo: "⚠️ Cabe, mas aperta",
+        texto: `Com folga, o ideal é até ${brl(a.cabeAte)} por mês.`,
+      };
+    if (a.veredito === "depois")
+      return {
+        tipo: "esperar" as const,
+        titulo: `📅 A partir de ${mes(a.aPartirDe)}`,
+        texto: "Este mês ainda falta; de lá em diante cabe.",
+      };
+    return {
+      tipo: "nao-cabe" as const,
+      titulo: "⛔ Ainda não cabe",
+      texto: a.cabeAte > 0 ? `Hoje cabe até ${brl(a.cabeAte)} por mês.` : "Hoje não sobra para um gasto novo.",
+    };
+  }
+
+  /** "Comecei": o desejo mensal vira gasto fixo a partir deste mês e sai da lista */
+  function comecei(d: Desejo) {
+    comDesfazer(`${d.nome} virou gasto fixo a partir de ${nomeMes(mesAtual()).split(" ")[0].toLowerCase()}`, () => {
+      assumirGastoMensal({ nome: d.nome, icone: d.icone, valor: d.valor, inicio: mesAtual(), vezes: d.mensal?.vezes });
+      removerDesejo(d.id);
+    });
+  }
 
   function salvar(e: React.FormEvent) {
     e.preventDefault();
@@ -88,7 +127,7 @@ export default function Desejos() {
       {desejos.length > 0 ? (
         <ul className="cartao divide-y divide-white/5 px-4">
           {desejos.map((d) => {
-            const v = avaliarDesejo(d.valor, dados);
+            const v = d.mensal ? avaliarMensal(d) : avaliarDesejo(d.valor, dados);
             return (
               <li key={d.id} className="flex items-center gap-3 py-3">
                 <span className="text-2xl" aria-hidden>
@@ -96,7 +135,11 @@ export default function Desejos() {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block font-medium">
-                    <TextoComIcones texto={d.nome} /> <span className="text-sm text-suave tabular-nums">· {brl(d.valor)}</span>
+                    <TextoComIcones texto={d.nome} />{" "}
+                    <span className="text-sm text-suave tabular-nums">
+                      · {brl(d.valor)}
+                      {d.mensal && "/mês"}
+                    </span>
                   </span>
                   <span className={`block text-sm font-semibold ${COR[v.tipo]}`}>
                     <TextoComIcones texto={v.titulo} />
@@ -107,10 +150,10 @@ export default function Desejos() {
                 </span>
                 <div className="flex shrink-0 flex-col items-end gap-1">
                   <button
-                    onClick={() => setComprando(d)}
+                    onClick={() => (d.mensal ? comecei(d) : setComprando(d))}
                     className="rounded-full bg-entrada/15 px-3 py-1 text-xs font-semibold text-entrada"
                   >
-                    Comprei
+                    {d.mensal ? "Comecei" : "Comprei"}
                   </button>
                   <button
                     onClick={() => comDesfazer(`${d.nome} removido`, () => removerDesejo(d.id))}

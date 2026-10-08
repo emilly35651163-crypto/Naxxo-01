@@ -1071,7 +1071,14 @@ export function registrarAdiantamento(id: string, quantas: number, economia: num
 
 // ---------- Desejos (coisas pequenas: perfume, restaurante, roupa…) ----------
 
-export type Desejo = { id: string; nome: string; icone: string; valor: number; criadoEm: string };
+export type Desejo = {
+  id: string;
+  nome: string;
+  icone: string;
+  valor: number; // no mensal: quanto por mês
+  criadoEm: string;
+  mensal?: { vezes?: number }; // gasto que vai se repetir (academia, curso…): quando começar, vira gasto fixo
+};
 
 const SEM_DESEJOS: Desejo[] = [];
 const desejos = criarDado<Desejo[]>("naxxo:desejos", SEM_DESEJOS);
