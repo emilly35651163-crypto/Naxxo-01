@@ -1098,6 +1098,17 @@ export function ordenarDesejos(ids: string[]) {
   desejos.gravar([...lista].sort((a, b) => pos(a.id) - pos(b.id)));
 }
 
+/** Muda nome, valor e se é mensal (mensal: undefined = vira compra única) */
+export function editarDesejo(id: string, mudancas: Pick<Desejo, "nome" | "valor" | "mensal">) {
+  desejos.gravar(
+    desejos.ler().map((d) => {
+      if (d.id !== id) return d;
+      const { mensal: _antes, ...resto } = d;
+      return { ...resto, nome: mudancas.nome, valor: mudancas.valor, ...(mudancas.mensal ? { mensal: mudancas.mensal } : {}) };
+    }),
+  );
+}
+
 export function removerDesejo(id: string) {
   desejos.gravar(desejos.ler().filter((d) => d.id !== id));
 }

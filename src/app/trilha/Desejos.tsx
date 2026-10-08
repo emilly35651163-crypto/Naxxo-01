@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { DotsSixVertical } from "@phosphor-icons/react";
-import { adicionarDesejo, ordenarDesejos, removerDesejo, useDesejos, type Desejo } from "@/lib/store";
+import { adicionarDesejo, editarDesejo, ordenarDesejos, removerDesejo, useDesejos, type Desejo } from "@/lib/store";
 import { brl, lerValor } from "@/lib/formato";
 import { avaliarDesejo } from "@/lib/desejos";
 import { assumirGastoMensal, avaliarGastoMensal, planoDosDesejos } from "@/lib/cabe";
@@ -33,6 +33,20 @@ export default function Desejos() {
   const [icone, setIcone] = useState("✨");
   const [valor, setValor] = useState("");
   const [comprando, setComprando] = useState<Desejo | null>(null);
+  const [editando, setEditando] = useState<{ id: string; nome: string; valor: string; mensal: boolean; vezes: string } | null>(
+    null,
+  );
+
+  function salvarEdicao(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editando || !editando.nome.trim() || !(lerValor(editando.valor) > 0)) return;
+    editarDesejo(editando.id, {
+      nome: editando.nome.trim(),
+      valor: lerValor(editando.valor),
+      mensal: editando.mensal ? { vezes: Number(editando.vezes) || undefined } : undefined,
+    });
+    setEditando(null);
+  }
   // Arrastar para mudar a prioridade: o item segue o dedo e os outros deslizam para abrir espaço.
   // A lista só muda de ordem de verdade ao soltar.
   const [arrasto, setArrasto] = useState<{
@@ -285,40 +299,104 @@ export default function Desejos() {
                 <span className="text-2xl" aria-hidden>
                   <Icone e={d.icone} />
                 </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block font-medium">
-                    <TextoComIcones texto={d.nome} />{" "}
-                    <span className="text-sm text-suave tabular-nums">
-                      · {brl(d.valor)}
-                      {d.mensal && "/mês"}
+                {editando?.id === d.id ? (
+                  <form onSubmit={salvarEdicao} className="min-w-0 flex-1 space-y-2">
+                    <input
+                      autoFocus
+                      value={editando.nome}
+                      onChange={(e) => setEditando({ ...editando, nome: e.target.value })}
+                      aria-label="Nome do desejo"
+                      className="campo w-full"
+                    />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="w-36">
+                        <CampoValor
+                          valor={editando.valor}
+                          onChange={(valor) => setEditando({ ...editando, valor })}
+                          rotulo={editando.mensal ? "Quanto por mês" : "Quanto custa"}
+                        />
+                      </div>
+                      <label className="flex items-center gap-1.5 text-xs text-suave">
+                        <input
+                          type="checkbox"
+                          checked={editando.mensal}
+                          onChange={(e) => setEditando({ ...editando, mensal: e.target.checked })}
+                          className="accent-rosa"
+                        />
+                        todo mês
+                      </label>
+                      {editando.mensal && (
+                        <input
+                          inputMode="numeric"
+                          value={editando.vezes}
+                          onChange={(e) => setEditando({ ...editando, vezes: e.target.value.replace(/\D/g, "").slice(0, 3) })}
+                          placeholder="meses (sem fim)"
+                          aria-label="Por quantos meses"
+                          className="campo w-32 px-2 py-1.5 text-center text-sm"
+                        />
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <button type="submit" className="botao-gradiente rounded-full px-4 py-1.5 text-sm font-semibold">
+                        Salvar
+                      </button>
+                      <button type="button" onClick={() => setEditando(null)} className="px-3 py-1.5 text-sm text-suave">
+                        Cancelar
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-medium">
+                        <TextoComIcones texto={d.nome} />{" "}
+                        <span className="text-sm text-suave tabular-nums">
+                          · {brl(d.valor)}
+                          {d.mensal && "/mês"}
+                        </span>
+                      </span>
+                      <span className={`block text-sm font-semibold ${COR[v.tipo]}`}>
+                        <TextoComIcones texto={v.titulo} />
+                      </span>
+                      <span className="block text-xs text-suave">
+                        <TextoComIcones texto={v.texto} />
+                      </span>
+                      {plano && (
+                        <span className="mt-0.5 block text-xs text-rosa">
+                          No plano com os outros: {plano.quando[d.id] ? mesCurto(plano.quando[d.id]!) : "não cabe em 12 meses"}
+                        </span>
+                      )}
                     </span>
-                  </span>
-                  <span className={`block text-sm font-semibold ${COR[v.tipo]}`}>
-                    <TextoComIcones texto={v.titulo} />
-                  </span>
-                  <span className="block text-xs text-suave">
-                    <TextoComIcones texto={v.texto} />
-                  </span>
-                  {plano && (
-                    <span className="mt-0.5 block text-xs text-rosa">
-                      No plano com os outros: {plano.quando[d.id] ? mesCurto(plano.quando[d.id]!) : "não cabe em 12 meses"}
-                    </span>
-                  )}
-                </span>
-                <div className="flex shrink-0 flex-col items-end gap-1">
-                  <button
-                    onClick={() => (d.mensal ? comecei(d) : setComprando(d))}
-                    className="rounded-full bg-entrada/15 px-3 py-1 text-xs font-semibold text-entrada"
-                  >
-                    {d.mensal ? "Comecei" : "Comprei"}
-                  </button>
-                  <button
-                    onClick={() => comDesfazer(`${d.nome} removido`, () => removerDesejo(d.id))}
-                    className="text-xs text-suave hover:text-saida"
-                  >
-                    remover
-                  </button>
-                </div>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <button
+                        onClick={() => (d.mensal ? comecei(d) : setComprando(d))}
+                        className="rounded-full bg-entrada/15 px-3 py-1 text-xs font-semibold text-entrada"
+                      >
+                        {d.mensal ? "Comecei" : "Comprei"}
+                      </button>
+                      <button
+                        onClick={() =>
+                          setEditando({
+                            id: d.id,
+                            nome: d.nome,
+                            valor: brl(d.valor).replace("R$", "").trim(),
+                            mensal: !!d.mensal,
+                            vezes: d.mensal?.vezes ? String(d.mensal.vezes) : "",
+                          })
+                        }
+                        className="text-xs text-suave hover:text-rosa"
+                      >
+                        editar
+                      </button>
+                      <button
+                        onClick={() => comDesfazer(`${d.nome} removido`, () => removerDesejo(d.id))}
+                        className="text-xs text-suave hover:text-saida"
+                      >
+                        remover
+                      </button>
+                    </div>
+                  </>
+                )}
               </li>
             );
           })}
