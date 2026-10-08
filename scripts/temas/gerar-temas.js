@@ -204,12 +204,13 @@ export type Tema = {
   estilo: "sobrio" | "tematico";
   descricao: string;
   bolinha: string; // a bolinha da tela de escolha (um fundo CSS)
+  barra: string; // a cor da barra do celular (lá em cima, onde fica a hora): a mesma do topo do app
 };
 
 export const TEMAS: Tema[] = [
-  { id: "escuro", nome: "NAXXO escuro", cor: "NAXXO", base: "escuro", estilo: "sobrio", descricao: "O original", bolinha: "radial-gradient(circle at 32% 30%, #2b3150, #0b0f1a 72%)" },
-  { id: "claro", nome: "NAXXO claro", cor: "NAXXO", base: "claro", estilo: "sobrio", descricao: "O original, de dia", bolinha: "linear-gradient(135deg, #fde3f6, #ece2ff 60%, #e3ecff)" },
-${T.map((t) => `  { id: "${t.id}", nome: ${JSON.stringify(t.nome)}, cor: "${t.cor}", base: "${t.base}", estilo: "${t.estilo}", descricao: ${JSON.stringify(t.descricao)}, bolinha: ${JSON.stringify(t.estilo === "tematico" ? `var(--cena-${t.id}) ${FOCO[t.id] ?? "50% 30%"} / 320% no-repeat` : bolinhaSobria(t))} },`).join("\n")}
+  { id: "escuro", nome: "NAXXO escuro", cor: "NAXXO", base: "escuro", estilo: "sobrio", descricao: "O original", bolinha: "radial-gradient(circle at 32% 30%, #2b3150, #0b0f1a 72%)", barra: "#0b0f1a" },
+  { id: "claro", nome: "NAXXO claro", cor: "NAXXO", base: "claro", estilo: "sobrio", descricao: "O original, de dia", bolinha: "linear-gradient(135deg, #fde3f6, #ece2ff 60%, #e3ecff)", barra: "#f6f0fb" },
+${T.map((t) => `  { id: "${t.id}", nome: ${JSON.stringify(t.nome)}, cor: "${t.cor}", base: "${t.base}", estilo: "${t.estilo}", descricao: ${JSON.stringify(t.descricao)}, bolinha: ${JSON.stringify(t.estilo === "tematico" ? `var(--cena-${t.id}) ${FOCO[t.id] ?? "50% 30%"} / 320% no-repeat` : bolinhaSobria(t))}, barra: "${t.base === "claro" ? (t.estilo === "tematico" ? t.v.sup2 : t.v.fundo) : t.v.fundo}" },`).join("\n")}
 ];
 
 /** Os grupos da tela de escolha, na ordem */

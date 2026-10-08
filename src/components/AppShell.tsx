@@ -29,6 +29,9 @@ function useTema() {
       raiz.dataset.tema = tema === "auto" || !escolhido ? (midia.matches ? "claro" : "escuro") : escolhido.base;
       if (escolhido && escolhido.cor !== "NAXXO") raiz.dataset.paleta = escolhido.id;
       else delete raiz.dataset.paleta;
+      // A barra do celular (onde fica a hora) acompanha o tema
+      const barra = escolhido?.barra ?? (raiz.dataset.tema === "claro" ? "#f6f0fb" : "#0b0f1a");
+      document.querySelectorAll("meta[name='theme-color']").forEach((m) => m.setAttribute("content", barra));
     };
     aplicar();
     midia.addEventListener("change", aplicar);

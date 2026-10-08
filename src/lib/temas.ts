@@ -48,6 +48,7 @@ export type Tema = {
   estilo: "sobrio" | "tematico";
   descricao: string;
   bolinha: string; // a bolinha da tela de escolha (um fundo CSS)
+  barra: string; // a cor da barra do celular (lá em cima, onde fica a hora): a mesma do topo do app
 };
 
 export const TEMAS: Tema[] = [
@@ -59,6 +60,7 @@ export const TEMAS: Tema[] = [
     estilo: "sobrio",
     descricao: "O original",
     bolinha: "radial-gradient(circle at 32% 30%, #2b3150, #0b0f1a 72%)",
+    barra: "#0b0f1a",
   },
   {
     id: "claro",
@@ -68,6 +70,7 @@ export const TEMAS: Tema[] = [
     estilo: "sobrio",
     descricao: "O original, de dia",
     bolinha: "linear-gradient(135deg, #fde3f6, #ece2ff 60%, #e3ecff)",
+    barra: "#f6f0fb",
   },
   {
     id: "vermelho-escuro",
@@ -77,6 +80,7 @@ export const TEMAS: Tema[] = [
     estilo: "sobrio",
     descricao: "Vermelho fechado e preto",
     bolinha: "radial-gradient(circle at 32% 30%, #e11d48, #120506 78%)",
+    barra: "#120506",
   },
   {
     id: "fogo",
@@ -86,6 +90,7 @@ export const TEMAS: Tema[] = [
     estilo: "tematico",
     descricao: "Lava, brasas e rocha",
     bolinha: "var(--cena-fogo) 80% 40% / 320% no-repeat",
+    barra: "#0a0202",
   },
   {
     id: "vermelho-claro",
@@ -95,6 +100,7 @@ export const TEMAS: Tema[] = [
     estilo: "sobrio",
     descricao: "Vermelho claro e branco",
     bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #fbd0d4 70%, #c8102e 140%)",
+    barra: "#fde2e4",
   },
   {
     id: "cereja",
@@ -104,6 +110,7 @@ export const TEMAS: Tema[] = [
     estilo: "tematico",
     descricao: "Cerejas e calda vermelha",
     bolinha: "var(--cena-cereja) 30% 18% / 320% no-repeat",
+    barra: "#ffe1e5",
   },
   {
     id: "laranja-escuro",
@@ -113,6 +120,7 @@ export const TEMAS: Tema[] = [
     estilo: "sobrio",
     descricao: "Laranja queimado e café",
     bolinha: "radial-gradient(circle at 32% 30%, #ea580c, #140b05 78%)",
+    barra: "#140b05",
   },
   {
     id: "outono",
@@ -122,6 +130,7 @@ export const TEMAS: Tema[] = [
     estilo: "tematico",
     descricao: "Folhas secas e luz quente",
     bolinha: "var(--cena-outono) 15% 30% / 320% no-repeat",
+    barra: "#140905",
   },
   {
     id: "laranja-claro",
@@ -131,6 +140,7 @@ export const TEMAS: Tema[] = [
     estilo: "sobrio",
     descricao: "Pêssego e creme",
     bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #fdd9b8 70%, #c2410c 140%)",
+    barra: "#ffe6cf",
   },
   {
     id: "borboletas",
@@ -140,6 +150,7 @@ export const TEMAS: Tema[] = [
     estilo: "tematico",
     descricao: "Borboletas-monarca",
     bolinha: "var(--cena-borboletas) 18% 9% / 320% no-repeat",
+    barra: "#ffe8d2",
   },
   {
     id: "amarelo-escuro",
@@ -149,6 +160,7 @@ export const TEMAS: Tema[] = [
     estilo: "sobrio",
     descricao: "Mostarda e preto",
     bolinha: "radial-gradient(circle at 32% 30%, #eab308, #131003 78%)",
+    barra: "#131003",
   },
   {
     id: "abelha",
@@ -158,6 +170,7 @@ export const TEMAS: Tema[] = [
     estilo: "tematico",
     descricao: "Favo de mel e mel escorrendo",
     bolinha: "var(--cena-abelha) 20% 14% / 320% no-repeat",
+    barra: "#0e0902",
   },
   {
     id: "amarelo-claro",
@@ -167,6 +180,7 @@ export const TEMAS: Tema[] = [
     estilo: "sobrio",
     descricao: "Amarelo-manteiga e branco",
     bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #ffe98a 70%, #a16207 140%)",
+    barra: "#fff2b8",
   },
   {
     id: "girassol",
@@ -176,6 +190,7 @@ export const TEMAS: Tema[] = [
     estilo: "tematico",
     descricao: "Girassóis e sol",
     bolinha: "var(--cena-girassol) 10% 6% / 320% no-repeat",
+    barra: "#fff1b3",
   },
   {
     id: "verde-escuro",
@@ -185,6 +200,7 @@ export const TEMAS: Tema[] = [
     estilo: "sobrio",
     descricao: "Verde-garrafa e preto",
     bolinha: "radial-gradient(circle at 32% 30%, #10b981, #04120b 78%)",
+    barra: "#04120b",
   },
   {
     id: "floresta",
@@ -194,6 +210,7 @@ export const TEMAS: Tema[] = [
     estilo: "tematico",
     descricao: "Pinheiros e névoa",
     bolinha: "var(--cena-floresta) 68% 26% / 320% no-repeat",
+    barra: "#04100a",
   },
   {
     id: "verde-claro",
@@ -203,6 +220,7 @@ export const TEMAS: Tema[] = [
     estilo: "sobrio",
     descricao: "Verde-menta e branco",
     bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #c2e9cf 70%, #047857 140%)",
+    barra: "#d6f2df",
   },
   {
     id: "natureza",
@@ -212,6 +230,7 @@ export const TEMAS: Tema[] = [
     estilo: "tematico",
     descricao: "Colinas e folhas",
     bolinha: "var(--cena-natureza) 50% 80% / 320% no-repeat",
+    barra: "#e1f4e4",
   },
   {
     id: "azul-escuro",
@@ -221,6 +240,7 @@ export const TEMAS: Tema[] = [
     estilo: "sobrio",
     descricao: "Azul-marinho e preto",
     bolinha: "radial-gradient(circle at 32% 30%, #3b82f6, #050b18 78%)",
+    barra: "#050b18",
   },
   {
     id: "mar-profundo",
@@ -230,6 +250,7 @@ export const TEMAS: Tema[] = [
     estilo: "tematico",
     descricao: "Águas-vivas e peixes de luz",
     bolinha: "var(--cena-mar-profundo) 48% 35% / 320% no-repeat",
+    barra: "#031628",
   },
   {
     id: "eletrico",
@@ -239,6 +260,7 @@ export const TEMAS: Tema[] = [
     estilo: "tematico",
     descricao: "Raios num céu azul vivo",
     bolinha: "var(--cena-eletrico) 50% 20% / 320% no-repeat",
+    barra: "#e3efff",
   },
   {
     id: "tecnologia",
@@ -248,6 +270,7 @@ export const TEMAS: Tema[] = [
     estilo: "tematico",
     descricao: "Circuitos azuis brilhando",
     bolinha: "var(--cena-tecnologia) 50% 70% / 320% no-repeat",
+    barra: "#03112e",
   },
   {
     id: "azul-claro",
@@ -257,6 +280,7 @@ export const TEMAS: Tema[] = [
     estilo: "sobrio",
     descricao: "Azul-céu",
     bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #bcd6f1 70%, #0369a1 140%)",
+    barra: "#cfe4f8",
   },
   {
     id: "bolhas",
@@ -266,6 +290,7 @@ export const TEMAS: Tema[] = [
     estilo: "tematico",
     descricao: "Bolhas de sabão",
     bolinha: "var(--cena-bolhas) 18% 7% / 320% no-repeat",
+    barra: "#e3f0ff",
   },
   {
     id: "roxo-escuro",
@@ -275,6 +300,7 @@ export const TEMAS: Tema[] = [
     estilo: "sobrio",
     descricao: "Berinjela e preto",
     bolinha: "radial-gradient(circle at 32% 30%, #8b5cf6, #0c0618 78%)",
+    barra: "#0c0618",
   },
   {
     id: "universo",
@@ -284,6 +310,7 @@ export const TEMAS: Tema[] = [
     estilo: "tematico",
     descricao: "Nebulosa, estrelas e planeta",
     bolinha: "var(--cena-universo) 70% 74% / 320% no-repeat",
+    barra: "#05030f",
   },
   {
     id: "roxo-claro",
@@ -293,6 +320,7 @@ export const TEMAS: Tema[] = [
     estilo: "sobrio",
     descricao: "Lilás e branco",
     bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #ddd0f7 70%, #6d28d9 140%)",
+    barra: "#e9e0fb",
   },
   {
     id: "gatinho",
@@ -302,6 +330,7 @@ export const TEMAS: Tema[] = [
     estilo: "tematico",
     descricao: "Gatinho branco dormindo no lilás",
     bolinha: "var(--cena-gatinho) 50% 68% / 320% no-repeat",
+    barra: "#e9e0fb",
   },
   {
     id: "rosa-escuro",
@@ -311,6 +340,7 @@ export const TEMAS: Tema[] = [
     estilo: "sobrio",
     descricao: "Magenta e preto",
     bolinha: "radial-gradient(circle at 32% 30%, #db2777, #160610 78%)",
+    barra: "#160610",
   },
   {
     id: "glitter",
@@ -320,6 +350,7 @@ export const TEMAS: Tema[] = [
     estilo: "tematico",
     descricao: "Brilhos rosa e dourado",
     bolinha: "var(--cena-glitter) 50% 40% / 320% no-repeat",
+    barra: "#12030e",
   },
   {
     id: "rosa-claro",
@@ -329,6 +360,7 @@ export const TEMAS: Tema[] = [
     estilo: "sobrio",
     descricao: "Rosa-bebê e branco",
     bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #fbcfe6 70%, #be185d 140%)",
+    barra: "#fde0f0",
   },
   {
     id: "barbiecore",
@@ -338,6 +370,7 @@ export const TEMAS: Tema[] = [
     estilo: "tematico",
     descricao: "Neon rosa, cartões e cetim",
     bolinha: "var(--cena-barbiecore) 28% 16% / 320% no-repeat",
+    barra: "#fbd3e2",
   },
   {
     id: "neutro-escuro",
@@ -348,6 +381,7 @@ export const TEMAS: Tema[] = [
     descricao: "Preto com degradê",
     bolinha:
       "radial-gradient(120% 120% at 80% -10%, rgb(255 255 255 / 0.09), transparent 60%), linear-gradient(180deg, #1c1c1f 0%, #0b0b0c 55%, #050506 100%)",
+    barra: "#0b0b0c",
   },
   {
     id: "neutro-medio",
@@ -358,6 +392,7 @@ export const TEMAS: Tema[] = [
     descricao: "Cinza com degradê",
     bolinha:
       "radial-gradient(120% 120% at 20% -10%, rgb(255 255 255 / 0.14), transparent 60%), linear-gradient(180deg, #4a4e56 0%, #34373d 50%, #24262b 100%)",
+    barra: "#34373d",
   },
   {
     id: "neutro-claro",
@@ -368,6 +403,7 @@ export const TEMAS: Tema[] = [
     descricao: "Branco com degradê",
     bolinha:
       "radial-gradient(120% 120% at 80% -10%, rgb(255 255 255 / 1), transparent 60%), linear-gradient(180deg, #ffffff 0%, #ececee 55%, #d9d9dd 100%)",
+    barra: "#f4f4f5",
   },
 ];
 

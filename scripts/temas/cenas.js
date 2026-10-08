@@ -137,27 +137,39 @@ function outono() {
   );
 }
 
-// Borboletas: parede laranja com luz de janela e borboletas-monarca
+// Borboletas: fundo de glitter laranja-dourado, muitas monarcas com sombra e brilhinhos nas asas
 function borboletas() {
+  // Textura de glitter: um quadradinho cheio de pontinhos que se repete (leve, mas parece purpurina)
+  const grao = (n, cores, rmin, rmax) =>
+    Array.from({ length: n }, () => `<circle cx='${f(r(0, 160))}' cy='${f(r(0, 160))}' r='${f(r(rmin, rmax))}' fill='${escolher(cores)}' opacity='${f(r(0.4, 1) * 100) / 100}'/>`).join("");
+  const glitter =
+    `<pattern id='glitter' width='160' height='160' patternUnits='userSpaceOnUse'><rect width='160' height='160' fill='#c96a14'/>${grao(260, ["#e08a2a", "#f5a742", "#a8520c", "#ffc56b", "#d9781c"], 0.8, 2.2)}${grao(26, ["#fff1b0", "#ffe27a"], 0.8, 1.8)}</pattern>` +
+    `<pattern id='glitterAsa' width='40' height='40' patternUnits='userSpaceOnUse'>${Array.from({ length: 30 }, () => `<circle cx='${f(r(0, 40))}' cy='${f(r(0, 40))}' r='${f(r(0.5, 1.4))}' fill='${escolher(["#ffb347", "#ffd27a", "#b84d08"])}' opacity='${f(r(0.4, 1) * 100) / 100}'/>`).join("")}</pattern>`;
   const monarca = (x, y, s, rot) => `
   <g transform='translate(${f(x)} ${f(y)}) rotate(${f(rot)}) scale(${f(s)})'>
-    <g transform='translate(10 14)' opacity='.25' filter='url(#b6)'><path d='M0 0 L-120 -60 L-70 30 Z M0 0 L120 -60 L70 30 Z' fill='#5a2200'/></g>
-    <path d='M-2 -2 C -40 -70, -128 -78, -130 -40 C -132 -10, -90 6, -2 2 Z' fill='url(#asa)' stroke='#1b0d05' stroke-width='9' stroke-linejoin='round'/>
-    <path d='M2 -2 C 40 -70, 128 -78, 130 -40 C 132 -10, 90 6, 2 2 Z' fill='url(#asa)' stroke='#1b0d05' stroke-width='9' stroke-linejoin='round'/>
-    <path d='M-2 4 C -26 40, -86 76, -96 44 C -104 18, -60 4, -2 4 Z' fill='url(#asa2)' stroke='#1b0d05' stroke-width='9' stroke-linejoin='round'/>
-    <path d='M2 4 C 26 40, 86 76, 96 44 C 104 18, 60 4, 2 4 Z' fill='url(#asa2)' stroke='#1b0d05' stroke-width='9' stroke-linejoin='round'/>
-    <path d='M-6 -6 L-110 -50 M-14 -12 L-84 -66 M-8 -4 L-122 -22 M6 -6 L110 -50 M14 -12 L84 -66 M8 -4 L122 -22 M-6 8 L-80 46 M-6 10 L-50 56 M6 8 L80 46 M6 10 L50 56' stroke='#1b0d05' stroke-width='4' fill='none'/>
-    ${[[-124, -40], [-118, -56], [-104, -68], [-86, -74], [-128, -24], [-92, 52], [-76, 62], [-98, 34], [124, -40], [118, -56], [104, -68], [86, -74], [128, -24], [92, 52], [76, 62], [98, 34]].map(([a, b]) => `<circle cx='${a}' cy='${b}' r='3.2' fill='#fff7e8'/>`).join("")}
-    <ellipse cx='0' cy='2' rx='6' ry='34' fill='#1b0d05'/><circle cx='0' cy='-32' r='7' fill='#1b0d05'/>
-    <path d='M-3 -36 C -10 -60, -22 -70, -30 -74 M3 -36 C 10 -60, 22 -70, 30 -74' stroke='#1b0d05' stroke-width='3' fill='none'/>
+    <g transform='translate(16 22)' opacity='.45' filter='url(#b8)'><path d='M0 0 C -40 -70, -128 -78, -130 -40 C -132 -10, -90 6, 0 2 C -26 40, -86 76, -96 44 C -104 18, -60 4, 0 4 Z M0 0 C 40 -70, 128 -78, 130 -40 C 132 -10, 90 6, 0 2 C 26 40, 86 76, 96 44 C 104 18, 60 4, 0 4 Z' fill='#3a1600'/></g>
+    ${[1, -1].map((l) => `
+    <g transform='scale(${l} 1)'>
+      <path d='M2 -2 C 40 -70, 128 -78, 130 -40 C 132 -10, 90 6, 2 2 Z' fill='url(#asa)'/>
+      <path d='M2 -2 C 40 -70, 128 -78, 130 -40 C 132 -10, 90 6, 2 2 Z' fill='url(#glitterAsa)'/>
+      <path d='M2 4 C 26 40, 86 76, 96 44 C 104 18, 60 4, 2 4 Z' fill='url(#asa2)'/>
+      <path d='M2 4 C 26 40, 86 76, 96 44 C 104 18, 60 4, 2 4 Z' fill='url(#glitterAsa)'/>
+      <path d='M2 -2 C 40 -70, 128 -78, 130 -40 C 132 -10, 90 6, 2 2 Z M2 4 C 26 40, 86 76, 96 44 C 104 18, 60 4, 2 4 Z' fill='none' stroke='#140800' stroke-width='10' stroke-linejoin='round'/>
+      <path d='M6 -6 L110 -50 M14 -12 L84 -66 M8 -4 L122 -22 M40 -30 L60 -58 M6 8 L80 46 M6 10 L50 56 M30 20 L70 30' stroke='#140800' stroke-width='4.5' fill='none'/>
+      ${[[124, -40], [118, -56], [104, -68], [86, -74], [128, -24], [92, 52], [76, 62], [98, 34], [112, -30], [70, -76]].map(([p, q]) => `<circle cx='${p}' cy='${q}' r='3.4' fill='#fff7e8'/>`).join("")}
+    </g>`).join("")}
+    <ellipse cx='0' cy='4' rx='7' ry='36' fill='#140800'/><circle cx='0' cy='-34' r='8' fill='#140800'/>
+    <path d='M-3 -38 C -10 -62, -22 -72, -30 -76 M3 -38 C 10 -62, 22 -72, 30 -76' stroke='#140800' stroke-width='3' fill='none'/>
+    <g filter='url(#luz)'>${faisca(118, -62, 14, "#ffffff")}${faisca(-60, -50, 9, "#fff6d0")}</g>
   </g>`;
-  const posicoes = [[180, 160, 0.95, -8], [800, 260, 0.75, 12], [560, 520, 0.7, -14], [120, 760, 0.8, 6], [900, 980, 0.9, -10], [420, 1180, 1, 4], [130, 1440, 0.7, -16], [820, 1560, 0.85, 10], [300, 1860, 0.8, -6]];
+  // Bem espalhadas, de vários tamanhos (as maiores nas bordas, cortadas como na foto)
+  const lugares = [[90, 80, 1.2, -20], [880, 70, 1.3, 25], [520, 150, 0.6, 10], [300, 300, 0.85, -12], [740, 330, 0.7, 18], [60, 560, 1.1, 30], [480, 520, 0.75, -8], [900, 560, 1, -25], [260, 760, 0.55, 12], [680, 760, 0.8, -15], [120, 980, 0.95, 8], [520, 980, 0.9, 20], [930, 1050, 1.2, -30], [330, 1200, 0.7, -10], [760, 1260, 0.6, 14], [60, 1400, 1, -18], [540, 1430, 1.05, 6], [900, 1500, 0.75, 22], [250, 1650, 0.8, -6], [700, 1700, 0.9, -20], [80, 1880, 1.15, 15], [480, 1900, 0.7, 10], [920, 1920, 1.1, -12]];
   return svg(
-    lin("parede", [[0, "#f2a35a"], [0.5, "#e98a3a"], [1, "#d8722a"]]) + blur("b40", 40) + blur("b6", 6) +
-      lin("asa", [[0, "#f7a23c"], [1, "#d9600f"]], 0, 0, 1, 1) + lin("asa2", [[0, "#f9ad4a"], [1, "#e0701a"]], 0, 0, 1, 1),
-    `<rect width='1000' height='2000' fill='url(#parede)'/>
-     <g filter='url(#b40)'><path d='M450 -100 L1100 300 L1100 900 L450 500 Z' fill='#ffd6a0' opacity='.55'/><path d='M440 700 L1100 1100 L1100 1200 L440 800 Z' fill='#7a3a10' opacity='.35'/><path d='M760 -100 L840 -60 L840 1400 L760 1360 Z' fill='#7a3a10' opacity='.3'/><path d='M-100 1200 L500 1500 L500 1600 L-100 1300 Z' fill='#7a3a10' opacity='.25'/></g>
-     ${posicoes.map(([x, y, s, rr]) => monarca(x, y, s, rr)).join("")}`,
+    glitter + rad("brilhoGeral", [[0, "#ffd27a", 0.45], [1, "#ffd27a", 0]], 0.5, 0.35, 0.6) + blur("b8", 8) + brilho("luz", 3) +
+      lin("asa", [[0, "#f06a14"], [1, "#c2410c"]], 0, 0, 1, 1) + lin("asa2", [[0, "#f57a20"], [1, "#d1520e"]], 0, 0, 1, 1),
+    `<rect width='1000' height='2000' fill='url(#glitter)'/><rect width='1000' height='2000' fill='url(#brilhoGeral)'/>
+     <g filter='url(#luz)'>${Array.from({ length: 40 }, () => faisca(r(0, 1000), r(0, 2000), r(3, 8), escolher(["#ffffff", "#fff1b0"]), 0.9)).join("")}</g>
+     ${lugares.map(([x, y, s, rr]) => monarca(x, y, s, rr)).join("")}`,
   );
 }
 
