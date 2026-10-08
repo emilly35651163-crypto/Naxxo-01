@@ -7,6 +7,7 @@ import { mostrarAviso } from "@/lib/avisos";
 import Modal from "./Modal";
 import { Campo, CampoValor, Chip } from "./Campos";
 import EscolhaConta, { lerEscolha } from "./EscolhaConta";
+import Icone from "@/components/Icone";
 
 // Pagar uma fatura (inteira ou só uma parte), escolhendo de qual conta sai o dinheiro.
 export default function FormPagarFatura({
@@ -56,7 +57,8 @@ export default function FormPagarFatura({
         </Campo>
         {numero > 0 && numero < restante - 0.005 && (
           <p className="text-xs text-amber-300">
-            ⚠️ Pagando menos que o total, o resto ({brl(restante - numero)}) costuma ir para o rotativo, com juros altos.
+            <Icone e="⚠️" /> Pagando menos que o total, o resto ({brl(restante - numero)}) costuma ir para o rotativo, com juros
+            altos.
           </p>
         )}
         <EscolhaConta valor={conta} onChange={setConta} rotulo="Pagou com o dinheiro de qual conta?" />
@@ -64,7 +66,11 @@ export default function FormPagarFatura({
           <input type="date" value={data} onChange={(e) => setData(e.target.value)} className="campo" />
         </Campo>
         <p className="text-xs text-suave">Sai do saldo da conta escolhida e libera o limite do cartão.</p>
-        {numero > restante + 0.009 && <p className="text-xs text-saida">⚠️ Valor maior do que falta pagar ({brl(restante)}).</p>}
+        {numero > restante + 0.009 && (
+          <p className="text-xs text-saida">
+            <Icone e="⚠️" /> Valor maior do que falta pagar ({brl(restante)}).
+          </p>
+        )}
         {erro && <p className="text-sm text-saida">{erro}</p>}
         <button type="submit" className="botao-gradiente w-full rounded-full py-3 font-semibold">
           Paguei

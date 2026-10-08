@@ -21,7 +21,7 @@ import { useDados } from "@/lib/dados";
 import FormLancamento from "@/components/FormLancamento";
 import FormCompra from "@/components/FormCompra";
 import FormGastoFixo from "@/components/FormGastoFixo";
-import Icone from "@/components/Icone";
+import Icone, { TextoComIcones } from "@/components/Icone";
 
 // Onde ver (e mexer) mais sobre cada categoria
 const LINKS: Record<string, { href: string; texto: string }> = {
@@ -91,12 +91,16 @@ function Detalhe() {
             <Icone e={iconeDaCategoria("saida", nome)} />
           </span>
           <div className="min-w-0 flex-1">
-            <h1 className="font-display text-xl font-bold">{nome}</h1>
+            <h1 className="font-display text-xl font-bold">
+              <TextoComIcones texto={nome} />
+            </h1>
             <p className="text-xs text-suave">{nomeMes(mes)}</p>
           </div>
           <div className="text-right">
             <p className="gradiente-texto font-display text-2xl font-bold tabular-nums">{brl(total)}</p>
-            <p className="text-xs text-suave">{totalDoMes > 0 ? `${Math.round((total / totalDoMes) * 100)}% dos gastos` : ""}</p>
+            <p className="text-xs text-suave">
+              <TextoComIcones texto={totalDoMes > 0 ? `${Math.round((total / totalDoMes) * 100)}% dos gastos` : ""} />
+            </p>
           </div>
         </div>
         <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-sm">
@@ -112,7 +116,8 @@ function Detalhe() {
           )}
           {mesPassado > 0 && (
             <span className={diferenca > 0 ? "text-saida" : "text-entrada"}>
-              {diferenca > 0 ? "▲" : "▼"} {brl(Math.abs(diferenca))} {diferenca > 0 ? "a mais" : "a menos"} que{" "}
+              <TextoComIcones texto={diferenca > 0 ? "▲" : "▼"} /> {brl(Math.abs(diferenca))}{" "}
+              <TextoComIcones texto={diferenca > 0 ? "a mais" : "a menos"} /> que{" "}
               {nomeMes(somarMeses(mes, -1)).split(" ")[0].toLowerCase()}
             </span>
           )}
@@ -158,7 +163,7 @@ function Detalhe() {
             </>
           ) : (
             <button onClick={() => setMudandoLimite(true)} className="text-xs text-rosa">
-              + Definir um limite por mês para {nome}
+              + Definir um limite por mês para <TextoComIcones texto={nome} />
             </button>
           )}
         </div>
@@ -166,7 +171,7 @@ function Detalhe() {
           <ul className="mt-3 flex flex-wrap gap-2 text-xs">
             {porSub.map(([sub, valor]) => (
               <li key={sub} className="rounded-full bg-white/5 px-3 py-1">
-                {sub} · <b className="tabular-nums">{brl(valor)}</b>
+                <TextoComIcones texto={sub} /> · <b className="tabular-nums">{brl(valor)}</b>
               </li>
             ))}
           </ul>
@@ -177,7 +182,7 @@ function Detalhe() {
             href={link.href}
             className="mt-4 inline-block rounded-full border border-rosa/50 px-4 py-1.5 text-sm text-rosa hover:bg-rosa/10"
           >
-            {link.texto}
+            <TextoComIcones texto={link.texto} />
           </Link>
         )}
       </section>
@@ -201,7 +206,9 @@ function Detalhe() {
                       <Icone e={g.icone} />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-medium group-enabled:group-hover:text-rosa">{g.descricao}</span>
+                      <span className="block truncate font-medium group-enabled:group-hover:text-rosa">
+                        <TextoComIcones texto={g.descricao} />
+                      </span>
                       <span className="block text-xs text-suave">
                         {formatarData(g.data)} · {g.previsto ? <span className="text-amber-300">previsto</span> : g.onde}
                       </span>
@@ -218,7 +225,9 @@ function Detalhe() {
                         .sort((a, b) => b.valor - a.valor)
                         .map((p, i) => (
                           <li key={`${p.itemId}-${i}`} className="flex gap-2">
-                            <span className="min-w-0 flex-1 truncate text-suave">{p.nome}</span>
+                            <span className="min-w-0 flex-1 truncate text-suave">
+                              <TextoComIcones texto={p.nome} />
+                            </span>
                             <span className="tabular-nums">{brl(p.valor)}</span>
                           </li>
                         ))}
@@ -229,7 +238,9 @@ function Detalhe() {
             })}
           </ul>
         ) : (
-          <p className="cartao p-4 text-sm text-suave">Nada em {nome} neste mês.</p>
+          <p className="cartao p-4 text-sm text-suave">
+            Nada em <TextoComIcones texto={nome} /> neste mês.
+          </p>
         )}
       </section>
 
@@ -246,7 +257,7 @@ function Detalhe() {
                   href={`/resumo/categoria?nome=${encodeURIComponent(c.categoria)}&de=${parametros.get("de") ?? "graficos"}`}
                   className="rounded-full border border-white/10 px-3 py-1.5 text-sm text-suave hover:border-rosa/50 hover:text-white"
                 >
-                  <Icone e={iconeDaCategoria("saida", c.categoria)} /> {c.categoria} · {brl(c.valor)}
+                  <Icone e={iconeDaCategoria("saida", c.categoria)} /> <TextoComIcones texto={c.categoria} /> · {brl(c.valor)}
                 </Link>
               ))}
           </div>

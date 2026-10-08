@@ -18,6 +18,7 @@ import { mostrarAviso } from "@/lib/avisos";
 import Modal from "./Modal";
 import { Campo, CampoValor } from "./Campos";
 import EscolhaConta, { lerEscolha } from "./EscolhaConta";
+import Icone from "@/components/Icone";
 
 /** A conta que já vem marcada: a do próprio lançamento, renda (ou vale), gasto fixo, meta ou cartão. */
 function contaSugerida(p: Previsto) {
@@ -115,7 +116,7 @@ export default function ConfirmarPrevisto({ previsto: p, onFechar }: { previsto:
         </p>
         {ehVale && (
           <p className="rounded-2xl bg-roxo/10 px-4 py-3 text-xs text-suave">
-            🍽️ Vale (VR/VA): cai na conta do vale e não conta como dinheiro livre na sobra do mês.
+            <Icone e="🍽️" /> Vale (VR/VA): cai na conta do vale e não conta como dinheiro livre na sobra do mês.
           </p>
         )}
         <Campo rotulo={entrada ? "Quanto entrou?" : p.origem === "guardar" ? "Quanto guardou?" : "Quanto pagou?"}>
@@ -138,7 +139,11 @@ export default function ConfirmarPrevisto({ previsto: p, onFechar }: { previsto:
         <Campo rotulo="Data">
           <input type="date" value={data} onChange={(e) => setData(e.target.value)} className="campo" />
         </Campo>
-        {noCredito && <p className="rounded-2xl bg-roxo/10 px-4 py-3 text-xs text-suave">💳 Vai para a fatura do cartão.</p>}
+        {noCredito && (
+          <p className="rounded-2xl bg-roxo/10 px-4 py-3 text-xs text-suave">
+            <Icone e="💳" /> Vai para a fatura do cartão.
+          </p>
+        )}
         {erro && (
           <p role="alert" className="text-sm text-saida">
             {erro}

@@ -8,7 +8,7 @@ import { useDados } from "@/lib/dados";
 import { comDesfazer } from "@/lib/avisos";
 import { CampoValor } from "@/components/Campos";
 import FormLancamento from "@/components/FormLancamento";
-import Icone from "@/components/Icone";
+import Icone, { TextoComIcones } from "@/components/Icone";
 
 const IDEIAS = [
   { nome: "Perfume", icone: "🌸" },
@@ -63,7 +63,7 @@ export default function Desejos() {
                 }}
                 className={`rounded-full border px-3 py-1 text-sm ${nome === i.nome ? "border-rosa bg-rosa/15" : "border-white/10"}`}
               >
-                <Icone e={i.icone} /> {i.nome}
+                <Icone e={i.icone} /> <TextoComIcones texto={i.nome} />
               </button>
             ))}
           </div>
@@ -96,10 +96,14 @@ export default function Desejos() {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block font-medium">
-                    {d.nome} <span className="text-sm text-suave tabular-nums">· {brl(d.valor)}</span>
+                    <TextoComIcones texto={d.nome} /> <span className="text-sm text-suave tabular-nums">· {brl(d.valor)}</span>
                   </span>
-                  <span className={`block text-sm font-semibold ${COR[v.tipo]}`}>{v.titulo}</span>
-                  <span className="block text-xs text-suave">{v.texto}</span>
+                  <span className={`block text-sm font-semibold ${COR[v.tipo]}`}>
+                    <TextoComIcones texto={v.titulo} />
+                  </span>
+                  <span className="block text-xs text-suave">
+                    <TextoComIcones texto={v.texto} />
+                  </span>
                 </span>
                 <div className="flex shrink-0 flex-col items-end gap-1">
                   <button

@@ -28,7 +28,7 @@ import CamposAssinatura, { assinaturaVazia, salvarAssinatura, type RascunhoAssin
 import { comDesfazer, mostrarAviso } from "@/lib/avisos";
 import { criarRepeticao } from "@/lib/repeticao";
 import EscolhaRepeticao, { lerRepeticao, type Repeticao } from "./EscolhaRepeticao";
-import Icone from "@/components/Icone";
+import Icone, { TextoComIcones } from "@/components/Icone";
 
 // "Fatura do cartão" não faz sentido como categoria de uma compra
 export const CATEGORIAS_COMPRA = CATEGORIAS.saida.filter((c) => c.nome !== "Fatura do cartão");
@@ -47,7 +47,7 @@ export function CampoDataCompra({
     <Campo rotulo="Data da compra">
       <input type="date" value={data} onChange={(e) => onChange(e.target.value)} className="campo" />
       {automatica && (
-        <span className="block text-xs text-suave">✨ Calculada pelas parcelas pagas. Pode ajustar se não for essa.</span>
+        <span className="block text-xs text-suave"> Calculada pelas parcelas pagas. Pode ajustar se não for essa.</span>
       )}
     </Campo>
   );
@@ -72,8 +72,12 @@ export function EscolhaCompraOuAssinatura({ valor, onChange }: { valor: TipoNoCa
             valor === o.id ? "border-rosa bg-rosa/15" : "border-white/10 hover:border-roxo/50"
           }`}
         >
-          <span className="block text-sm font-semibold">{o.nome}</span>
-          <span className="block text-xs text-suave">{o.descricao}</span>
+          <span className="block text-sm font-semibold">
+            <TextoComIcones texto={o.nome} />
+          </span>
+          <span className="block text-xs text-suave">
+            <TextoComIcones texto={o.descricao} />
+          </span>
         </button>
       ))}
     </div>
@@ -254,13 +258,13 @@ export default function FormCompra({
                 <div className="flex flex-wrap gap-2">
                   {metasDisponiveis.map((m) => (
                     <Chip key={m.id} ativo={metaId === m.id} onClick={() => trazerDaMeta(m)}>
-                      <Icone e={m.icone} /> {m.nome}
+                      <Icone e={m.icone} /> <TextoComIcones texto={m.nome} />
                     </Chip>
                   ))}
                 </div>
                 {metaId && (
                   <p className="text-xs text-suave">
-                    💡 A meta continua na Trilha e passa a avançar sozinha quando você paga a fatura.
+                    <Icone e="💡" /> A meta continua na Trilha e passa a avançar sozinha quando você paga a fatura.
                   </p>
                 )}
               </div>
@@ -288,7 +292,7 @@ export default function FormCompra({
                       !noDebito === c ? "bg-white text-fundo" : "text-suave hover:text-white"
                     }`}
                   >
-                    {c ? "💳 Crédito" : "🏦 Débito / Pix"}
+                    <TextoComIcones texto={c ? "💳 Crédito" : "🏦 Débito / Pix"} />
                   </button>
                 ))}
               </div>
@@ -301,11 +305,15 @@ export default function FormCompra({
                 </Campo>
                 <EscolhaConta valor={forma} onChange={setForma} rotulo="De qual banco?" />
                 <p className="rounded-2xl bg-roxo/10 px-4 py-3 text-xs text-suave">
-                  {compra
-                    ? "🏦 Vai sair da fatura e virar uma saída da conta."
-                    : data < hojeISO()
-                      ? "🏦 No débito, com data antes de hoje: fica registrado, mas não muda o saldo de hoje (já tinha saído)."
-                      : "🏦 Sai do saldo da conta."}
+                  <TextoComIcones
+                    texto={
+                      compra
+                        ? "🏦 Vai sair da fatura e virar uma saída da conta."
+                        : data < hojeISO()
+                          ? "🏦 No débito, com data antes de hoje: fica registrado, mas não muda o saldo de hoje (já tinha saído)."
+                          : "🏦 Sai do saldo da conta."
+                    }
+                  />
                 </p>
               </>
             ) : (
@@ -337,7 +345,7 @@ export default function FormCompra({
               <div className="flex flex-wrap gap-2">
                 {categorias.map((c) => (
                   <Chip key={c.nome} ativo={categoria === c.nome} onClick={() => setCategoria(c.nome)}>
-                    <Icone e={c.icone} /> {c.nome}
+                    <Icone e={c.icone} /> <TextoComIcones texto={c.nome} />
                   </Chip>
                 ))}
                 <Chip ativo={criando} onClick={() => setCriando(!criando)}>
@@ -387,9 +395,15 @@ export default function FormCompra({
           />
         )}
 
-        {erro && <p className="text-sm text-saida">{erro}</p>}
+        {erro && (
+          <p className="text-sm text-saida">
+            <TextoComIcones texto={erro} />
+          </p>
+        )}
         <button type="submit" className="botao-gradiente w-full rounded-full py-3 font-semibold">
-          {compra ? "Salvar alterações" : tipo === "assinatura" ? "Adicionar assinatura" : "Incluir no cartão"}
+          <TextoComIcones
+            texto={compra ? "Salvar alterações" : tipo === "assinatura" ? "Adicionar assinatura" : "Incluir no cartão"}
+          />
         </button>
 
         {compra && (

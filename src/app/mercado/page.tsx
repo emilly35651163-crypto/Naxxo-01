@@ -30,7 +30,7 @@ import FizOMercado from "./FizOMercado";
 import { gastosDoMes } from "@/lib/analise";
 import { useDados } from "@/lib/dados";
 import CamposPreco from "./CamposPreco";
-import Icone from "@/components/Icone";
+import Icone, { TextoComIcones } from "@/components/Icone";
 
 export default function Mercado() {
   const lista = useListaCompras();
@@ -91,9 +91,9 @@ export default function Mercado() {
               {gastosMercado.map((g) => (
                 <li key={g.chave} className="flex items-center gap-2 py-2">
                   <span className="min-w-0 flex-1 truncate">
-                    {g.descricao}{" "}
+                    <TextoComIcones texto={g.descricao} />{" "}
                     <span className="text-xs text-suave">
-                      · {formatarData(g.data)} · {g.onde}
+                      · {formatarData(g.data)} · <TextoComIcones texto={g.onde} />
                     </span>
                   </span>
                   <span className="tabular-nums">{brl(g.valor)}</span>
@@ -126,7 +126,7 @@ export default function Mercado() {
           onClick={() => setColando(true)}
           className="rounded-2xl border border-rosa/50 px-4 text-sm font-semibold text-rosa"
         >
-          📋 Colar lista
+          <Icone e="📋" /> Colar lista
         </button>
       </div>
 
@@ -135,10 +135,11 @@ export default function Mercado() {
         <section className="cartao p-4">
           <div className="flex items-center justify-between gap-2">
             <h2 className="font-display font-semibold">
-              🛒 Lista de compras {totalLista > 0 && <span className="text-sm font-normal text-suave">≈ {brl(totalLista)}</span>}
+              <Icone e="🛒" /> Lista de compras{" "}
+              {totalLista > 0 && <span className="text-sm font-normal text-suave">≈ {brl(totalLista)}</span>}
             </h2>
             <button onClick={() => setListaAberta(!listaAberta)} className="text-sm text-rosa">
-              {listaAberta ? "Mostrar menos" : "Mostrar"}
+              <TextoComIcones texto={listaAberta ? "Mostrar menos" : "Mostrar"} />
             </button>
           </div>
 
@@ -154,7 +155,7 @@ export default function Mercado() {
                   >
                     {contas.map((c) => (
                       <option key={c.id} value={c.id}>
-                        {c.nome}
+                        <TextoComIcones texto={c.nome} />
                       </option>
                     ))}
                   </select>
@@ -166,7 +167,7 @@ export default function Mercado() {
                 return (
                   <div key={cat.id} className="mt-4">
                     <p className="titulo-secao">
-                      <Icone e={cat.icone} /> {cat.nome}
+                      <Icone e={cat.icone} /> <TextoComIcones texto={cat.nome} />
                     </p>
                     <ul className="space-y-2">
                       {itens.map((l) => (
@@ -186,7 +187,9 @@ export default function Mercado() {
       {(emCasa.length > 0 || lista.length > 0) && (
         <section className="cartao p-4">
           <div className="mb-3 space-y-3">
-            <h2 className="whitespace-nowrap font-display font-semibold">🏠 Em casa</h2>
+            <h2 className="whitespace-nowrap font-display font-semibold">
+              <Icone e="🏠" /> Em casa
+            </h2>
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => setEmCasaNovo(true)}
@@ -198,7 +201,7 @@ export default function Mercado() {
                 onClick={() => setColandoEmCasa(true)}
                 className="rounded-full border border-white/15 px-3 py-2 text-sm text-suave hover:text-white"
               >
-                📋 Colar lista
+                <Icone e="📋" /> Colar lista
               </button>
             </div>
           </div>
@@ -214,7 +217,9 @@ export default function Mercado() {
                   <Icone e={CATEGORIAS_MERCADO.find((c) => c.id === item.categoria)?.icone ?? item.icone} />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-medium">{item.nome}</span>
+                  <span className="block truncate font-medium">
+                    <TextoComIcones texto={item.nome} />
+                  </span>
                   <PrevisaoDeAcabar id={item.id} faltam={s.faltam} />
                 </span>
                 <ExcluirDeCasa
@@ -238,7 +243,9 @@ export default function Mercado() {
 
       {lista.length === 0 && emCasa.length === 0 && (
         <div className="cartao space-y-3 p-5 text-center text-sm text-suave">
-          <p>Comece adicionando o que você costuma comprar. 🛒</p>
+          <p>
+            Comece adicionando o que você costuma comprar. <Icone e="🛒" />
+          </p>
           <button onClick={() => setEmCasaNovo(true)} className="rounded-full border border-rosa/50 px-4 py-1.5 text-rosa">
             + Já tenho em casa
           </button>
@@ -264,9 +271,11 @@ export default function Mercado() {
 function Numero({ rotulo, valor, destaque }: { rotulo: string; valor: string; destaque?: boolean }) {
   return (
     <div className="cartao p-3 sm:p-4">
-      <p className="text-[0.7rem] text-suave sm:text-xs">{rotulo}</p>
+      <p className="text-[0.7rem] text-suave sm:text-xs">
+        <TextoComIcones texto={rotulo} />
+      </p>
       <p className={`mt-0.5 font-display text-base font-bold tabular-nums sm:text-xl ${destaque ? "gradiente-texto" : ""}`}>
-        {valor}
+        <TextoComIcones texto={valor} />
       </p>
     </div>
   );
@@ -280,10 +289,12 @@ function LinhaLista({ item: l, onEditar, contaId }: { item: ItemLista; onEditar:
     <li className="rounded-2xl bg-fundo/50 p-3">
       <div className="flex items-center gap-2">
         <button onClick={onEditar} className="min-w-0 flex-1 text-left">
-          <span className="block truncate font-medium">{l.nome}</span>
+          <span className="block truncate font-medium">
+            <TextoComIcones texto={l.nome} />
+          </span>
           {l.qtd && (
             <span className="text-xs text-suave">
-              {l.qtd} {l.unidadeQtd ?? "un"}
+              <TextoComIcones texto={l.qtd} /> {l.unidadeQtd ?? "un"}
               {totalDoItemLista(l) > 0 && ` · ${brl(totalDoItemLista(l))}`}
             </span>
           )}
@@ -328,11 +339,15 @@ function LinhaLista({ item: l, onEditar, contaId }: { item: ItemLista; onEditar:
           className="campo cursor-pointer py-2"
         >
           <option value="">
-            {l.duracao ? `${cada(l.unidadeQtd)} dura ${l.duracao} ${l.unidadeDuracao}` : `${cada(l.unidadeQtd)} dura quanto?`}
+            <TextoComIcones
+              texto={
+                l.duracao ? `${cada(l.unidadeQtd)} dura ${l.duracao} ${l.unidadeDuracao}` : `${cada(l.unidadeQtd)} dura quanto?`
+              }
+            />
           </option>
           {DURACOES.map((d) => (
             <option key={d.rotulo} value={d.rotulo}>
-              {cada(l.unidadeQtd)} dura {d.rotulo}
+              <TextoComIcones texto={cada(l.unidadeQtd)} /> dura <TextoComIcones texto={d.rotulo} />
             </option>
           ))}
         </select>
@@ -340,7 +355,9 @@ function LinhaLista({ item: l, onEditar, contaId }: { item: ItemLista; onEditar:
       {/* Excluir pede confirmação e tira o item de tudo (lista e "em casa") */}
       {excluindo && (
         <div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl bg-saida/10 p-2 text-xs">
-          <span className="min-w-0 flex-1">Excluir {l.nome} da lista e de “em casa”?</span>
+          <span className="min-w-0 flex-1">
+            Excluir <TextoComIcones texto={l.nome} /> da lista e de “em casa”?
+          </span>
           <button onClick={() => setExcluindo(false)} className="rounded-full px-3 py-1 text-suave">
             Cancelar
           </button>
@@ -408,13 +425,17 @@ function PrevisaoDeAcabar({ id, faltam }: { id: string; faltam: number | null })
   return (
     <span className="block">
       <button type="button" onClick={() => setAberto(!aberto)} className={`text-left text-xs ${cor} hover:text-rosa`}>
-        {faltam === null
-          ? "sem previsão de acabar · definir ✏️"
-          : faltam < 0
-            ? "já deve ter acabado ✏️"
-            : faltam === 0
-              ? "acaba hoje ✏️"
-              : `acaba em ${faltam} ${faltam === 1 ? "dia" : "dias"} ✏️`}
+        <TextoComIcones
+          texto={
+            faltam === null
+              ? "sem previsão de acabar · definir ✏️"
+              : faltam < 0
+                ? "já deve ter acabado ✏️"
+                : faltam === 0
+                  ? "acaba hoje ✏️"
+                  : `acaba em ${faltam} ${faltam === 1 ? "dia" : "dias"} ✏️`
+          }
+        />
       </button>
       {aberto && (
         <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -426,7 +447,7 @@ function PrevisaoDeAcabar({ id, faltam }: { id: string; faltam: number | null })
               onClick={() => salvar(Number(d.duracao), d.unidade)}
               className="rounded-full border border-white/15 px-2 py-0.5 text-xs hover:border-rosa"
             >
-              {d.rotulo}
+              <TextoComIcones texto={d.rotulo} />
             </button>
           ))}
           <input

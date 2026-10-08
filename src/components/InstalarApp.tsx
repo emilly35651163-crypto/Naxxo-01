@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
+import Icone from "@/components/Icone";
 
 // "Instalar o app": no Android/computador o navegador instala com um toque; no iPhone é pelo Safari (Compartilhar →
 // Adicionar à Tela de Início), então mostramos o passo a passo. Some quando o app já está instalado.
@@ -85,7 +86,9 @@ export default function InstalarApp({ fechavel = false }: { fechavel?: boolean }
   return (
     <section className="cartao space-y-3 border-rosa/40 p-4">
       <div className="flex items-start gap-3">
-        <span className="text-2xl">📲</span>
+        <span className="text-2xl">
+          <Icone e="📲" />
+        </span>
         <div className="min-w-0 flex-1">
           <p className="font-semibold">Instale o NAXXO no celular</p>
           <p className="text-xs text-suave">Abre como um app, com ícone na tela inicial e sem a barra do navegador.</p>
@@ -117,10 +120,18 @@ export default function InstalarApp({ fechavel = false }: { fechavel?: boolean }
                 </li>
               )}
               <li>
-                Toque em <b>Compartilhar</b> <span aria-hidden>⬆️</span> (o quadrado com a seta, embaixo ou no topo).
+                Toque em <b>Compartilhar</b>{" "}
+                <span aria-hidden>
+                  <Icone e="⬆️" />
+                </span>{" "}
+                (o quadrado com a seta, embaixo ou no topo).
               </li>
               <li>
-                Role e toque em <b>Adicionar à Tela de Início</b> <span aria-hidden>➕</span>.
+                Role e toque em <b>Adicionar à Tela de Início</b>{" "}
+                <span aria-hidden>
+                  <Icone e="➕" />
+                </span>
+                .
               </li>
               <li>
                 Toque em <b>Adicionar</b>. O ícone do NAXXO aparece na tela inicial.

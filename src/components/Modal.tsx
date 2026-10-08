@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { semEmojis, TextoComIcones } from "@/components/Icone";
 
 const FOCAVEIS =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -76,7 +77,7 @@ export default function Modal({
         ref={caixa}
         role="dialog"
         aria-modal="true"
-        aria-label={titulo}
+        aria-label={semEmojis(titulo)}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         onInput={() => (mexeu.current = true)}
@@ -84,7 +85,9 @@ export default function Modal({
         className="relative max-h-[92dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-3xl border border-roxo/25 bg-superficie p-5 outline-none sm:rounded-3xl"
       >
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="font-display text-lg font-semibold">{titulo}</h2>
+          <h2 className="font-display text-lg font-semibold">
+            <TextoComIcones texto={titulo} />
+          </h2>
           <button type="button" onClick={tentarFechar} aria-label="Fechar" className="text-2xl text-suave hover:text-white">
             ×
           </button>

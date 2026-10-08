@@ -15,6 +15,7 @@ import ComprasManuais, {
 } from "./ComprasManuais";
 import { ehImagem } from "@/lib/ocr";
 import { lerValor as lerValorDoCampo } from "@/lib/formato";
+import Icone, { TextoComIcones } from "@/components/Icone";
 
 // Questionário → "Suas contas e cartões": primeiro o banco; dentro dele, o extrato da conta e o do cartão de crédito.
 // Com isso o app monta as contas (com saldo), os cartões (com compras e parcelas) e o que entrou e saiu.
@@ -158,7 +159,9 @@ function ZonaArquivo({
     const datas = arquivo.extrato.linhas.map((l) => l.data).sort();
     return (
       <div className="flex items-center gap-3 rounded-2xl border border-entrada/30 bg-entrada/10 px-3 py-2.5 text-sm">
-        <span className="text-xl">📄</span>
+        <span className="text-xl">
+          <Icone e="📄" />
+        </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate font-medium">{arquivo.nomeArquivo}</span>
           <span className="block text-xs text-suave">
@@ -188,10 +191,12 @@ function ZonaArquivo({
         arrastando ? "border-rosa bg-rosa/15" : "border-rosa/40"
       }`}
     >
-      <span className="block font-medium text-rosa">📂 {titulo}</span>
+      <span className="block font-medium text-rosa">
+        <Icone e="📂" /> {titulo}
+      </span>
       {aceitaPrints && (
         <span className="my-1 inline-block rounded-full bg-entrada/15 px-2 py-0.5 text-[0.65rem] font-semibold text-entrada">
-          📸 aceita prints
+          <Icone e="📸" /> aceita prints
         </span>
       )}
       <span className="block text-xs text-suave">{ajuda}</span>
@@ -326,16 +331,18 @@ export default function BoasVindasExtratos({
 
           <div className="flex flex-wrap gap-2">
             <Chip ativo={b.temConta} onClick={() => mudar(b.id, { temConta: !b.temConta })}>
-              🏦 Conta {b.temConta && "✓"}
+              <Icone e="🏦" /> Conta {b.temConta && "✓"}
             </Chip>
             <Chip ativo={b.temCartao} onClick={() => mudar(b.id, { temCartao: !b.temCartao })}>
-              💳 Cartão de crédito {b.temCartao && "✓"}
+              <Icone e="💳" /> Cartão de crédito {b.temCartao && "✓"}
             </Chip>
           </div>
 
           {b.temConta && (
             <div className="space-y-3 rounded-2xl border border-white/10 p-3">
-              <p className="text-sm font-semibold">🏦 Conta</p>
+              <p className="text-sm font-semibold">
+                <Icone e="🏦" /> Conta
+              </p>
               <ZonaArquivo
                 titulo="Extrato da conta"
                 ajuda="Toque para abrir o arquivo (OFX ou CSV)"
@@ -346,9 +353,13 @@ export default function BoasVindasExtratos({
               <Campo rotulo="Quanto tem nessa conta hoje?">
                 <CampoValor valor={b.saldo} onChange={(saldo) => mudar(b.id, { saldo })} negativo />
                 <span className="block text-xs text-suave">
-                  {b.conta?.extrato.saldo !== undefined
-                    ? `✨ Veio do extrato (${brl(b.conta.extrato.saldo)}). Se mudou desde então, ajuste.`
-                    : "Olhe no app do banco. Em branco = R$ 0,00."}
+                  <TextoComIcones
+                    texto={
+                      b.conta?.extrato.saldo !== undefined
+                        ? `✨ Veio do extrato (${brl(b.conta.extrato.saldo)}). Se mudou desde então, ajuste.`
+                        : "Olhe no app do banco. Em branco = R$ 0,00."
+                    }
+                  />
                 </span>
               </Campo>
               <ComprasManuais modo="conta" lista={b.itensConta} onChange={(itensConta) => mudar(b.id, { itensConta })} />
@@ -357,7 +368,9 @@ export default function BoasVindasExtratos({
 
           {b.temCartao && (
             <div className="space-y-3 rounded-2xl border border-white/10 p-3">
-              <p className="text-sm font-semibold">💳 Cartão de crédito</p>
+              <p className="text-sm font-semibold">
+                <Icone e="💳" /> Cartão de crédito
+              </p>
               <ZonaArquivo
                 titulo="Extrato / fatura do cartão"
                 ajuda="Toque para abrir: OFX, CSV ou prints da fatura"
@@ -399,7 +412,11 @@ export default function BoasVindasExtratos({
             </div>
           )}
 
-          {avisos[b.id] && <p className="text-sm text-amber-300">⚠️ {avisos[b.id]}</p>}
+          {avisos[b.id] && (
+            <p className="text-sm text-amber-300">
+              <Icone e="⚠️" /> {avisos[b.id]}
+            </p>
+          )}
         </div>
       ))}
 

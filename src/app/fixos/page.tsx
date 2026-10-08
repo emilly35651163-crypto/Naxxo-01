@@ -22,7 +22,7 @@ import { brl, formatarData, nomeMes } from "@/lib/formato";
 import FormGastoFixo from "@/components/FormGastoFixo";
 import FormPagarFixo from "@/components/FormPagarFixo";
 import EstadoVazio from "@/components/EstadoVazio";
-import Icone from "@/components/Icone";
+import Icone, { TextoComIcones } from "@/components/Icone";
 
 export default function Fixos() {
   const todos = useGastosFixos();
@@ -106,7 +106,9 @@ export default function Fixos() {
 
       {/* Mercado / alimentação: vem da aba Mercado */}
       <Link href="/mercado" className="cartao flex items-center gap-3 p-4 hover:border-rosa/50">
-        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-superficie-2 text-lg">🛒</span>
+        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-superficie-2 text-lg">
+          <Icone e="🛒" />
+        </span>
         <span className="min-w-0 flex-1">
           <span className="block font-semibold">Mercado / alimentação</span>
           <span className="block text-xs text-suave">
@@ -230,9 +232,13 @@ function LinhaFixo({
         <span className="min-w-0 flex-1">
           <span className="block truncate font-medium">{fixo.nome}</span>
           <span className="block truncate text-xs text-suave">
-            {fixo.pagamento === "cartao"
-              ? `💳 ${nomeCartao ?? "Cartão"} · ${porIntervalo(fixo) ? descreverCobranca(fixo) : `cobra dia ${fixo.dia}`}`
-              : `${forma?.icone} ${porIntervalo(fixo) ? `${descreverCobranca(fixo)} · próxima` : "vence"} ${formatarData(s.vencimento)}`}
+            <TextoComIcones
+              texto={
+                fixo.pagamento === "cartao"
+                  ? `💳 ${nomeCartao ?? "Cartão"} · ${porIntervalo(fixo) ? descreverCobranca(fixo) : `cobra dia ${fixo.dia}`}`
+                  : `${forma?.icone} ${porIntervalo(fixo) ? `${descreverCobranca(fixo)} · próxima` : "vence"} ${formatarData(s.vencimento)}`
+              }
+            />
             {fixo.frequencia && fixo.frequencia !== "mensal" && !porIntervalo(fixo) && ` · ${fixo.frequencia}`}
           </span>
         </span>

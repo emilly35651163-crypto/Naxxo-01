@@ -4,6 +4,7 @@ import { useState } from "react";
 import { atualizarMeta, type Meta } from "@/lib/store";
 import type { Orientacao } from "@/lib/orientacoes";
 import { brl } from "@/lib/formato";
+import Icone, { TextoComIcones } from "@/components/Icone";
 
 // "O que dizem os especialistas": dicas para a meta, com botões para aplicar a sugestão.
 export default function CaixaOrientacao({ meta, orientacao }: { meta: Meta; orientacao: Orientacao }) {
@@ -14,9 +15,13 @@ export default function CaixaOrientacao({ meta, orientacao }: { meta: Meta; orie
   return (
     <div className="mt-4 rounded-2xl border border-roxo/25 bg-roxo/5">
       <button onClick={() => setAberta(!aberta)} className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm">
-        <span>💡</span>
+        <span>
+          <Icone e="💡" />
+        </span>
         <span className="flex-1 font-medium">O que dizem os especialistas</span>
-        <span className="text-suave">{aberta ? "▴" : "▾"}</span>
+        <span className="text-suave">
+          <TextoComIcones texto={aberta ? "▴" : "▾"} />
+        </span>
       </button>
 
       {aberta && (
@@ -25,13 +30,17 @@ export default function CaixaOrientacao({ meta, orientacao }: { meta: Meta; orie
             {orientacao.linhas.map((linha) => (
               <li key={linha} className="flex gap-2">
                 <span className="text-rosa">•</span>
-                <span>{linha}</span>
+                <span>
+                  <TextoComIcones texto={linha} />
+                </span>
               </li>
             ))}
           </ul>
 
           {orientacao.alerta && (
-            <p className="rounded-xl bg-amber-300/10 px-3 py-2 text-xs text-amber-300">⚠️ {orientacao.alerta}</p>
+            <p className="rounded-xl bg-amber-300/10 px-3 py-2 text-xs text-amber-300">
+              <Icone e="⚠️" /> <TextoComIcones texto={orientacao.alerta} />
+            </p>
           )}
 
           <div className="flex flex-wrap gap-2">

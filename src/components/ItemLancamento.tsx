@@ -52,11 +52,15 @@ export default function ItemLancamento({
           <span className="block text-xs text-suave">
             {transferencia ? (
               <>
-                🔁 {nomeDe} → {nomePara} · {formatarData(l.data)}
+                <Icone e="🔁" /> {nomeDe} → {nomePara} · {formatarData(l.data)}
               </>
             ) : (
               <>
-                {previsto && <span className="text-amber-300">📌 previsto · </span>}
+                {previsto && (
+                  <span className="text-amber-300">
+                    <Icone e="📌" /> previsto ·{" "}
+                  </span>
+                )}
                 {l.categoria}
                 {l.subcategoria && ` › ${l.subcategoria}`} · {formatarData(l.data)} ·{" "}
                 {conta ? conta.nome : contas.length > 0 ? <span className="text-amber-300">sem conta</span> : null}

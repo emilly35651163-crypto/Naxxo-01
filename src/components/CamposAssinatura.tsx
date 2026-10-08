@@ -116,7 +116,7 @@ export default function CamposAssinatura({
           <div className="flex flex-wrap gap-2">
             {cartoes.map((c) => (
               <Chip key={c.id} ativo={r.cartaoId === c.id} onClick={() => mudar({ cartaoId: c.id })}>
-                💳 {c.nome}
+                <Icone e="💳" /> {c.nome}
               </Chip>
             ))}
           </div>
@@ -128,7 +128,7 @@ export default function CamposAssinatura({
       </Campo>
 
       <p className="rounded-2xl bg-roxo/10 px-4 py-3 text-xs text-suave">
-        🔁 Não tem parcelas nem data para acabar:{" "}
+        <Icone e="🔁" /> Não tem parcelas nem data para acabar:{" "}
         {r.frequencia === "mensal" ? "entra sozinha na fatura todo mês" : `entra na fatura a cada ${frequencia.meses} meses`}, até
         você excluir.
       </p>

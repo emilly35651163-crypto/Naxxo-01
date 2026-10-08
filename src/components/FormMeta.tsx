@@ -9,6 +9,7 @@ import { Campo, CampoValor, Chip } from "./Campos";
 import CampoMes from "./CampoMes";
 import CamposQuitar, { lerRascunhoQuitar, type RascunhoQuitar } from "./CamposQuitar";
 import EscolhaConta, { lerEscolha } from "./EscolhaConta";
+import Icone, { TextoComIcones } from "@/components/Icone";
 
 const TIPOS_DIVIDA: { id: RascunhoQuitar["divida"]; nome: string }[] = [
   { id: "parcelado", nome: "🛍️ Compra parcelada" },
@@ -96,7 +97,7 @@ export default function FormMeta({
                   tipo === t ? "botao-gradiente" : "text-suave"
                 }`}
               >
-                {t === "juntar" ? "🎯 Juntar para algo" : "💸 Quitar algo"}
+                <TextoComIcones texto={t === "juntar" ? "🎯 Juntar para algo" : "💸 Quitar algo"} />
               </button>
             ))}
           </div>
@@ -112,7 +113,7 @@ export default function FormMeta({
                 icone === i ? "bg-rosa/20 ring-2 ring-rosa" : "bg-fundo hover:bg-superficie-2"
               }`}
             >
-              {i}
+              <TextoComIcones texto={i} />
             </button>
           ))}
         </div>
@@ -132,15 +133,15 @@ export default function FormMeta({
             <div className="flex flex-wrap gap-2">
               {TIPOS_DIVIDA.map((t) => (
                 <Chip key={t.id} ativo={quitar.divida === t.id} onClick={() => setQuitar({ ...quitar, divida: t.id })}>
-                  {t.nome}
+                  <TextoComIcones texto={t.nome} />
                 </Chip>
               ))}
             </div>
             <CamposQuitar key={quitar.divida} rascunho={quitar} onChange={setQuitar} />
             <EscolhaConta valor={conta} onChange={setConta} rotulo="De qual conta sai a parcela?" />
             <p className="text-xs text-suave">
-              💳 Comprou no cartão de crédito? Então não é aqui: inclua a compra no cartão, na aba Contas (ela já entra nas
-              faturas).
+              <Icone e="💳" /> Comprou no cartão de crédito? Então não é aqui: inclua a compra no cartão, na aba Contas (ela já
+              entra nas faturas).
             </p>
           </>
         ) : (
@@ -164,10 +165,14 @@ export default function FormMeta({
           </>
         )}
 
-        {erro && <p className="text-sm text-saida">{erro}</p>}
+        {erro && (
+          <p className="text-sm text-saida">
+            <TextoComIcones texto={erro} />
+          </p>
+        )}
 
         <button type="submit" className="botao-gradiente w-full rounded-full py-3 font-semibold">
-          {meta ? "Salvar alterações" : "Criar meta"}
+          <TextoComIcones texto={meta ? "Salvar alterações" : "Criar meta"} />
         </button>
       </form>
     </Modal>

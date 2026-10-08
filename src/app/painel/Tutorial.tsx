@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Icone from "@/components/Icone";
 
 // Passo a passo para ligar o painel, com o que já está pronto marcado.
 // etapa: onde parou ("sem-chave" → passos 1 e 2; "chave-recusada" → passo 2; "sem-permissao" → passo 4; "pronto").
@@ -94,7 +95,8 @@ export default function Tutorial({ etapa, onTestar, testando }: { etapa: Etapa; 
             <code className="text-white">sb_secret_</code>).
           </p>
           <p className="text-amber-300">
-            🔐 Aproveite e apague a chave antiga (a que você mandou no chat): nos três pontinhos ao lado dela, “Delete”.
+            <Icone e="🔐" /> Aproveite e apague a chave antiga (a que você mandou no chat): nos três pontinhos ao lado dela,
+            “Delete”.
           </p>
         </Passo>
 

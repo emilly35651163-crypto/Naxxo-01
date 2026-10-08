@@ -254,7 +254,7 @@ export default function FormGastoFixo({
             <div className="flex flex-wrap gap-2">
               {cartoes.map((c) => (
                 <Chip key={c.id} ativo={cartaoId === c.id} onClick={() => setCartaoId(c.id)}>
-                  💳 {c.nome}
+                  <Icone e="💳" /> {c.nome}
                 </Chip>
               ))}
             </div>
@@ -307,7 +307,9 @@ export default function FormGastoFixo({
         )}
 
         {pagamento === "cartao" && cartoes.length > 0 && (
-          <p className="text-xs text-suave">💡 Esse gasto entra sozinho na fatura do cartão todo mês.</p>
+          <p className="text-xs text-suave">
+            <Icone e="💡" /> Esse gasto entra sozinho na fatura do cartão todo mês.
+          </p>
         )}
 
         {erro && <p className="text-sm text-saida">{erro}</p>}

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Tutorial, { type Etapa } from "./Tutorial";
+import Icone from "@/components/Icone";
 
 // Painel de controle (localhost): quantas pessoas criaram conta, quem está usando e o quanto.
 // Os dados vêm de /api/painel, que só funciona no seu computador (com a chave secreta no .env.local).
@@ -101,8 +102,16 @@ export default function Painel() {
         </button>
       </div>
 
-      {erro && !etapa && <p className="cartao border-saida/50 p-4 text-sm text-saida">⚠️ {erro}</p>}
-      {aviso && <p className="cartao border-amber-300/40 p-4 text-sm text-amber-300">⚠️ {aviso}</p>}
+      {erro && !etapa && (
+        <p className="cartao border-saida/50 p-4 text-sm text-saida">
+          <Icone e="⚠️" /> {erro}
+        </p>
+      )}
+      {aviso && (
+        <p className="cartao border-amber-300/40 p-4 text-sm text-amber-300">
+          <Icone e="⚠️" /> {aviso}
+        </p>
+      )}
       {etapa && etapa !== "pronto" && <Tutorial etapa={etapa} onTestar={() => void carregar()} testando={carregando} />}
 
       {numeros && (

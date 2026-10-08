@@ -6,6 +6,7 @@ import { brl, lerValor, nomeMes, soNumeros } from "@/lib/formato";
 import { metaDeQuitar } from "@/lib/metas";
 import { formatarTaxa, taxaImplicita } from "@/lib/juros";
 import { Campo, CampoSelect, CampoValor, DIAS_DO_MES } from "./Campos";
+import Icone, { TextoComIcones } from "@/components/Icone";
 
 // Os campos de algo para quitar (parcelado, empréstimo, financiamento),
 // usados no questionário e na Trilha. Os valores ficam como texto enquanto a pessoa digita.
@@ -131,12 +132,12 @@ export default function CamposQuitar({
           <div>
             <p className="text-xs text-suave">{restantes > 0 ? `Faltam ${restantes} parcelas` : "Situação"}</p>
             <p className="font-display text-lg font-bold tabular-nums">
-              {restantes > 0 ? brl(restantes * dados.parcela) : "Tudo pago 🎉"}
+              <TextoComIcones texto={restantes > 0 ? brl(restantes * dados.parcela) : "Tudo pago 🎉"} />
             </p>
           </div>
           {restantes > 0 && quitacao && (
             <p className="col-span-2">
-              Você quita em <strong className="gradiente-texto">{nomeMes(quitacao)}</strong> 🎉
+              Você quita em <strong className="gradiente-texto">{nomeMes(quitacao)}</strong>
             </p>
           )}
         </div>
@@ -150,7 +151,9 @@ export default function CamposQuitar({
       ) : (
         <div className="space-y-3 rounded-2xl border border-white/10 bg-fundo/50 p-4">
           <div>
-            <p className="text-sm font-semibold">📈 Juros</p>
+            <p className="text-sm font-semibold">
+              <Icone e="📈" /> Juros
+            </p>
             <p className="text-xs text-suave">
               {contrato
                 ? "Com a taxa do contrato, o app calcula quanto você economiza adiantando parcelas."
@@ -180,9 +183,11 @@ export default function CamposQuitar({
               {taxaCalculada ? <span className="text-suave"> (≈ {formatarTaxa(taxaCalculada)} ao mês)</span> : null}.
             </p>
           )}
-          {dados?.valorOriginal && juros <= 0 && <p className="text-sm text-entrada">Sem juros! 🙌</p>}
+          {dados?.valorOriginal && juros <= 0 && <p className="text-sm text-entrada">Sem juros! </p>}
           {contrato && !r.juros && !r.valorOriginal && (
-            <p className="text-xs text-suave">💡 A taxa costuma estar no contrato ou no app do banco, como “juros a.m.”.</p>
+            <p className="text-xs text-suave">
+              <Icone e="💡" /> A taxa costuma estar no contrato ou no app do banco, como “juros a.m.”.
+            </p>
           )}
         </div>
       )}

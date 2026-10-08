@@ -88,7 +88,7 @@ export default function MovimentacoesDoMes({ mes, dados }: { mes: string; dados:
           )}
         </ul>
       )}
-      {!aberto && aPagar.length === 0 && <p className="mt-3 text-sm text-suave">Nada para pagar. ✨</p>}
+      {!aberto && aPagar.length === 0 && <p className="mt-3 text-sm text-suave">Nada para pagar. </p>}
 
       {aberto && (
         <div className="mt-4 space-y-3">
@@ -168,7 +168,7 @@ export default function MovimentacoesDoMes({ mes, dados }: { mes: string; dados:
                 })}
               </ul>
             ) : (
-              <p className="text-sm text-suave">Nada previsto. ✨</p>
+              <p className="text-sm text-suave">Nada previsto. </p>
             ))}
 
           {aba === "feito" && (
@@ -177,7 +177,7 @@ export default function MovimentacoesDoMes({ mes, dados }: { mes: string; dados:
                 type="search"
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
-                placeholder="🔍 Buscar"
+                placeholder="Buscar"
                 aria-label="Buscar no que já aconteceu"
                 className="campo rounded-full py-2 text-sm"
               />
@@ -191,7 +191,7 @@ export default function MovimentacoesDoMes({ mes, dados }: { mes: string; dados:
                 <p className="text-sm text-suave">{busca ? "Nada encontrado." : "Nada ainda neste mês."}</p>
               )}
               <p className="text-xs text-suave">
-                💳 As compras no crédito ficam na fatura de cada cartão, em{" "}
+                <Icone e="💳" /> As compras no crédito ficam na fatura de cada cartão, em{" "}
                 <Link href="/contas" className="text-rosa">
                   Contas
                 </Link>

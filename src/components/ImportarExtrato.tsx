@@ -23,7 +23,7 @@ import { cartoesDeCredito, marcoDoSaldo, saldoDaConta } from "@/lib/contas";
 import { compraDoExtrato, jaExiste, lerExtrato, parcelaRepetida, type Existente, type LinhaExtrato } from "@/lib/extrato";
 import { comDesfazer } from "@/lib/avisos";
 import Modal from "./Modal";
-import Icone from "@/components/Icone";
+import Icone, { TextoComIcones } from "@/components/Icone";
 
 /** Lê o arquivo como UTF-8; se vier com acentos quebrados (bancos antigos), lê de novo como Windows-1252. */
 async function lerArquivo(arquivo: File) {
@@ -338,7 +338,7 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
             arrastando ? "border-rosa bg-rosa/15" : "border-rosa/50"
           }`}
         >
-          {nomeArquivo ? `📄 ${nomeArquivo} (trocar)` : "📂 Abrir o arquivo do extrato"}
+          <TextoComIcones texto={nomeArquivo ? `📄 ${nomeArquivo} (trocar)` : "📂 Abrir o arquivo do extrato"} />
           <input
             type="file"
             accept=".ofx,.csv,.txt,.qfx"
@@ -354,13 +354,17 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
           <>
             <div className="space-y-1.5">
               <span className="text-xs text-suave">
-                {ehCartao ? "💳 É a fatura de qual cartão?" : "🏦 É o extrato de qual conta?"}
+                <TextoComIcones texto={ehCartao ? "💳 É a fatura de qual cartão?" : "🏦 É o extrato de qual conta?"} />
               </span>
               {opcoes.length === 0 ? (
                 <p className="text-sm text-saida">
-                  {ehCartao
-                    ? "Ative o cartão de crédito de uma conta na aba Contas primeiro."
-                    : "Cadastre uma conta na aba Contas primeiro."}
+                  <TextoComIcones
+                    texto={
+                      ehCartao
+                        ? "Ative o cartão de crédito de uma conta na aba Contas primeiro."
+                        : "Cadastre uma conta na aba Contas primeiro."
+                    }
+                  />
                 </p>
               ) : (
                 <div className="flex flex-wrap gap-2">
@@ -373,7 +377,7 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
                         contaId === c.id ? "border-rosa bg-rosa/15 text-white" : "border-white/10 text-suave hover:text-white"
                       }`}
                     >
-                      {ehCartao ? "💳" : "🏦"} {c.nome}
+                      <TextoComIcones texto={ehCartao ? "💳" : "🏦"} /> <TextoComIcones texto={c.nome} />
                     </button>
                   ))}
                 </div>
@@ -390,7 +394,7 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
                 onClick={() => setLinhas(linhas.map((l) => (semDuvida.includes(l) ? { ...l, marcada: !todasMarcadas } : l)))}
                 className="text-rosa"
               >
-                {todasMarcadas ? "Desmarcar todas" : "Marcar todas"}
+                <TextoComIcones texto={todasMarcadas ? "Desmarcar todas" : "Marcar todas"} />
               </button>
             </div>
 
@@ -424,14 +428,14 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
                         <span
                           className={`shrink-0 text-sm font-semibold ${l.tipo === "entrada" ? "text-entrada" : "text-saida"}`}
                         >
-                          {l.tipo === "entrada" ? "+" : "−"}
+                          <TextoComIcones texto={l.tipo === "entrada" ? "+" : "−"} />
                           {brl(l.valor)}
                         </span>
                       </div>
                       <div className="mt-1 flex items-center gap-2 text-xs text-suave">
                         <span>
                           {formatarData(l.data)}
-                          {l.parcela && ` · parcela ${l.parcela.numero}/${l.parcela.total}`}
+                          <TextoComIcones texto={l.parcela && ` · parcela ${l.parcela.numero}/${l.parcela.total}`} />
                         </span>
                         <select
                           value={l.categoria}
@@ -443,15 +447,22 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
                             .filter((c) => !["Guardar (metas)"].includes(c.nome))
                             .map((c) => (
                               <option key={c.nome} value={c.nome}>
-                                {c.icone} {c.nome}
+                                {c.nome}
                               </option>
                             ))}
                         </select>
                       </div>
-                      {l.aviso && <p className="mt-1 text-[0.7rem] text-amber-300">⚠️ {l.aviso}</p>}
+                      {l.aviso && (
+                        <p className="mt-1 text-[0.7rem] text-amber-300">
+                          <Icone e="⚠️" /> <TextoComIcones texto={l.aviso} />
+                        </p>
+                      )}
                       {l.ligado && (
                         <p className="mt-1.5 text-xs text-entrada">
-                          🔗 Ligado a: <b>{l.ligado.tipo === "previsto" ? l.ligado.previsto.nome : l.ligado.descricao}</b>
+                          <Icone e="🔗" /> Ligado a:{" "}
+                          <b>
+                            <TextoComIcones texto={l.ligado.tipo === "previsto" ? l.ligado.previsto.nome : l.ligado.descricao} />
+                          </b>
                           {l.ligado.tipo === "previsto" && " (vai ficar como pago/recebido)"}{" "}
                           <button
                             type="button"
@@ -464,9 +475,15 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
                       )}
                       {l.frequente && !l.ligado && (
                         <p className="mt-1.5 text-xs text-entrada">
-                          🔁 Vira gasto frequente: <b>{l.frequente.nome}</b> (
-                          {l.frequente.intervaloDias ? `a cada ${l.frequente.intervaloDias} dias` : "todo mês"}
-                          {l.frequente.restantes ? `, ${l.frequente.restantes} parcelas` : ""}){" "}
+                          <Icone e="🔁" /> Vira gasto frequente:{" "}
+                          <b>
+                            <TextoComIcones texto={l.frequente.nome} />
+                          </b>{" "}
+                          (
+                          <TextoComIcones
+                            texto={l.frequente.intervaloDias ? `a cada ${l.frequente.intervaloDias} dias` : "todo mês"}
+                          />
+                          <TextoComIcones texto={l.frequente.restantes ? `, ${l.frequente.restantes} parcelas` : ""} />){" "}
                           <button
                             type="button"
                             onClick={() => mudarLinha(i, { frequente: undefined })}
@@ -479,9 +496,9 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
                       {l.sugestao && !l.recusou && !resolvida(l) && (
                         <div className="mt-2 space-y-2 rounded-xl border border-amber-300/40 bg-amber-300/10 p-2 text-xs">
                           <p>
-                            💡 Parece ser{" "}
+                            <Icone e="💡" /> Parece ser{" "}
                             <b>
-                              <Icone e={l.sugestao.icone} /> {l.sugestao.nome}
+                              <Icone e={l.sugestao.icone} /> <TextoComIcones texto={l.sugestao.nome} />
                             </b>{" "}
                             (previsto para {formatarData(l.sugestao.data)}, {brl(l.sugestao.valor)}). É isso?
                           </p>
@@ -510,7 +527,7 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
                             onClick={() => mudarLinha(i, { painel: "ligar" })}
                             className="text-rosa hover:underline"
                           >
-                            🔗 Já está no app
+                            <Icone e="🔗" /> Já está no app
                           </button>
                           {l.tipo === "saida" && (
                             <button
@@ -518,7 +535,7 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
                               onClick={() => mudarLinha(i, { painel: "frequente" })}
                               className="text-rosa hover:underline"
                             >
-                              🔁 Gasto frequente
+                              <Icone e="🔁" /> Gasto frequente
                             </button>
                           )}
                         </div>
@@ -543,7 +560,10 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
                       {l.conflito && !resolvida(l) && (
                         <div className="mt-2 space-y-2 rounded-xl border border-amber-300/40 bg-amber-300/10 p-2 text-xs">
                           <p>
-                            ⚖️ Parecido com o que já está no app: <b>“{l.conflito.descricao}”</b>
+                            <Icone e="⚖️" /> Parecido com o que já está no app:{" "}
+                            <b>
+                              “<TextoComIcones texto={l.conflito.descricao} />”
+                            </b>
                           </p>
                           <div className="grid grid-cols-[auto_1fr_1fr] gap-x-3 gap-y-0.5">
                             <span />
@@ -555,9 +575,15 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
                               ["Conta", nomeConta(l.conflito.contaId), conta?.nome ?? ""],
                             ].map(([rotulo, app, extrato]) => (
                               <div key={rotulo} className="contents">
-                                <span className="text-suave">{rotulo}</span>
-                                <span>{app}</span>
-                                <span className={app !== extrato ? "font-semibold text-amber-300" : ""}>{extrato}</span>
+                                <span className="text-suave">
+                                  <TextoComIcones texto={rotulo} />
+                                </span>
+                                <span>
+                                  <TextoComIcones texto={app} />
+                                </span>
+                                <span className={app !== extrato ? "font-semibold text-amber-300" : ""}>
+                                  <TextoComIcones texto={extrato} />
+                                </span>
                               </div>
                             ))}
                           </div>
@@ -580,7 +606,7 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
                                     : "border-white/15 text-suave hover:text-white"
                                 }`}
                               >
-                                {nome}
+                                <TextoComIcones texto={nome} />
                               </button>
                             ))}
                           </div>
@@ -609,8 +635,9 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
             {!ehCartao && conta && antesDoSaldo.length > 0 && (
               <div className="space-y-2 rounded-2xl border border-white/10 bg-fundo/60 p-3 text-xs">
                 <p className="font-medium">
-                  💰 {antesDoSaldo.length} movimentaç{antesDoSaldo.length > 1 ? "ões são" : "ão é"} de antes de você informar o
-                  saldo de {conta.nome} ({brl(conta.saldo ?? 0)} em {formatarData(diaDoSaldo)}). Como fica o saldo?
+                  <Icone e="💰" /> {antesDoSaldo.length} movimentaç{antesDoSaldo.length > 1 ? "ões são" : "ão é"} de antes de você
+                  informar o saldo de <TextoComIcones texto={conta.nome} /> ({brl(conta.saldo ?? 0)} em {formatarData(diaDoSaldo)}
+                  ). Como fica o saldo?
                 </p>
                 <div className="grid gap-1.5 sm:grid-cols-2">
                   {(
@@ -627,13 +654,17 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
                         (valor === "somar") === somarNoSaldo ? "border-rosa bg-rosa/15 text-white" : "border-white/10 text-suave"
                       }`}
                     >
-                      <span className="block font-semibold">{nome}</span>
-                      <span className="block text-[0.65rem] text-suave">{ajuda}</span>
+                      <span className="block font-semibold">
+                        <TextoComIcones texto={nome} />
+                      </span>
+                      <span className="block text-[0.65rem] text-suave">
+                        <TextoComIcones texto={ajuda} />
+                      </span>
                     </button>
                   ))}
                 </div>
                 <p>
-                  Saldo de {conta.nome}: {brl(saldoHoje)} →{" "}
+                  Saldo de <TextoComIcones texto={conta.nome} />: {brl(saldoHoje)} →{" "}
                   <b className={saldoHoje + efeitoNoSaldo < 0 ? "text-saida" : "text-entrada"}>
                     {brl(saldoHoje + efeitoNoSaldo)}
                   </b>{" "}
@@ -644,7 +675,11 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
           </>
         )}
 
-        {erro && <p className="text-sm text-saida">{erro}</p>}
+        {erro && (
+          <p className="text-sm text-saida">
+            <TextoComIcones texto={erro} />
+          </p>
+        )}
 
         {linhas && (
           <button type="button" onClick={importar} className="botao-gradiente w-full rounded-full py-3 font-semibold">

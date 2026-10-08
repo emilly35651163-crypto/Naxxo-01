@@ -72,7 +72,7 @@ export default function Relatorio() {
           onClick={() => window.print()}
           className="rounded-full border border-white/15 px-4 py-1.5 text-sm text-suave hover:text-white print:hidden"
         >
-          🖨️ Imprimir / salvar PDF
+          <Icone e="🖨️" /> Imprimir / salvar PDF
         </button>
       </div>
 

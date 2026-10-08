@@ -37,7 +37,7 @@ import BoasVindasExtratos, {
   type BancoExtrato,
 } from "@/components/BoasVindasExtratos";
 import { lerRascunhoQuitar, RASCUNHO_QUITAR_VAZIO, type RascunhoQuitar } from "@/components/CamposQuitar";
-import Icone from "@/components/Icone";
+import Icone, { TextoComIcones } from "@/components/Icone";
 
 type Etapa = "inicio" | "objetivos" | "extratos" | "situacao" | "renda" | "sonhos" | "reserva" | "pronto";
 type Reserva = "tenho" | "quero" | "nao";
@@ -428,7 +428,7 @@ export default function BoasVindas() {
                   className="campo"
                 />
               </Campo>
-              <p className="mt-2 text-xs text-suave">Assim o app te cumprimenta pelo nome 💜</p>
+              <p className="mt-2 text-xs text-suave">Assim o app te cumprimenta pelo nome </p>
             </div>
           </div>
         )}
@@ -503,8 +503,8 @@ export default function BoasVindas() {
             </div>
             {semRenda && (
               <p className="mt-4 rounded-2xl bg-roxo/10 px-4 py-3 text-sm text-suave">
-                Tudo bem 💜 O app te ajuda a controlar o que sai e a esticar o que tem guardado. Quando voltar a entrar dinheiro,
-                é só cadastrar na aba Renda.
+                Tudo bem O app te ajuda a controlar o que sai e a esticar o que tem guardado. Quando voltar a entrar dinheiro, é
+                só cadastrar na aba Renda.
               </p>
             )}
           </>
@@ -519,7 +519,7 @@ export default function BoasVindas() {
             {salarioAchado && !salarioJaUsado && (
               <div className="mb-4 space-y-2 rounded-2xl border border-entrada/30 bg-entrada/10 px-4 py-3 text-sm">
                 <p>
-                  ✨ Achei no extrato{salarioAchado.banco ? ` do ${salarioAchado.banco}` : ""}: <b>{salarioAchado.descricao}</b>,{" "}
+                  Achei no extrato{salarioAchado.banco ? ` do ${salarioAchado.banco}` : ""}: <b>{salarioAchado.descricao}</b>,{" "}
                   <b>{brl(salarioAchado.valor)}</b> no dia {salarioAchado.dia}. É de alguma dessas entradas?
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -661,8 +661,8 @@ export default function BoasVindas() {
                 <p className="text-xs text-suave sm:col-span-2">
                   {sugestao.alvo > 0 ? (
                     <>
-                      💡 Sugestão: <b className="text-white">{brl(sugestao.alvo)}</b> (3 meses do que você recebe). Em branco,
-                      usamos esse valor.
+                      <Icone e="💡" /> Sugestão: <b className="text-white">{brl(sugestao.alvo)}</b> (3 meses do que você recebe).
+                      Em branco, usamos esse valor.
                     </>
                   ) : (
                     "Sem renda informada, defina um valor que faça sentido para você (dá para mudar depois)."
@@ -716,9 +716,13 @@ export default function BoasVindas() {
               </LinhaResumo>
             </ul>
             <p className="mt-4 rounded-2xl bg-roxo/10 px-4 py-3 text-sm text-suave">
-              {usandoExtratos
-                ? "🏦 Suas contas e cartões vão ser criados com tudo dos extratos. Depois é só conferir na aba Contas."
-                : "🏦 Próximo passo: cadastrar suas contas (banco, carteira, vale) com o saldo de hoje. Assim tudo o que entra e sai cai no lugar certo."}
+              <TextoComIcones
+                texto={
+                  usandoExtratos
+                    ? "🏦 Suas contas e cartões vão ser criados com tudo dos extratos. Depois é só conferir na aba Contas."
+                    : "🏦 Próximo passo: cadastrar suas contas (banco, carteira, vale) com o saldo de hoje. Assim tudo o que entra e sai cai no lugar certo."
+                }
+              />
             </p>
           </>
         )}
@@ -783,8 +787,12 @@ function BotaoSugestao({
 function Titulo({ titulo, texto }: { titulo: string; texto: string }) {
   return (
     <div className="mb-7">
-      <h1 className="font-display text-3xl font-bold leading-tight">{titulo}</h1>
-      <p className="mt-2 text-suave">{texto}</p>
+      <h1 className="font-display text-3xl font-bold leading-tight">
+        <TextoComIcones texto={titulo} />
+      </h1>
+      <p className="mt-2 text-suave">
+        <TextoComIcones texto={texto} />
+      </p>
     </div>
   );
 }

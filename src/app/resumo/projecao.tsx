@@ -244,8 +244,8 @@ export default function Projecao() {
 
           {projecao.menor.valor < 0 && (
             <p className="mt-3 rounded-xl bg-saida/10 px-3 py-2 text-xs text-saida">
-              ⚠️ No dia {formatarData(projecao.menor.data)} o saldo fica em {brl(projecao.menor.valor)}. Vale adiar alguma conta,
-              mudar a meta do mês ou guardar antes.
+              <Icone e="⚠️" /> No dia {formatarData(projecao.menor.data)} o saldo fica em {brl(projecao.menor.valor)}. Vale adiar
+              alguma conta, mudar a meta do mês ou guardar antes.
             </p>
           )}
         </div>

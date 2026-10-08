@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import ImportarExtrato from "./ImportarExtrato";
+import Icone from "@/components/Icone";
 
 // Botão "Importar extrato" + arrastar o arquivo (dos Downloads) para qualquer lugar da tela.
 export default function BotaoImportarExtrato() {
@@ -54,12 +55,12 @@ export default function BotaoImportarExtrato() {
         onClick={() => setAberto(true)}
         className="w-full rounded-full border border-rosa/50 py-2.5 text-sm font-medium text-rosa hover:bg-rosa/10"
       >
-        📥 Importar extrato do banco (OFX ou CSV)
+        <Icone e="📥" /> Importar extrato do banco (OFX ou CSV)
       </button>
       {arrastando && !aberto && (
         <div className="pointer-events-none fixed inset-0 z-40 grid place-items-center bg-fundo/80 backdrop-blur-sm">
           <p className="rounded-3xl border-2 border-dashed border-rosa px-8 py-6 text-lg font-semibold text-rosa">
-            📥 Solte aqui para importar o extrato
+            <Icone e="📥" /> Solte aqui para importar o extrato
           </p>
         </div>
       )}

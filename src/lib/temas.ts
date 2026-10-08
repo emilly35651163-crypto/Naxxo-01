@@ -1,8 +1,42 @@
 // Os temas do app. Cada cor tem 4 versões: escuro sóbrio, escuro temático, claro sóbrio, claro temático.
-// Sóbrio = só as cores. Temático = as cores + um desenho parado no fundo (sem animação, para ficar leve).
-// As cores de cada tema ficam no globals.css (procure por data-paleta); aqui fica o que a tela de escolha mostra.
+// Sóbrio = só as cores. Temático = as cores + uma cena parada no fundo e na barra de cima (sem animação).
+// As cores e as cenas ficam no globals.css (data-paleta / --cena-<id>), geradas junto com este arquivo.
 
-export type IdTema = "escuro" | "claro" | "azul-escuro" | "mar-profundo" | "azul-claro" | "bolhas";
+export type IdTema =
+  | "escuro"
+  | "claro"
+  | "vermelho-escuro"
+  | "fogo"
+  | "vermelho-claro"
+  | "cereja"
+  | "laranja-escuro"
+  | "outono"
+  | "laranja-claro"
+  | "borboletas"
+  | "amarelo-escuro"
+  | "abelha"
+  | "amarelo-claro"
+  | "girassol"
+  | "verde-escuro"
+  | "floresta"
+  | "verde-claro"
+  | "natureza"
+  | "azul-escuro"
+  | "mar-profundo"
+  | "azul-claro"
+  | "bolhas"
+  | "roxo-escuro"
+  | "universo"
+  | "roxo-claro"
+  | "lavanda"
+  | "rosa-escuro"
+  | "glitter"
+  | "rosa-claro"
+  | "algodao-doce"
+  | "cinza-escuro"
+  | "escritorio-noite"
+  | "cinza-claro"
+  | "escritorio";
 export type EscolhaTema = IdTema | "auto";
 
 export type Tema = {
@@ -12,8 +46,7 @@ export type Tema = {
   base: "escuro" | "claro"; // letras claras em fundo escuro, ou o contrário
   estilo: "sobrio" | "tematico";
   descricao: string;
-  // A bolinha da tela de escolha (um fundo CSS)
-  bolinha: string;
+  bolinha: string; // a bolinha da tela de escolha (um fundo CSS)
 };
 
 export const TEMAS: Tema[] = [
@@ -36,13 +69,157 @@ export const TEMAS: Tema[] = [
     bolinha: "linear-gradient(135deg, #fde3f6, #ece2ff 60%, #e3ecff)",
   },
   {
+    id: "vermelho-escuro",
+    nome: "Vermelho escuro",
+    cor: "Vermelho",
+    base: "escuro",
+    estilo: "sobrio",
+    descricao: "Vermelho fechado e preto",
+    bolinha: "radial-gradient(circle at 32% 30%, #e11d48, #120506 78%)",
+  },
+  {
+    id: "fogo",
+    nome: "Fogo",
+    cor: "Vermelho",
+    base: "escuro",
+    estilo: "tematico",
+    descricao: "Lava, brasas e rocha",
+    bolinha: "var(--cena-fogo) 50% 92% / 320% no-repeat",
+  },
+  {
+    id: "vermelho-claro",
+    nome: "Vermelho claro",
+    cor: "Vermelho",
+    base: "claro",
+    estilo: "sobrio",
+    descricao: "Vermelho claro e branco",
+    bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #fbd0d4 70%, #c8102e 140%)",
+  },
+  {
+    id: "cereja",
+    nome: "Cereja",
+    cor: "Vermelho",
+    base: "claro",
+    estilo: "tematico",
+    descricao: "Cerejas e calda vermelha",
+    bolinha: "var(--cena-cereja) 86% 27% / 320% no-repeat",
+  },
+  {
+    id: "laranja-escuro",
+    nome: "Laranja escuro",
+    cor: "Laranja",
+    base: "escuro",
+    estilo: "sobrio",
+    descricao: "Laranja queimado e café",
+    bolinha: "radial-gradient(circle at 32% 30%, #ea580c, #140b05 78%)",
+  },
+  {
+    id: "outono",
+    nome: "Outono",
+    cor: "Laranja",
+    base: "escuro",
+    estilo: "tematico",
+    descricao: "Folhas secas e luz quente",
+    bolinha: "var(--cena-outono) 45% 45% / 320% no-repeat",
+  },
+  {
+    id: "laranja-claro",
+    nome: "Laranja claro",
+    cor: "Laranja",
+    base: "claro",
+    estilo: "sobrio",
+    descricao: "Pêssego e creme",
+    bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #fdd9b8 70%, #c2410c 140%)",
+  },
+  {
+    id: "borboletas",
+    nome: "Borboletas",
+    cor: "Laranja",
+    base: "claro",
+    estilo: "tematico",
+    descricao: "Borboletas-monarca",
+    bolinha: "var(--cena-borboletas) 82% 14% / 320% no-repeat",
+  },
+  {
+    id: "amarelo-escuro",
+    nome: "Amarelo escuro",
+    cor: "Amarelo",
+    base: "escuro",
+    estilo: "sobrio",
+    descricao: "Mostarda e preto",
+    bolinha: "radial-gradient(circle at 32% 30%, #eab308, #131003 78%)",
+  },
+  {
+    id: "abelha",
+    nome: "Abelha",
+    cor: "Amarelo",
+    base: "escuro",
+    estilo: "tematico",
+    descricao: "Favo de mel e mel escorrendo",
+    bolinha: "var(--cena-abelha) 80% 62% / 320% no-repeat",
+  },
+  {
+    id: "amarelo-claro",
+    nome: "Amarelo claro",
+    cor: "Amarelo",
+    base: "claro",
+    estilo: "sobrio",
+    descricao: "Amarelo-manteiga e branco",
+    bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #ffe98a 70%, #a16207 140%)",
+  },
+  {
+    id: "girassol",
+    nome: "Girassol",
+    cor: "Amarelo",
+    base: "claro",
+    estilo: "tematico",
+    descricao: "Girassóis e sol",
+    bolinha: "var(--cena-girassol) 88% 33% / 320% no-repeat",
+  },
+  {
+    id: "verde-escuro",
+    nome: "Verde escuro",
+    cor: "Verde",
+    base: "escuro",
+    estilo: "sobrio",
+    descricao: "Verde-garrafa e preto",
+    bolinha: "radial-gradient(circle at 32% 30%, #10b981, #04120b 78%)",
+  },
+  {
+    id: "floresta",
+    nome: "Floresta",
+    cor: "Verde",
+    base: "escuro",
+    estilo: "tematico",
+    descricao: "Pinheiros e névoa",
+    bolinha: "var(--cena-floresta) 50% 92% / 320% no-repeat",
+  },
+  {
+    id: "verde-claro",
+    nome: "Verde claro",
+    cor: "Verde",
+    base: "claro",
+    estilo: "sobrio",
+    descricao: "Verde-menta e branco",
+    bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #c2e9cf 70%, #047857 140%)",
+  },
+  {
+    id: "natureza",
+    nome: "Natureza",
+    cor: "Verde",
+    base: "claro",
+    estilo: "tematico",
+    descricao: "Colinas e folhas",
+    bolinha: "var(--cena-natureza) 50% 88% / 320% no-repeat",
+  },
+  {
     id: "azul-escuro",
     nome: "Azul escuro",
     cor: "Azul",
     base: "escuro",
     estilo: "sobrio",
     descricao: "Azul-marinho e preto",
-    bolinha: "radial-gradient(circle at 32% 30%, #1e40af, #050b18 75%)",
+    bolinha: "radial-gradient(circle at 32% 30%, #3b82f6, #050b18 78%)",
   },
   {
     id: "mar-profundo",
@@ -50,9 +227,8 @@ export const TEMAS: Tema[] = [
     cor: "Azul",
     base: "escuro",
     estilo: "tematico",
-    descricao: "Águas-vivas, peixes e corais",
-    bolinha:
-      "linear-gradient(110deg, transparent 32%, rgb(186 244 255 / 0.6) 44%, transparent 58%), linear-gradient(180deg, #0e6a8f, #031628)",
+    descricao: "Luz descendo pela água",
+    bolinha: "var(--cena-mar-profundo) 50% 8% / 320% no-repeat",
   },
   {
     id: "azul-claro",
@@ -60,8 +236,8 @@ export const TEMAS: Tema[] = [
     cor: "Azul",
     base: "claro",
     estilo: "sobrio",
-    descricao: "Azul-céu e branco",
-    bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #b9dcff 80%)",
+    descricao: "Azul-céu",
+    bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #bcd6f1 70%, #0369a1 140%)",
   },
   {
     id: "bolhas",
@@ -69,16 +245,130 @@ export const TEMAS: Tema[] = [
     cor: "Azul",
     base: "claro",
     estilo: "tematico",
-    descricao: "Bolhas de sabão e água clara",
-    bolinha:
-      "radial-gradient(circle at 36% 34%, rgb(255 255 255 / 0.95) 0 2px, transparent 3px), radial-gradient(circle at 40% 40%, transparent 8px, #93c5fd 9px, #f9a8d4 10.5px, transparent 12px), radial-gradient(circle at 72% 70%, transparent 4px, #67e8f9 5px, transparent 6.5px), linear-gradient(160deg, #d8eeff, #f5fbff)",
+    descricao: "Bolhas de sabão",
+    bolinha: "var(--cena-bolhas) 80% 10% / 320% no-repeat",
+  },
+  {
+    id: "roxo-escuro",
+    nome: "Roxo escuro",
+    cor: "Roxo",
+    base: "escuro",
+    estilo: "sobrio",
+    descricao: "Berinjela e preto",
+    bolinha: "radial-gradient(circle at 32% 30%, #8b5cf6, #0c0618 78%)",
+  },
+  {
+    id: "universo",
+    nome: "Universo",
+    cor: "Roxo",
+    base: "escuro",
+    estilo: "tematico",
+    descricao: "Nebulosa, estrelas e planeta",
+    bolinha: "var(--cena-universo) 14% 19% / 320% no-repeat",
+  },
+  {
+    id: "roxo-claro",
+    nome: "Roxo claro",
+    cor: "Roxo",
+    base: "claro",
+    estilo: "sobrio",
+    descricao: "Lilás e branco",
+    bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #ddd0f7 70%, #6d28d9 140%)",
+  },
+  {
+    id: "lavanda",
+    nome: "Lavanda",
+    cor: "Roxo",
+    base: "claro",
+    estilo: "tematico",
+    descricao: "Campo de lavanda",
+    bolinha: "var(--cena-lavanda) 50% 97% / 320% no-repeat",
+  },
+  {
+    id: "rosa-escuro",
+    nome: "Rosa escuro",
+    cor: "Rosa",
+    base: "escuro",
+    estilo: "sobrio",
+    descricao: "Magenta e preto",
+    bolinha: "radial-gradient(circle at 32% 30%, #db2777, #160610 78%)",
+  },
+  {
+    id: "glitter",
+    nome: "Glitter",
+    cor: "Rosa",
+    base: "escuro",
+    estilo: "tematico",
+    descricao: "Brilhos rosa e dourado",
+    bolinha: "var(--cena-glitter) 50% 40% / 320% no-repeat",
+  },
+  {
+    id: "rosa-claro",
+    nome: "Rosa claro",
+    cor: "Rosa",
+    base: "claro",
+    estilo: "sobrio",
+    descricao: "Rosa-bebê e branco",
+    bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #fbcfe6 70%, #be185d 140%)",
+  },
+  {
+    id: "algodao-doce",
+    nome: "Algodão-doce",
+    cor: "Rosa",
+    base: "claro",
+    estilo: "tematico",
+    descricao: "Nuvens fofas em tons pastel",
+    bolinha: "var(--cena-algodao-doce) 82% 15% / 320% no-repeat",
+  },
+  {
+    id: "cinza-escuro",
+    nome: "Cinza escuro",
+    cor: "Cinza",
+    base: "escuro",
+    estilo: "sobrio",
+    descricao: "Grafite e preto",
+    bolinha: "radial-gradient(circle at 32% 30%, #94a3b8, #0f1114 78%)",
+  },
+  {
+    id: "escritorio-noite",
+    nome: "Escritório à noite",
+    cor: "Cinza",
+    base: "escuro",
+    estilo: "tematico",
+    descricao: "Papel quadriculado e luminária",
+    bolinha: "var(--cena-escritorio-noite) 14% 75% / 320% no-repeat",
+  },
+  {
+    id: "cinza-claro",
+    nome: "Cinza claro",
+    cor: "Cinza",
+    base: "claro",
+    estilo: "sobrio",
+    descricao: "Cinza-claro e branco",
+    bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #d5d9df 70%, #334155 140%)",
+  },
+  {
+    id: "escritorio",
+    nome: "Escritório",
+    cor: "Cinza",
+    base: "claro",
+    estilo: "tematico",
+    descricao: "Caderno, post-its e clipe",
+    bolinha: "var(--cena-escritorio) 80% 19% / 320% no-repeat",
   },
 ];
 
 /** Os grupos da tela de escolha, na ordem */
 export const GRUPOS_TEMA: { cor: string; nome: string }[] = [
   { cor: "NAXXO", nome: "Oficial NAXXO" },
+  { cor: "Vermelho", nome: "Vermelho" },
+  { cor: "Laranja", nome: "Laranja" },
+  { cor: "Amarelo", nome: "Amarelo" },
+  { cor: "Verde", nome: "Verde" },
   { cor: "Azul", nome: "Azul" },
+  { cor: "Roxo", nome: "Roxo" },
+  { cor: "Rosa", nome: "Rosa" },
+  { cor: "Cinza", nome: "Cinza" },
 ];
 
 /** A bolinha do "Automático": metade escuro, metade claro */

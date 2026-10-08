@@ -43,7 +43,7 @@ import CamposFonte, {
 } from "@/components/CamposFonte";
 import EscolhaConta, { lerEscolha } from "@/components/EscolhaConta";
 import EstadoVazio from "@/components/EstadoVazio";
-import Icone from "@/components/Icone";
+import Icone, { TextoComIcones } from "@/components/Icone";
 
 export default function Renda() {
   const fontes = useFontes();
@@ -111,7 +111,11 @@ export default function Renda() {
           <p className="text-xs text-suave">Recebido em {nomeMes(mes).toLowerCase()}</p>
           <p className="gradiente-texto mt-1 font-display text-xl font-bold tabular-nums">{brl(doMesAtual.recebido)}</p>
           {doMesAtual.aReceber > 0 && <p className="text-xs text-amber-300">+ {brl(doMesAtual.aReceber)} a receber</p>}
-          {doMesAtual.vales > 0 && <p className="text-xs text-suave">🍽️ + {brl(doMesAtual.vales)} em vale</p>}
+          {doMesAtual.vales > 0 && (
+            <p className="text-xs text-suave">
+              <Icone e="🍽️" /> + {brl(doMesAtual.vales)} em vale
+            </p>
+          )}
         </div>
         <div className="cartao p-4">
           <p className="text-xs text-suave">Esperado por mês</p>
@@ -130,7 +134,7 @@ export default function Renda() {
       {proxima && (
         <div className="flex items-center gap-3 rounded-2xl border border-roxo/30 bg-roxo/10 px-4 py-3 text-sm">
           <span className="text-xl" aria-hidden>
-            📅
+            <Icone e="📅" />
           </span>
           <p>
             Próxima entrada: <b>{proxima.parte.nome}</b>{" "}
@@ -177,9 +181,13 @@ export default function Renda() {
                       <p className="text-xs text-suave">
                         {forma?.nome}
                         {f.forma === "hora" && f.valorHora && f.horasMes && ` · ${brl(f.valorHora)}/h × ${f.horasMes}h`}
-                        {intervalo
-                          ? ` · ${intervalo === 7 ? "toda semana" : "a cada 15 dias"}`
-                          : f.diaRecebimento && ` · 📅 ${nomeDoDia(f.diaRecebimento)}`}
+                        <TextoComIcones
+                          texto={
+                            intervalo
+                              ? ` · ${intervalo === 7 ? "toda semana" : "a cada 15 dias"}`
+                              : f.diaRecebimento && ` · 📅 ${nomeDoDia(f.diaRecebimento)}`
+                          }
+                        />
                         {f.adiantamento && ` · adiantamento dia ${f.adiantamento.dia} (${f.adiantamento.percentual}%)`}
                         {f.decimoTerceiro && " · 13º"}
                         {f.mesFerias && ` · férias em ${nomeMesCurto(`2000-${String(f.mesFerias).padStart(2, "0")}`)}`}
@@ -258,7 +266,7 @@ export default function Renda() {
                       {pendentes.map((p) => (
                         <li key={p.chave} className="flex gap-2">
                           <span className="min-w-0 flex-1 truncate">
-                            ⏳ {p.nome}
+                            <Icone e="⏳" /> {p.nome}
                             {!p.dinheiro && " (vale)"}
                           </span>
                           <span>{formatarData(p.data)}</span>
@@ -542,7 +550,7 @@ function FormRecebimento({ fonte, mes, onFechar }: { fonte: FonteRenda; mes: str
             </Campo>
             {calculado && total > 0 && (
               <p className="-mt-2 text-xs text-roxo">
-                ✨{" "}
+                {" "}
                 {calculado === "valor"
                   ? `Valor calculado: ${horas}h × ${brl(lerValor(valorHora))} = ${brl(total)}`
                   : `Horas calculadas: ${brl(total)} ÷ ${brl(lerValor(valorHora))} ≈ ${horas}h`}

@@ -5,6 +5,7 @@ import type { CategoriaFixo, Lancamento } from "@/lib/store";
 import type { Previsto } from "@/lib/previstos";
 import type { LinhaExtrato } from "@/lib/extrato";
 import { brl, formatarData } from "@/lib/formato";
+import Icone, { TextoComIcones } from "@/components/Icone";
 
 // Dois atalhos de cada linha do extrato:
 // - 🔗 "Já está no app": liga a linha a um lançamento ou a algo previsto (salário, aluguel, parcela…), sem duplicar;
@@ -141,7 +142,9 @@ export function PainelLigar({
   return (
     <div className="mt-2 space-y-2 rounded-xl border border-roxo/40 bg-roxo/10 p-2 text-xs">
       <div className="flex items-center justify-between">
-        <span className="font-medium">🔗 Qual destes é essa movimentação?</span>
+        <span className="font-medium">
+          <Icone e="🔗" /> Qual destes é essa movimentação?
+        </span>
         <button type="button" onClick={onFechar} className="text-suave hover:text-white">
           fechar
         </button>
@@ -149,7 +152,7 @@ export function PainelLigar({
       <input
         value={busca}
         onChange={(e) => setBusca(e.target.value)}
-        placeholder="🔍 Buscar pelo nome"
+        placeholder="Buscar pelo nome"
         className="w-full rounded-lg bg-superficie px-2 py-1.5 text-xs"
       />
       {lista.length === 0 ? (
@@ -164,9 +167,9 @@ export function PainelLigar({
                 className="flex w-full items-center justify-between gap-2 rounded-lg border border-white/10 px-2 py-1.5 text-left hover:border-rosa"
               >
                 <span className="min-w-0 truncate">
-                  {c.nome}
+                  <TextoComIcones texto={c.nome} />
                   <span className="block text-[0.65rem] text-suave">
-                    {c.detalhe} · {formatarData(c.data)}
+                    <TextoComIcones texto={c.detalhe} /> · {formatarData(c.data)}
                   </span>
                 </span>
                 <span className="shrink-0 font-semibold">{brl(c.valor)}</span>
@@ -211,7 +214,9 @@ export function PainelFrequente({
   return (
     <div className="mt-2 space-y-2 rounded-xl border border-roxo/40 bg-roxo/10 p-2 text-xs">
       <div className="flex items-center justify-between">
-        <span className="font-medium">🔁 Gasto que se repete</span>
+        <span className="font-medium">
+          <Icone e="🔁" /> Gasto que se repete
+        </span>
         <button type="button" onClick={onFechar} className="text-suave hover:text-white">
           fechar
         </button>
@@ -224,7 +229,7 @@ export function PainelFrequente({
             onClick={() => escolherTipo(t.id)}
             className={`rounded-full border px-2.5 py-1 ${tipo === t.id ? "border-rosa bg-rosa/20 text-white" : "border-white/15 text-suave"}`}
           >
-            {t.nome}
+            <TextoComIcones texto={t.nome} />
           </button>
         ))}
       </div>
@@ -276,7 +281,8 @@ export function PainelFrequente({
       )}
       <p className="text-[0.65rem] text-suave">
         Esta movimentação vira o pagamento de agora. As próximas aparecem como previstas (e o valor
-        {base.varia ? " pode mudar a cada vez" : " é sempre o mesmo"}).
+        <TextoComIcones texto={base.varia ? " pode mudar a cada vez" : " é sempre o mesmo"} />
+        ).
       </p>
       <button
         type="button"

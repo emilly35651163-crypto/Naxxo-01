@@ -1,6 +1,7 @@
 "use client";
 
 import { dataDoRecebimento, formatarData, mesAtual } from "@/lib/formato";
+import Icone from "@/components/Icone";
 
 type Modo = "dia" | "util" | "ultimo";
 
@@ -78,7 +79,8 @@ export default function CampoDiaRecebimento({ valor, onChange }: { valor: string
       )}
       {(modo !== "dia" || proximoUtil) && valor && (
         <p className="text-xs text-suave">
-          📅 Neste mês cai em {formatarData(dataDoRecebimento(valor, mesAtual()))} (já pula fim de semana e feriado).
+          <Icone e="📅" /> Neste mês cai em {formatarData(dataDoRecebimento(valor, mesAtual()))} (já pula fim de semana e
+          feriado).
         </p>
       )}
     </div>

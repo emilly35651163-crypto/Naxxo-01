@@ -46,7 +46,7 @@ import Modal from "./Modal";
 import { Campo, Chip } from "./Campos";
 import EscolhaConta, { lerEscolha } from "./EscolhaConta";
 import EscolhaParcelas from "./EscolhaParcelas";
-import Icone from "@/components/Icone";
+import Icone, { TextoComIcones } from "@/components/Icone";
 
 // Para onde vai um gasto que se repete (vira gasto fixo)
 const CATEGORIA_DO_FIXO: Record<string, CategoriaFixo> = {
@@ -433,7 +433,7 @@ export default function FormLancamento({
                     : "text-suave"
                 }`}
               >
-                {m === "entrada" ? "Entrada" : m === "saida" ? "Saída" : "🔁 Transferir"}
+                <TextoComIcones texto={m === "entrada" ? "Entrada" : m === "saida" ? "Saída" : "🔁 Transferir"} />
               </button>
             ))}
         </div>
@@ -478,7 +478,7 @@ export default function FormLancamento({
                     setSubcategoria("");
                   }}
                 >
-                  <Icone e={c.icone} /> {c.nome}
+                  <Icone e={c.icone} /> <TextoComIcones texto={c.nome} />
                 </Chip>
               ))}
               <Chip
@@ -496,14 +496,14 @@ export default function FormLancamento({
                     ativo={subcategoria === s.nome}
                     onClick={() => setSubcategoria(subcategoria === s.nome ? "" : s.nome)}
                   >
-                    {s.nome}
+                    <TextoComIcones texto={s.nome} />
                   </Chip>
                 ))}
               </div>
             )}
             {novaCategoria === null && (
               <button type="button" onClick={() => setNovaCategoria("sub")} className="text-xs text-suave hover:text-rosa">
-                + subcategoria de {categoria}
+                + subcategoria de <TextoComIcones texto={categoria} />
               </button>
             )}
             {novaCategoria && (
@@ -604,21 +604,27 @@ export default function FormLancamento({
                 onClick={() => setPago(v)}
                 className={`rounded-full py-2 transition-colors ${pago === v ? "bg-white font-semibold text-fundo" : "text-suave"}`}
               >
-                {v ? (entrada ? "✓ Já recebi" : "✓ Já paguei") : entrada ? "Ainda vou receber" : "Ainda vou pagar"}
+                <TextoComIcones
+                  texto={v ? (entrada ? "✓ Já recebi" : "✓ Já paguei") : entrada ? "Ainda vou receber" : "Ainda vou pagar"}
+                />
               </button>
             ))}
           </div>
         )}
 
-        {destino && <p className="rounded-2xl bg-roxo/10 px-4 py-3 text-xs text-suave">{destino}</p>}
+        {destino && (
+          <p className="rounded-2xl bg-roxo/10 px-4 py-3 text-xs text-suave">
+            <TextoComIcones texto={destino} />
+          </p>
+        )}
         {erro && (
           <p role="alert" className="text-sm text-saida">
-            {erro.texto}
+            <TextoComIcones texto={erro.texto} />
           </p>
         )}
 
         <button type="submit" className="botao-gradiente w-full rounded-full py-3 font-semibold">
-          {lancamento ? "Salvar alterações" : "Salvar"}
+          <TextoComIcones texto={lancamento ? "Salvar alterações" : "Salvar"} />
         </button>
 
         {lancamento && (
@@ -630,7 +636,7 @@ export default function FormLancamento({
             }}
             className="w-full py-1 text-sm text-suave hover:text-saida"
           >
-            {transferencia ? "Excluir transferência (as duas pontas)" : "Excluir lançamento"}
+            <TextoComIcones texto={transferencia ? "Excluir transferência (as duas pontas)" : "Excluir lançamento"} />
           </button>
         )}
       </form>

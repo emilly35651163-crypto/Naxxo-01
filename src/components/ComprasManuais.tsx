@@ -28,6 +28,7 @@ import {
   type Lancamento,
 } from "@/lib/store";
 import { CampoValor } from "./Campos";
+import Icone, { TextoComIcones } from "@/components/Icone";
 
 // A lista para conferir antes de salvar: tudo o que veio do extrato (arquivo), dos prints ou foi digitado à mão.
 // Dá para mudar nome, valor, categoria, parcelas e dizer se é esporádico, assinatura ou se repete com valor que varia.
@@ -299,7 +300,7 @@ export default function ComprasManuais({
         </span>
         {onPrints && (
           <label className="cursor-pointer rounded-full border border-rosa/50 px-3 py-1.5 text-xs font-medium text-rosa hover:bg-rosa/10">
-            📸 Ler print da fatura
+            <Icone e="📸" /> Ler print da fatura
             <input
               type="file"
               accept="image/*"
@@ -314,7 +315,11 @@ export default function ComprasManuais({
           </label>
         )}
       </div>
-      {lendo && <p className="animate-pulse text-xs text-rosa">🔎 {lendo}</p>}
+      {lendo && (
+        <p className="animate-pulse text-xs text-rosa">
+          <Icone e="🔎" /> {lendo}
+        </p>
+      )}
       {aviso && <p className="text-xs text-amber-300">{aviso}</p>}
       {texto && (
         <details className="text-xs text-suave">
@@ -368,7 +373,7 @@ export default function ComprasManuais({
                   .filter((x) => x.nome !== "Guardar (metas)")
                   .map((x) => (
                     <option key={x.nome} value={x.nome}>
-                      {x.icone} {x.nome}
+                      {x.nome}
                     </option>
                   ))}
               </select>
@@ -410,7 +415,7 @@ export default function ComprasManuais({
                       c.recorrencia === r.id ? "border-rosa bg-rosa/20 text-white" : "border-white/10 text-suave hover:text-white"
                     }`}
                   >
-                    {r.id === "assinatura" ? "🔁 " : r.id === "variavel" ? "〰️ " : ""}
+                    <TextoComIcones texto={r.id === "assinatura" ? "🔁 " : r.id === "variavel" ? "〰️ " : ""} />
                     {r.nome}
                   </button>
                 ))}

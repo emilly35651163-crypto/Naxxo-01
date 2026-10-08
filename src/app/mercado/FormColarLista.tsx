@@ -95,7 +95,7 @@ export default function FormColarLista({ onFechar, emCasa = false }: { onFechar:
             </p>
             {repetidas.length > 0 && (
               <p className="rounded-2xl border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-xs">
-                ⚠️ Aparece duas vezes: <b>{repetidas.join(", ")}</b>. Se foi sem querer, apague uma das linhas.
+                <Icone e="⚠️" /> Aparece duas vezes: <b>{repetidas.join(", ")}</b>. Se foi sem querer, apague uma das linhas.
               </p>
             )}
             <ul className="max-h-56 divide-y divide-white/5 overflow-y-auto rounded-2xl bg-fundo/50 px-3 text-sm">
@@ -123,7 +123,8 @@ export default function FormColarLista({ onFechar, emCasa = false }: { onFechar:
 
             {emCasa ? (
               <p className="rounded-2xl bg-roxo/10 px-3 py-2 text-xs text-suave">
-                🏠 Vão direto para “Em casa” (não entram na lista nem no gasto). Quando acabar, toque em “Acabou hoje”.
+                <Icone e="🏠" /> Vão direto para “Em casa” (não entram na lista nem no gasto). Quando acabar, toque em “Acabou
+                hoje”.
               </p>
             ) : (
               <div

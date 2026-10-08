@@ -41,3 +41,49 @@ export function ComIcone({ texto }: { texto: string }) {
     </>
   );
 }
+
+// Enfeites: somem do texto (carinhas, brilhos, corações, confete)
+const DECORATIVOS = new Set([
+  "👋",
+  "😟",
+  "🙂",
+  "😬",
+  "🙌",
+  "✨",
+  "🎉",
+  "🔮",
+  "💜",
+  "🩷",
+  "💚",
+  "😊",
+  "🥳",
+  "🤩",
+  "😉",
+  "🔥",
+  "💪",
+  "🚀",
+]);
+const EMOJIS = /((?![©®™])\p{Extended_Pictographic}️?(?:‍\p{Extended_Pictographic}️?)*)/u;
+
+/** Qualquer texto: cada emoji vira ícone (ou some, se for só enfeite); o resto continua texto. */
+export function TextoComIcones({ texto }: { texto: string | number | null | undefined }) {
+  if (texto === null || texto === undefined || texto === "") return null;
+  const s = String(texto);
+  if (!EMOJIS.test(s)) return <>{s}</>;
+  const partes = s.split(new RegExp(EMOJIS.source, "gu"));
+  return (
+    <>
+      {partes.map((p, i) =>
+        i % 2 === 0 ? p.replace(/^ (?= )/, "") : DECORATIVOS.has(p.replace(/️/g, "")) ? null : <Icone key={i} e={p} />,
+      )}
+    </>
+  );
+}
+
+/** Texto sem nenhum emoji (para notificações do celular, títulos da aba…). */
+export function semEmojis(s: string) {
+  return s
+    .replace(new RegExp(EMOJIS.source, "gu"), "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}

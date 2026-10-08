@@ -23,6 +23,7 @@ import { limiteUsadoPelasCompras, parcelasPagasDaCompra } from "@/lib/cartoes";
 import { comDesfazer } from "@/lib/avisos";
 import Modal from "./Modal";
 import { Campo, CampoSelect, CampoValor, Chip, DIAS_DO_MES } from "./Campos";
+import Icone, { TextoComIcones } from "@/components/Icone";
 
 const NOMES_DAS_CORES = ["Rosa e roxo", "Roxo e azul", "Azul e ciano", "Laranja e rosa", "Verde e azul", "Grafite"];
 const SUGESTOES_VALE = ["Alelo", "VR", "Pluxee (Sodexo)", "Ticket", "Caju", "Flash", "iFood Benefícios", "Swile"];
@@ -132,16 +133,20 @@ export default function FormConta({ conta, onFechar }: { conta?: Conta; onFechar
                 tipo === o.id ? "border-rosa bg-rosa/15" : "border-white/10 hover:border-roxo/50"
               }`}
             >
-              <span className="block text-sm font-semibold">{o.nome}</span>
-              <span className="block text-xs text-suave">{o.descricao}</span>
+              <span className="block text-sm font-semibold">
+                <TextoComIcones texto={o.nome} />
+              </span>
+              <span className="block text-xs text-suave">
+                <TextoComIcones texto={o.descricao} />
+              </span>
             </button>
           ))}
         </div>
 
         {tipo === "vale" && (
           <p className="rounded-2xl bg-roxo/10 px-4 py-3 text-xs text-suave">
-            🍽️ O vale tem saldo próprio e só paga mercado e alimentação. Ele <b className="text-white">não entra</b> na sobra do
-            mês, na reserva de emergência nem na % da renda — só o dinheiro de verdade entra.
+            <Icone e="🍽️" /> O vale tem saldo próprio e só paga mercado e alimentação. Ele <b className="text-white">não entra</b>{" "}
+            na sobra do mês, na reserva de emergência nem na % da renda — só o dinheiro de verdade entra.
           </p>
         )}
 
@@ -149,14 +154,14 @@ export default function FormConta({ conta, onFechar }: { conta?: Conta; onFechar
         <div className="relative h-32 overflow-hidden rounded-2xl p-4 text-white shadow-lg" style={{ background: cor }}>
           <div className="absolute -right-8 -top-8 size-32 rounded-full bg-white/10" />
           <p className="font-display text-lg font-bold">
-            {nome || (tipo === "dinheiro" ? "Carteira" : tipo === "vale" ? "Meu vale" : "Minha conta")}
+            <TextoComIcones texto={nome || (tipo === "dinheiro" ? "Carteira" : tipo === "vale" ? "Meu vale" : "Minha conta")} />
           </p>
           <p className="absolute bottom-4 left-4 text-xs text-white/80">
             Saldo {brl(lerValor(saldo) || 0)}
             {comCredito && valorLimite > 0 && ` · limite ${brl(valorLimite)}`}
           </p>
           <span className="absolute bottom-3 right-4 text-2xl">
-            {tipo === "dinheiro" ? "💵" : tipo === "vale" ? "🍽️" : comCredito ? "💳" : "🏦"}
+            <TextoComIcones texto={tipo === "dinheiro" ? "💵" : tipo === "vale" ? "🍽️" : comCredito ? "💳" : "🏦"} />
           </span>
         </div>
 
@@ -187,12 +192,11 @@ export default function FormConta({ conta, onFechar }: { conta?: Conta; onFechar
           <div className="flex flex-wrap gap-2">
             {(tipo === "vale" ? SUGESTOES_VALE : SUGESTOES_CARTAO).map((s) => (
               <Chip key={s} ativo={nome === s} onClick={() => setNome(s)}>
-                {s}
+                <TextoComIcones texto={s} />
               </Chip>
             ))}
           </div>
         )}
-
 
         <Campo rotulo="Quanto tem nessa conta agora?">
           <CampoValor valor={saldo} onChange={setSaldo} negativo={tipo === "banco"} />
@@ -210,17 +214,21 @@ export default function FormConta({ conta, onFechar }: { conta?: Conta; onFechar
               onChange={(e) => setCredito(e.target.checked)}
               className="size-5 accent-rosa"
             />
-            💳 Essa conta tem cartão de crédito
+            <Icone e="💳" /> Essa conta tem cartão de crédito
           </label>
         )}
 
         {desligandoCredito && (
           <p className="rounded-2xl border border-amber-300/40 bg-amber-300/10 px-4 py-3 text-xs">
-            {comprasAbertas.length > 0
-              ? `⚠️ Não dá para desligar ainda: ${comprasAbertas.length} compra(s) deste cartão ainda estão sendo pagas.`
-              : assinaturasNoCartao.length > 0
-                ? `⚠️ ${assinaturasNoCartao.length} assinatura(s) estão neste cartão. Ao salvar, elas passam a sair desta conta (débito).`
-                : "O cartão de crédito desta conta vai ser desligado."}
+            <TextoComIcones
+              texto={
+                comprasAbertas.length > 0
+                  ? `⚠️ Não dá para desligar ainda: ${comprasAbertas.length} compra(s) deste cartão ainda estão sendo pagas.`
+                  : assinaturasNoCartao.length > 0
+                    ? `⚠️ ${assinaturasNoCartao.length} assinatura(s) estão neste cartão. Ao salvar, elas passam a sair desta conta (débito).`
+                    : "O cartão de crédito desta conta vai ser desligado."
+              }
+            />
           </p>
         )}
 
@@ -251,16 +259,20 @@ export default function FormConta({ conta, onFechar }: { conta?: Conta; onFechar
             )}
             {!conta && (
               <p className="text-xs text-suave">
-                💡 Depois de salvar, inclua no cartão as compras que ainda estão sendo pagas (inclusive parceladas).
+                <Icone e="💡" /> Depois de salvar, inclua no cartão as compras que ainda estão sendo pagas (inclusive parceladas).
               </p>
             )}
           </>
         )}
 
-        {erro && <p className="text-sm text-saida">{erro}</p>}
+        {erro && (
+          <p className="text-sm text-saida">
+            <TextoComIcones texto={erro} />
+          </p>
+        )}
 
         <button type="submit" className="botao-gradiente w-full rounded-full py-3 font-semibold">
-          {conta ? "Salvar alterações" : "Adicionar conta"}
+          <TextoComIcones texto={conta ? "Salvar alterações" : "Adicionar conta"} />
         </button>
 
         {conta && !excluindo && (
@@ -272,7 +284,10 @@ export default function FormConta({ conta, onFechar }: { conta?: Conta; onFechar
         {/* Excluir mostra o que será afetado e deixa escolher para onde vai */}
         {conta && excluindo && vinculos && (
           <div className="space-y-3 rounded-2xl border border-saida/40 bg-saida/5 p-4 text-sm">
-            <p className="font-semibold">Excluir “{conta.nome}”?</p>
+            <p className="font-semibold">
+              Excluir “<TextoComIcones texto={conta.nome} />
+              ”?
+            </p>
             <ul className="list-inside list-disc text-xs text-suave">
               <li>{vinculos.lancamentos} lançamento(s) desta conta</li>
               {vinculos.compras > 0 && <li>{vinculos.compras} compra(s) no cartão (serão apagadas)</li>}
@@ -286,7 +301,7 @@ export default function FormConta({ conta, onFechar }: { conta?: Conta; onFechar
                 <option value="">Deixar sem conta (escolho depois)</option>
                 {outras.map((c) => (
                   <option key={c.id} value={c.id}>
-                    Passar para {c.nome}
+                    Passar para <TextoComIcones texto={c.nome} />
                   </option>
                 ))}
               </select>

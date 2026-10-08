@@ -27,7 +27,7 @@ import { CampoValor, Chip } from "@/components/Campos";
 import EscolhaConta, { lerEscolha } from "@/components/EscolhaConta";
 import EstadoVazio from "@/components/EstadoVazio";
 import Desejos from "./Desejos";
-import Icone from "@/components/Icone";
+import Icone, { TextoComIcones } from "@/components/Icone";
 
 export default function Trilha() {
   const dados = useDados();
@@ -139,8 +139,12 @@ export default function Trilha() {
             aria-expanded={verConquistas}
             className="titulo-secao flex w-full items-center justify-between"
           >
-            <span>🏆 Conquistas ({conquistas.length})</span>
-            <span className="text-rosa">{verConquistas ? "esconder ▴" : "ver ▾"}</span>
+            <span>
+              <Icone e="🏆" /> Conquistas ({conquistas.length})
+            </span>
+            <span className="text-rosa">
+              <TextoComIcones texto={verConquistas ? "esconder ▴" : "ver ▾"} />
+            </span>
           </button>
           {verConquistas && (
             <ul className="cartao divide-y divide-white/5 px-4">
@@ -150,7 +154,9 @@ export default function Trilha() {
                     <Icone e={m.icone} />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-medium">{m.nome}</span>
+                    <span className="block truncate font-medium">
+                      <TextoComIcones texto={m.nome} />
+                    </span>
                     <span className="block text-xs text-suave">
                       {m.tipo === "quitar" ? "Quitada" : `Juntou ${brl(m.alvo)}`}
                       {m.concluidaEm && ` · ${formatarData(m.concluidaEm)}/${m.concluidaEm.slice(0, 4)}`}
@@ -186,11 +192,13 @@ function Numero({
 }) {
   return (
     <div className="cartao p-4">
-      <p className="text-xs text-suave">{rotulo}</p>
+      <p className="text-xs text-suave">
+        <TextoComIcones texto={rotulo} />
+      </p>
       <p
         className={`mt-1 font-display text-xl font-bold tabular-nums ${vermelho ? "text-saida" : destaque ? "gradiente-texto" : ""}`}
       >
-        {valor}
+        <TextoComIcones texto={valor} />
       </p>
     </div>
   );
@@ -240,14 +248,14 @@ function CartaoMeta({
     return (
       <article className="cartao relative overflow-hidden border-rosa/60 p-5 text-center">
         <div className="pointer-events-none absolute -right-10 -top-10 size-40 rounded-full bg-rosa/25 blur-3xl" />
-        <p className="text-5xl" aria-hidden>
-          🎉
-        </p>
+        <p className="text-5xl" aria-hidden></p>
         <h3 className="mt-2 font-display text-xl font-bold">
-          <Icone e={meta.icone} /> {meta.nome}
+          <Icone e={meta.icone} /> <TextoComIcones texto={meta.nome} />
         </h3>
         <p className="mt-1 text-sm text-suave">
-          {quitar ? "Quitada! Uma dívida a menos 💚" : `Você juntou ${brl(meta.alvo)}! Conquista realizada.`}
+          <TextoComIcones
+            texto={quitar ? "Quitada! Uma dívida a menos 💚" : `Você juntou ${brl(meta.alvo)}! Conquista realizada.`}
+          />
         </p>
         <TrilhaProgresso progresso={1} />
         <div className="mt-4 flex justify-center gap-2">
@@ -255,7 +263,7 @@ function CartaoMeta({
             onClick={() => arquivarMeta(meta.id)}
             className="botao-gradiente rounded-full px-5 py-2.5 text-sm font-semibold"
           >
-            Guardar nas conquistas 🏆
+            Guardar nas conquistas <Icone e="🏆" />
           </button>
           <button
             onClick={onEditar}
@@ -275,7 +283,9 @@ function CartaoMeta({
           <Icone e={meta.icone} />
         </span>
         <div className="min-w-0 flex-1">
-          <h3 className="truncate font-display text-lg font-semibold">{meta.nome}</h3>
+          <h3 className="truncate font-display text-lg font-semibold">
+            <TextoComIcones texto={meta.nome} />
+          </h3>
           <p className="text-sm tabular-nums text-suave">
             {quitar ? `${pagas} de ${meta.parcelas} parcelas pagas` : `${brl(meta.guardado)} de ${brl(meta.alvo)}`}
           </p>
@@ -291,14 +301,14 @@ function CartaoMeta({
         <div className="mt-4 rounded-2xl border border-white/10 bg-fundo/60 p-4">
           <div className="flex items-baseline justify-between gap-2">
             <span className="text-xs text-suave">
-              {quitar ? "Parcela" : "Guardar"} em {nomeMes(mes).split(" ")[0].toLowerCase()}{" "}
+              <TextoComIcones texto={quitar ? "Parcela" : "Guardar"} /> em {nomeMes(mes).split(" ")[0].toLowerCase()}{" "}
               {quitar ? (
                 <span className={automatico ? "text-roxo" : "text-amber-300"}>
-                  · {automatico ? "parcela normal" : "você mudou"}
+                  · <TextoComIcones texto={automatico ? "parcela normal" : "você mudou"} />
                 </span>
               ) : (
                 <span className={automatico ? "text-suave" : "text-amber-300"}>
-                  · {automatico ? "ainda não definido" : "você escolheu"}
+                  · <TextoComIcones texto={automatico ? "ainda não definido" : "você escolheu"} />
                 </span>
               )}
             </span>
@@ -324,7 +334,7 @@ function CartaoMeta({
               </button>
               {quitar && lerValor(novoValor) < (meta.parcela ?? 0) && (
                 <p className="w-full text-xs text-amber-300">
-                  ⚠️ Pagar menos que a parcela pode gerar multa e juros: a dívida continua vencendo.
+                  <Icone e="⚠️" /> Pagar menos que a parcela pode gerar multa e juros: a dívida continua vencendo.
                 </p>
               )}
             </div>
@@ -337,7 +347,9 @@ function CartaoMeta({
                 }}
                 className="text-rosa"
               >
-                {quitar ? "mudar só este mês" : valorDoMes > 0 ? "mudar valor" : "definir quanto guardar"}
+                <TextoComIcones
+                  texto={quitar ? "mudar só este mês" : valorDoMes > 0 ? "mudar valor" : "definir quanto guardar"}
+                />
               </button>
               {!quitar && automatico && sugerido >= 1 && (
                 <button
@@ -369,9 +381,9 @@ function CartaoMeta({
           {confirmandoAdiar && (
             <div className="mt-3 rounded-2xl border border-amber-300/40 bg-amber-300/10 p-3 text-xs">
               <p>
-                ⚠️ Adiar não faz a dívida parar: a parcela de {nomeMes(mes).split(" ")[0].toLowerCase()} continua vencendo e pode
-                ter <b>multa e juros</b>. Ela vai para {nomeMes(somarMeses(mes, 1)).split(" ")[0].toLowerCase()} somada à próxima
-                ({brl(valorDoMes + (meta.planoMensal?.[somarMeses(mes, 1)] ?? meta.parcela ?? 0))}).
+                <Icone e="⚠️" /> Adiar não faz a dívida parar: a parcela de {nomeMes(mes).split(" ")[0].toLowerCase()} continua
+                vencendo e pode ter <b>multa e juros</b>. Ela vai para {nomeMes(somarMeses(mes, 1)).split(" ")[0].toLowerCase()}{" "}
+                somada à próxima ({brl(valorDoMes + (meta.planoMensal?.[somarMeses(mes, 1)] ?? meta.parcela ?? 0))}).
               </p>
               <div className="mt-2 flex gap-2">
                 <button
@@ -416,7 +428,8 @@ function CartaoMeta({
 
       {!quitar && !semRitmo && c.atrasaNoRitmo && meta.prazo && c.precisaPorMes && (
         <p className="mt-3 text-xs text-amber-300">
-          ⏰ Nesse ritmo você chega depois do prazo. Para chegar em {nomeMes(meta.prazo)}, seriam {brl(c.precisaPorMes)} por mês.
+          <Icone e="⏰" /> Nesse ritmo você chega depois do prazo. Para chegar em {nomeMes(meta.prazo)}, seriam{" "}
+          {brl(c.precisaPorMes)} por mês.
         </p>
       )}
 
@@ -427,13 +440,13 @@ function CartaoMeta({
           )}
           {taxa ? (
             <span className="rounded-full bg-white/5 px-3 py-1 text-suave">
-              {meta.jurosMes ? "" : "≈ "}
-              {formatarTaxa(taxa)} ao mês
+              <TextoComIcones texto={meta.jurosMes ? "" : "≈ "} />
+              <TextoComIcones texto={formatarTaxa(taxa)} /> ao mês
             </span>
           ) : null}
           {meta.economizado ? (
             <span className="rounded-full bg-entrada/10 px-3 py-1 text-entrada">
-              💚 Economizou {brl(meta.economizado)} adiantando
+              Economizou {brl(meta.economizado)} adiantando
             </span>
           ) : null}
         </div>
@@ -441,7 +454,11 @@ function CartaoMeta({
 
       {nomeCartao && (
         <p className="mt-3 rounded-2xl bg-roxo/10 px-4 py-2.5 text-xs text-suave">
-          💳 No cartão <b className="text-white">{nomeCartao}</b>: as parcelas avançam sozinhas quando você paga a fatura.
+          <Icone e="💳" /> No cartão{" "}
+          <b className="text-white">
+            <TextoComIcones texto={nomeCartao} />
+          </b>
+          : as parcelas avançam sozinhas quando você paga a fatura.
         </p>
       )}
 
@@ -461,7 +478,7 @@ function CartaoMeta({
             onClick={onGuardar}
             className="rounded-full border border-rosa/50 px-4 py-2.5 text-sm text-rosa hover:bg-rosa/10"
           >
-            {previsto ? "Outro valor" : "Guardar / retirar"}
+            <TextoComIcones texto={previsto ? "Outro valor" : "Guardar / retirar"} />
           </button>
         )}
         {quitar && !nomeCartao && restantes > 1 && (
@@ -564,11 +581,12 @@ function FormAdiantar({
               <p className="gradiente-texto font-display text-lg font-bold tabular-nums">{brl(custo)}</p>
             </div>
             <p className="col-span-2 rounded-xl bg-entrada/10 px-3 py-2 text-entrada">
-              💚 Você economiza ≈ <b>{brl(economia)}</b> de juros
+              Você economiza ≈ <b>{brl(economia)}</b> de juros
             </p>
             <p className="col-span-2 text-xs text-suave">
-              Taxa usada: {formatarTaxa(taxa)} ao mês{meta.jurosMes ? "" : " (calculada pelo valor original)"}. O valor exato quem
-              informa é o banco ou a loja. Peça o boleto de antecipação.
+              Taxa usada: <TextoComIcones texto={formatarTaxa(taxa)} /> ao mês
+              <TextoComIcones texto={meta.jurosMes ? "" : " (calculada pelo valor original)"} />. O valor exato quem informa é o
+              banco ou a loja. Peça o boleto de antecipação.
             </p>
           </div>
         ) : (
@@ -598,12 +616,12 @@ function FormAdiantar({
         />
         {erro && (
           <p role="alert" className="text-sm text-saida">
-            {erro}
+            <TextoComIcones texto={erro} />
           </p>
         )}
 
         <button onClick={confirmar} className="botao-gradiente w-full rounded-full py-3 font-semibold">
-          Já adiantei {quantas === 1 ? "1 parcela" : `${quantas} parcelas`}
+          Já adiantei <TextoComIcones texto={quantas === 1 ? "1 parcela" : `${quantas} parcelas`} />
         </button>
       </div>
     </Modal>
@@ -613,8 +631,12 @@ function FormAdiantar({
 function Info({ rotulo, valor }: { rotulo: string; valor: string }) {
   return (
     <div>
-      <dt className="text-xs text-suave">{rotulo}</dt>
-      <dd className="font-semibold tabular-nums">{valor}</dd>
+      <dt className="text-xs text-suave">
+        <TextoComIcones texto={rotulo} />
+      </dt>
+      <dd className="font-semibold tabular-nums">
+        <TextoComIcones texto={valor} />
+      </dd>
     </div>
   );
 }
@@ -653,10 +675,10 @@ function FormGuardar({ meta, onFechar }: { meta: Meta; onFechar: () => void }) {
       <form onSubmit={salvar} className="space-y-4">
         <div className="flex gap-2">
           <Chip ativo={acao === "guardar"} onClick={() => setAcao("guardar")}>
-            ➕ Guardar
+            <Icone e="➕" /> Guardar
           </Chip>
           <Chip ativo={acao === "retirar"} onClick={() => setAcao("retirar")}>
-            ➖ Retirar
+            <Icone e="➖" /> Retirar
           </Chip>
         </div>
         <CampoValor
@@ -679,11 +701,11 @@ function FormGuardar({ meta, onFechar }: { meta: Meta; onFechar: () => void }) {
         </p>
         {erro && (
           <p role="alert" className="text-sm text-saida">
-            {erro}
+            <TextoComIcones texto={erro} />
           </p>
         )}
         <button type="submit" className="botao-gradiente w-full rounded-full py-3 font-semibold">
-          {acao === "retirar" ? "Retirar" : numero > 0 ? "Guardar" : "Não guardar este mês"}
+          <TextoComIcones texto={acao === "retirar" ? "Retirar" : numero > 0 ? "Guardar" : "Não guardar este mês"} />
         </button>
       </form>
     </Modal>

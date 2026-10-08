@@ -1,4 +1,5 @@
 const MARCOS = [0.25, 0.5, 0.75, 1];
+import Icone, { TextoComIcones } from "@/components/Icone";
 
 // A "trilha" desenhada: uma estrada com 4 marcos (25%, 50%, 75% e a chegada).
 export default function TrilhaProgresso({ progresso }: { progresso: number }) {
@@ -18,7 +19,7 @@ export default function TrilhaProgresso({ progresso }: { progresso: number }) {
         style={{ left: porcento }}
         aria-hidden
       >
-        📍
+        <Icone e="📍" />
       </span>
 
       {MARCOS.map((marco) => {
@@ -30,7 +31,7 @@ export default function TrilhaProgresso({ progresso }: { progresso: number }) {
                 alcancado ? "border-rosa bg-rosa text-white" : "border-white/20 bg-superficie text-suave"
               }`}
             >
-              {marco === 1 ? "🏆" : alcancado ? "✓" : ""}
+              <TextoComIcones texto={marco === 1 ? "🏆" : alcancado ? "✓" : ""} />
             </span>
             <span className="absolute left-1/2 top-7 -translate-x-1/2 text-[0.65rem] text-suave">{marco * 100}%</span>
           </div>

@@ -287,7 +287,7 @@ export default function CamposFonte({
 
       {!fixa && (
         <p className="rounded-2xl bg-roxo/10 px-4 py-3 text-xs text-suave">
-          💡 Como esse valor muda, a cada vez você registra quanto recebeu de verdade na aba <b>Renda</b>.
+          <Icone e="💡" /> Como esse valor muda, a cada vez você registra quanto recebeu de verdade na aba <b>Renda</b>.
         </p>
       )}
 
@@ -362,7 +362,9 @@ export default function CamposFonte({
       {/* Benefícios e vales que vêm junto com essa renda */}
       <div className="space-y-3 rounded-2xl border border-white/10 bg-fundo/50 p-4">
         <div>
-          <p className="text-sm font-semibold">🎟️ Benefícios e vales</p>
+          <p className="text-sm font-semibold">
+            <Icone e="🎟️" /> Benefícios e vales
+          </p>
           <p className="text-xs text-suave">Vem algo junto com essa renda? Toque para adicionar.</p>
         </div>
 
@@ -418,13 +420,13 @@ export default function CamposFonte({
               {/* Vem em dinheiro ou num cartão de vale? */}
               <div className="flex flex-wrap gap-2 pl-12">
                 <Chip ativo={b.emDinheiro} onClick={() => mudarBeneficio(i, { emDinheiro: true })}>
-                  💵 Em dinheiro na conta
+                  <Icone e="💵" /> Em dinheiro na conta
                 </Chip>
                 <Chip
                   ativo={!b.emDinheiro}
                   onClick={() => mudarBeneficio(i, { emDinheiro: false, contaId: b.contaId ?? vales[0]?.id })}
                 >
-                  🍽️ Num cartão de vale
+                  <Icone e="🍽️" /> Num cartão de vale
                 </Chip>
               </div>
               {!b.emDinheiro && comContas && (
@@ -446,7 +448,9 @@ export default function CamposFonte({
                       </select>
                     </label>
                   ) : (
-                    <p>Crie uma conta do tipo 🍽️ Vale na aba Contas para ver o saldo dele.</p>
+                    <p>
+                      Crie uma conta do tipo <Icone e="🍽️" /> Vale na aba Contas para ver o saldo dele.
+                    </p>
                   )}
                 </div>
               )}

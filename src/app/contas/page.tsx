@@ -117,8 +117,8 @@ export default function Contas() {
         <section className="space-y-3 rounded-2xl border border-amber-300/40 bg-amber-300/10 p-3 text-sm">
           <button onClick={() => setVendoSemConta(!vendoSemConta)} className="flex w-full items-center gap-2 text-left">
             <span className="min-w-0 flex-1">
-              ⚠️ <b>{semConta.length}</b> {semConta.length === 1 ? "lançamento está" : "lançamentos estão"} sem conta: não sei de
-              qual conta {semConta.length === 1 ? "saiu ou entrou" : "saíram ou entraram"}.
+              <Icone e="⚠️" /> <b>{semConta.length}</b> {semConta.length === 1 ? "lançamento está" : "lançamentos estão"} sem
+              conta: não sei de qual conta {semConta.length === 1 ? "saiu ou entrou" : "saíram ou entraram"}.
             </span>
             <span className="shrink-0 text-xs text-rosa">{vendoSemConta ? "esconder ▴" : "ver quais ▾"}</span>
           </button>
@@ -171,7 +171,7 @@ export default function Contas() {
           )}
           {semConta.some((l) => l.fonteId) && (
             <p className="text-xs text-suave">
-              💡 Os que são de renda ficam sem conta porque a renda não diz onde cai. Em{" "}
+              <Icone e="💡" /> Os que são de renda ficam sem conta porque a renda não diz onde cai. Em{" "}
               <Link href="/renda" className="text-rosa underline">
                 Renda
               </Link>
@@ -224,7 +224,7 @@ export default function Contas() {
                 onClick={() => setTransferindo(true)}
                 className="rounded-full border border-azul/50 px-3 py-1.5 text-sm text-azul"
               >
-                🔁 Transferir
+                <Icone e="🔁" /> Transferir
               </button>
             )}
             <button
@@ -324,7 +324,7 @@ export default function Contas() {
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-medium">{f.nome}</span>
                       <span className="block text-xs text-suave">
-                        💳 {contas.find((c) => c.id === f.cartaoId)?.nome} · {descreverCobranca(f)}
+                        <Icone e="💳" /> {contas.find((c) => c.id === f.cartaoId)?.nome} · {descreverCobranca(f)}
                       </span>
                     </span>
                     <span className="font-display font-semibold tabular-nums">{brl(f.valor)}</span>
@@ -614,7 +614,7 @@ function CartaoConta({
                 className="flex items-center gap-3 rounded-2xl border border-saida/40 bg-saida/10 px-3 py-2 text-sm"
               >
                 <span className="min-w-0 flex-1">
-                  ⏰ Fatura de {nomeMes(a.fatura).toLowerCase()} <b>atrasada</b>: falta {brl(a.restante)}
+                  <Icone e="⏰" /> Fatura de {nomeMes(a.fatura).toLowerCase()} <b>atrasada</b>: falta {brl(a.restante)}
                   <span className="block text-xs text-suave">venceu em {formatarData(a.vencimento)}</span>
                 </span>
                 <button
@@ -688,7 +688,7 @@ function CartaoConta({
                       <span className="min-w-0 flex-1">
                         <span className="block truncate font-medium group-hover:text-rosa">{m.item.descricao}</span>
                         <span className="block text-xs text-suave">
-                          💳 crédito · {m.item.detalhe}
+                          <Icone e="💳" /> crédito · {m.item.detalhe}
                           {m.item.compra && ` · ${formatarData(m.item.compra.data)}`}
                         </span>
                       </span>
@@ -707,7 +707,7 @@ function CartaoConta({
         {foraDoSaldo.length > 0 && avisoFechadoEm !== foraDoSaldo.length && (
           <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-amber-300/40 bg-amber-300/10 p-3 text-xs">
             <span className="min-w-0 flex-1">
-              ⚠️ {foraDoSaldo.length} movimentaç{foraDoSaldo.length > 1 ? "ões" : "ão"} do extrato não mexe
+              <Icone e="⚠️" /> {foraDoSaldo.length} movimentaç{foraDoSaldo.length > 1 ? "ões" : "ão"} do extrato não mexe
               {foraDoSaldo.length > 1 ? "m" : ""} no saldo (ficaram como &quot;já estavam no saldo&quot;). Contando, o saldo vai
               para <b>{brl(saldo + efeitoForaDoSaldo)}</b>.
             </span>
@@ -755,7 +755,7 @@ function CartaoConta({
                 }}
                 className="text-suave hover:text-saida"
               >
-                ↩️ Tirar o que veio do extrato ({doExtrato})
+                <Icone e="↩️" /> Tirar o que veio do extrato ({doExtrato})
               </button>
             )}
             {comprasDoCartao > 0 && (
@@ -771,7 +771,7 @@ function CartaoConta({
                 }}
                 className="text-suave hover:text-saida"
               >
-                🧹 Zerar cartão ({comprasDoCartao} compras)
+                <Icone e="🧹" /> Zerar cartão ({comprasDoCartao} compras)
               </button>
             )}
           </div>

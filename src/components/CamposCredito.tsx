@@ -5,6 +5,7 @@ import type { Cartao } from "@/lib/store";
 import { brl, lerValor, nomeMes, somarMeses, soNumeros, valorParaCampo } from "@/lib/formato";
 import { faturaDaData } from "@/lib/cartoes";
 import { Campo, CampoValor, Chip } from "./Campos";
+import Icone from "@/components/Icone";
 
 // Campos de uma compra no crédito, na ordem: à vista ou parcelado → valor (parcela ⇄ total) → cartão → parcelas já pagas.
 // Usados na aba Contas (Incluir no cartão).
@@ -131,7 +132,7 @@ export default function CamposCredito({
         <div className="flex flex-wrap gap-2">
           {cartoes.map((c) => (
             <Chip key={c.id} ativo={r.cartaoId === c.id} onClick={() => mudar({ cartaoId: c.id })}>
-              💳 {c.nome}
+              <Icone e="💳" /> {c.nome}
               <span className="block text-[0.65rem] text-suave">fecha dia {c.diaFechamento}</span>
             </Chip>
           ))}
@@ -167,7 +168,7 @@ export default function CamposCredito({
                   . A próxima cai na fatura de <strong className="gradiente-texto">{nomeMes(proxima)}</strong>.
                 </>
               ) : (
-                <>. Tudo pago! 🎉</>
+                <>. Tudo pago! </>
               )}
             </>
           ) : (

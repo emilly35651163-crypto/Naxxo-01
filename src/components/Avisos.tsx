@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { fecharAviso, useAvisos } from "@/lib/avisos";
+import { TextoComIcones } from "@/components/Icone";
 
 // Os avisos rápidos ("Salvo ✓", "Excluído · Desfazer"), em cima do menu de baixo.
 export default function Avisos() {
@@ -19,7 +20,9 @@ export default function Avisos() {
             a.tipo === "erro" ? "border-saida/50 bg-superficie text-saida" : "border-roxo/40 bg-superficie-2"
           }`}
         >
-          <span className="min-w-0 flex-1">{a.texto}</span>
+          <span className="min-w-0 flex-1">
+            <TextoComIcones texto={a.texto} />
+          </span>
           {a.link &&
             (a.link.href ? (
               <Link

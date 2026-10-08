@@ -168,18 +168,19 @@ export default function Configuracoes() {
       {/* Backup */}
       <Secao titulo="💾 Backup dos seus dados">
         <p className="text-sm text-suave">
-          Seus dados ficam só neste navegador. Limpar o histórico, trocar de celular ou usar aba anônima apaga tudo. Baixe um
-          backup de vez em quando (ex.: todo mês) e guarde no Drive ou no e-mail.
+          {nuvemAtiva
+            ? "Seus dados já ficam salvos na sua conta e aparecem em qualquer aparelho em que você entrar. O backup é só uma cópia extra, se quiser guardar um arquivo."
+            : "Sem login, seus dados ficam só neste navegador: limpar o histórico ou trocar de celular apaga tudo. Baixe um backup de vez em quando e guarde no Drive ou no e-mail."}
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <button onClick={baixarBackup} className="botao-gradiente rounded-full px-5 py-2.5 text-sm font-semibold">
-            ⬇️ Baixar backup
+            <Icone e="⬇️" /> Baixar backup
           </button>
           <button
             onClick={() => arquivo.current?.click()}
             className="rounded-full border border-rosa/50 px-5 py-2.5 text-sm text-rosa"
           >
-            ⬆️ Restaurar de um arquivo
+            <Icone e="⬆️" /> Restaurar de um arquivo
           </button>
           <input
             ref={arquivo}
@@ -365,12 +366,6 @@ export default function Configuracoes() {
           >
             Apagar todos os dados
           </button>
-          <button
-            onClick={() => setConfirmar("zerar")}
-            className="rounded-full border border-saida/40 px-4 py-2 text-sm text-saida"
-          >
-            Começar do zero (mantém a lista do mercado)
-          </button>
         </div>
         {confirmar === "questionario" && (
           <Confirmacao
@@ -383,22 +378,9 @@ export default function Configuracoes() {
             }}
           />
         )}
-        {confirmar === "zerar" && (
-          <Confirmacao
-            texto="Apaga tudo (contas, lançamentos, metas, renda, fixos, despensa) e começa pelo questionário de novo. Ficam só a lista de compras do mercado e os produtos que você criou."
-            botao="Começar do zero"
-            onCancelar={() => setConfirmar(null)}
-            onConfirmar={() => {
-              comDesfazer("Tudo apagado (a lista do mercado ficou)", () =>
-                apagarTudo(["naxxo:mercado-lista", "naxxo:mercado-opcoes"]),
-              );
-              setConfirmar(null);
-            }}
-          />
-        )}
         {confirmar === "apagar" && (
           <Confirmacao
-            texto="Isso apaga TUDO deste navegador: contas, lançamentos, metas, mercado. Baixe um backup antes se quiser guardar. Dá para desfazer só nos próximos segundos."
+            texto="Isso apaga TUDO: contas, lançamentos, metas, mercado (e começa pelo questionário de novo). Dá para desfazer só nos próximos segundos."
             botao="Apagar tudo"
             onCancelar={() => setConfirmar(null)}
             onConfirmar={() => {
@@ -460,7 +442,7 @@ function CriarSenha() {
         onClick={() => setAberto(true)}
         className="mr-2 mt-3 rounded-full border border-rosa/50 px-4 py-2 text-sm text-rosa"
       >
-        🔑 Criar / mudar senha
+        <Icone e="🔑" /> Criar / mudar senha
       </button>
     );
   return (

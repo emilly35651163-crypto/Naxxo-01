@@ -65,7 +65,11 @@ export function useLembretes(ativo: boolean) {
       if (prefs.lembretes && typeof Notification !== "undefined" && Notification.permission === "granted") {
         try {
           new Notification("NAXXO Finanças", {
-            body: textos.slice(0, 4).join("\n"),
+            // A notificação do celular é só texto: sem emojis
+            body: textos
+              .slice(0, 4)
+              .map((x) => x.replace(/(?![©®™])\p{Extended_Pictographic}️?/gu, "").trim())
+              .join("\n"),
             icon: "/icone-app/192",
             tag: `lembretes-${hoje}`,
           });

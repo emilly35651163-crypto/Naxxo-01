@@ -27,7 +27,7 @@ export default function FizOMercado({ lista, contaId }: { lista: ItemLista[]; co
   if (etapa === "botao")
     return (
       <button onClick={() => setEtapa("pergunta")} className="botao-gradiente mt-5 w-full rounded-2xl py-3.5 font-semibold">
-        🛒 Fiz o mercado: comprei tudo hoje
+        <Icone e="🛒" /> Fiz o mercado: comprei tudo hoje
       </button>
     );
 
@@ -79,7 +79,7 @@ export default function FizOMercado({ lista, contaId }: { lista: ItemLista[]; co
       )}
       {semPreco > 0 && (
         <p className="text-center text-xs text-amber-300">
-          ⚠️ {semPreco} {semPreco === 1 ? "item está" : "itens estão"} sem preço e entram com R$ 0.
+          <Icone e="⚠️" /> {semPreco} {semPreco === 1 ? "item está" : "itens estão"} sem preço e entram com R$ 0.
         </p>
       )}
       <button onClick={() => setEtapa("botao")} className="w-full text-xs text-suave">

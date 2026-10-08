@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Graficos from "./graficos";
 import Relatorio from "./relatorio";
 import Projecao from "./projecao";
+import { TextoComIcones } from "@/components/Icone";
 
 const ABAS = [
   { id: "graficos", nome: "📊 Gráficos" },
@@ -43,7 +44,7 @@ function Abas({ inicial }: { inicial: Aba }) {
               aba === a.id ? "botao-gradiente font-semibold" : "text-suave hover:text-white"
             }`}
           >
-            {a.nome}
+            <TextoComIcones texto={a.nome} />
           </button>
         ))}
       </div>

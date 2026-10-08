@@ -6,6 +6,7 @@ import Image from "next/image";
 import simbolo from "@/assets/naxxo-simbolo.png";
 import { NomeNaxxo } from "@/components/Logo";
 import { confirmarCodigo, entrarComSenha, pedirCodigo, useEstadoNuvem } from "@/lib/nuvem";
+import Icone, { TextoComIcones } from "@/components/Icone";
 
 // Entrar: o e-mail e, depois, o código de 6 números que chega nele. Sem senha.
 export default function Entrar() {
@@ -57,7 +58,9 @@ export default function Entrar() {
       <div className="flex flex-col items-center text-center">
         <Image src={simbolo} alt="" className="h-20 w-auto drop-shadow-[0_0_30px_rgb(255_78_216/0.5)]" priority />
         <NomeNaxxo className="mt-5 h-5 w-auto" />
-        <h1 className="mt-8 font-display text-2xl font-bold">{etapa === "codigo" ? "Confira seu e-mail 📬" : "Login"}</h1>
+        <h1 className="mt-8 font-display text-2xl font-bold">
+          <TextoComIcones texto={etapa === "codigo" ? "Confira seu e-mail 📬" : "Login"} />
+        </h1>
         <p className="mt-2 text-sm text-suave">
           {etapa === "senha"
             ? "Entre com o seu e-mail e a sua senha."
@@ -176,7 +179,11 @@ export default function Entrar() {
           </button>
         )}
       </div>
-      {estado === "sincronizando" && <p className="mt-6 text-center text-sm text-suave">Trazendo seus dados… ☁️</p>}
+      {estado === "sincronizando" && (
+        <p className="mt-6 text-center text-sm text-suave">
+          Trazendo seus dados… <Icone e="☁️" />
+        </p>
+      )}
     </form>
   );
 }
