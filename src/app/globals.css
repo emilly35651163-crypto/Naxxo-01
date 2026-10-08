@@ -17,6 +17,16 @@
   --font-display: var(--font-montserrat);
 }
 
+/* O que cada tema pode trocar além das cores: o degradê dos botões, os brilhos do fundo e um desenho no fundo */
+:root {
+  --botao: linear-gradient(135deg, #d4239f, #7c3aed 55%, #2563eb);
+  --brilho-botao: rgb(255 78 216 / 0.3);
+  --brilho-1: rgb(139 92 246 / 0.2);
+  --brilho-2: rgb(255 78 216 / 0.12);
+  --fundo-desenho: none;
+  --fundo-tamanho: auto;
+}
+
 /*
  * Tema claro (escolhido em Configurações). As mesmas classes de sempre, com outras cores:
  * "white" vira a cor do texto escuro, e as superfícies ficam claras.
@@ -35,6 +45,9 @@
   --color-saida: #be123c;
   --color-amber-300: #b45309;
   --color-red-200: #9f1239;
+  --botao: linear-gradient(135deg, #b5179e, #6d28d9 55%, #1d4ed8);
+  --brilho-1: rgb(139 92 246 / 0.1);
+  --brilho-2: rgb(255 78 216 / 0.07);
 }
 
 /* Sobre um fundo colorido (cartão da conta), o texto é sempre branco, nos dois temas */
@@ -44,9 +57,11 @@
 }
 
 body {
-  background:
-    radial-gradient(50rem 28rem at 110% -10%, rgb(139 92 246 / 0.2), transparent 60%),
-    radial-gradient(40rem 26rem at -15% 5%, rgb(255 78 216 / 0.12), transparent 60%), var(--color-fundo);
+  background-color: var(--color-fundo);
+  background-image:
+    var(--fundo-desenho), radial-gradient(50rem 28rem at 110% -10%, var(--brilho-1), transparent 60%),
+    radial-gradient(40rem 26rem at -15% 5%, var(--brilho-2), transparent 60%);
+  background-size: var(--fundo-tamanho), auto, auto;
   background-attachment: fixed;
   color: var(--color-texto);
   color-scheme: dark;
@@ -54,9 +69,6 @@ body {
 
 :root[data-tema="claro"] body {
   color-scheme: light;
-  background:
-    radial-gradient(50rem 28rem at 110% -10%, rgb(139 92 246 / 0.1), transparent 60%),
-    radial-gradient(40rem 26rem at -15% 5%, rgb(255 78 216 / 0.07), transparent 60%), var(--color-fundo);
 }
 
 /* Quem pediu menos movimento no celular/computador: sem animações */
@@ -80,9 +92,9 @@ body {
 
   /* Degradê um pouco mais escuro que a marca, para o texto branco ter contraste (mínimo 4,5:1) */
   .botao-gradiente {
-    background-image: linear-gradient(135deg, #d4239f, #7c3aed 55%, #2563eb);
+    background-image: var(--botao);
     color: #ffffff;
-    box-shadow: 0 0 24px rgb(255 78 216 / 0.3);
+    box-shadow: 0 0 24px var(--brilho-botao);
     --color-white: #ffffff;
   }
 
@@ -135,4 +147,80 @@ body {
   textarea {
     font-size: 16px !important;
   }
+}
+
+/* ================= Temas por cor (Configurações → Aparência) =================
+ * data-tema = base (escuro/claro: letras claras ou escuras); data-paleta = a cor e o estilo.
+ * "rosa" é a cor de destaque principal do app (botões, links); "roxo" e "azul" acompanham.
+ * Sóbrio = só as cores. Temático = as cores + um desenho parado no fundo.
+ */
+
+/* ----- Azul escuro (sóbrio): azul-marinho e preto ----- */
+:root[data-paleta="azul-escuro"] {
+  --color-fundo: #050b18;
+  --color-superficie: #0c1628;
+  --color-superficie-2: #13223c;
+  --color-suave: #8ea3c2;
+  --color-texto: #eaf2ff;
+  --color-rosa: #38bdf8;
+  --color-roxo: #3b82f6;
+  --color-azul: #60a5fa;
+  --botao: linear-gradient(135deg, #0369a1, #1d4ed8 60%, #1e40af);
+  --brilho-botao: rgb(56 189 248 / 0.25);
+  --brilho-1: rgb(59 130 246 / 0.16);
+  --brilho-2: rgb(56 189 248 / 0.08);
+}
+
+/* ----- Mar profundo (escuro temático): águas-vivas, peixes, algas ----- */
+:root[data-paleta="mar-profundo"] {
+  --color-fundo: #030d1a;
+  --color-superficie: #082033;
+  --color-superficie-2: #0d2c44;
+  --color-suave: #86b6c8;
+  --color-texto: #e6fbff;
+  --color-rosa: #22d3ee;
+  --color-roxo: #0ea5e9;
+  --color-azul: #2dd4bf;
+  --botao: linear-gradient(135deg, #0e7490, #0369a1 60%, #155e75);
+  --brilho-botao: rgb(34 211 238 / 0.28);
+  --brilho-1: rgb(45 212 191 / 0.1);
+  --brilho-2: rgb(34 211 238 / 0.08);
+  --fundo-desenho: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420' fill='none' stroke='%237ee8fa' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' opacity='0.2'%3E %3Cg transform='translate(90 90) scale(1)'%3E %3Cpath d='M-28 0 C-28 -34 28 -34 28 0 Q21 -5 14 0 Q7 -5 0 0 Q-7 -5 -14 0 Q-21 -5 -28 0 Z'/%3E %3Cpath d='M-18 3 q-6 14 0 28 q6 14 0 28'/%3E%3Cpath d='M0 3 q-6 16 0 32 q6 16 0 34'/%3E%3Cpath d='M18 3 q-6 14 0 28 q6 14 0 28'/%3E %3Cpath d='M-9 3 q4 10 0 20 q-4 10 0 18' opacity='.6'/%3E%3Cpath d='M9 3 q4 10 0 20 q-4 10 0 18' opacity='.6'/%3E %3C/g%3E %3Cg transform='translate(320 250) scale(0.7)'%3E %3Cpath d='M-28 0 C-28 -34 28 -34 28 0 Q21 -5 14 0 Q7 -5 0 0 Q-7 -5 -14 0 Q-21 -5 -28 0 Z'/%3E %3Cpath d='M-18 3 q-6 14 0 28 q6 14 0 28'/%3E%3Cpath d='M0 3 q-6 16 0 32 q6 16 0 34'/%3E%3Cpath d='M18 3 q-6 14 0 28 q6 14 0 28'/%3E %3Cpath d='M-9 3 q4 10 0 20 q-4 10 0 18' opacity='.6'/%3E%3Cpath d='M9 3 q4 10 0 20 q-4 10 0 18' opacity='.6'/%3E %3C/g%3E %3Cg transform='translate(270 80) scale(1 1)'%3E %3Cpath d='M-22 0 Q-2 -16 20 0 Q-2 16 -22 0 Z'/%3E%3Cpath d='M20 0 L32 -9 L30 0 L32 9 Z'/%3E %3Ccircle cx='-12' cy='-2' r='1.8' fill='%237ee8fa' stroke='none'/%3E%3Cpath d='M-4 -8 q4 8 0 16' opacity='.6'/%3E %3C/g%3E %3Cg transform='translate(110 290) scale(-0.8 0.8)'%3E %3Cpath d='M-22 0 Q-2 -16 20 0 Q-2 16 -22 0 Z'/%3E%3Cpath d='M20 0 L32 -9 L30 0 L32 9 Z'/%3E %3Ccircle cx='-12' cy='-2' r='1.8' fill='%237ee8fa' stroke='none'/%3E%3Cpath d='M-4 -8 q4 8 0 16' opacity='.6'/%3E %3C/g%3E %3Cg transform='translate(360 380) scale(0.6 0.6)'%3E %3Cpath d='M-22 0 Q-2 -16 20 0 Q-2 16 -22 0 Z'/%3E%3Cpath d='M20 0 L32 -9 L30 0 L32 9 Z'/%3E %3Ccircle cx='-12' cy='-2' r='1.8' fill='%237ee8fa' stroke='none'/%3E%3Cpath d='M-4 -8 q4 8 0 16' opacity='.6'/%3E %3C/g%3E%3Cpath d='M200 420 q-12 -26 0 -52 q12 -26 0 -52 q-10 -20 0 -40'/%3E%3Cpath d='M214 420 q10 -22 0 -44 q-10 -22 0 -40' opacity='.7'/%3E%3Ccircle cx='30' cy='40' r='2' fill='%237ee8fa' stroke='none'/%3E%3Ccircle cx='150' cy='30' r='1.3' fill='%237ee8fa' stroke='none'/%3E%3Ccircle cx='380' cy='60' r='1.3' fill='%237ee8fa' stroke='none'/%3E%3Ccircle cx='200' cy='190' r='2' fill='%237ee8fa' stroke='none'/%3E%3Ccircle cx='340' cy='170' r='1.3' fill='%237ee8fa' stroke='none'/%3E%3Ccircle cx='60' cy='210' r='1.3' fill='%237ee8fa' stroke='none'/%3E%3Ccircle cx='260' cy='330' r='2' fill='%237ee8fa' stroke='none'/%3E%3Ccircle cx='120' cy='380' r='1.3' fill='%237ee8fa' stroke='none'/%3E%3Ccircle cx='400' cy='300' r='1.3' fill='%237ee8fa' stroke='none'/%3E%3Ccircle cx='300' cy='20' r='2' fill='%237ee8fa' stroke='none'/%3E%3Ccircle cx='180' cy='300' r='1.3' fill='%237ee8fa' stroke='none'/%3E%3Ccircle cx='20' cy='360' r='1.3' fill='%237ee8fa' stroke='none'/%3E %3C/svg%3E"), linear-gradient(180deg, #07324a 0%, #04192c 45%, #020a14 100%);
+  --fundo-tamanho: 420px 420px, 100% 100%;
+}
+
+/* ----- Azul claro (sóbrio): azul-céu e branco ----- */
+:root[data-paleta="azul-claro"] {
+  --color-white: #0f1e36;
+  --color-texto: #0f1e36;
+  --color-fundo: #eef5fd;
+  --color-superficie: #ffffff;
+  --color-superficie-2: #e1ecf9;
+  --color-suave: #4a5d7a;
+  --color-rosa: #0369a1;
+  --color-roxo: #1d4ed8;
+  --color-azul: #0284c7;
+  --botao: linear-gradient(135deg, #0284c7, #1d4ed8);
+  --brilho-botao: rgb(2 132 199 / 0.25);
+  --brilho-1: rgb(56 189 248 / 0.12);
+  --brilho-2: rgb(59 130 246 / 0.08);
+}
+
+/* ----- Bolhas (claro temático): bolhas de sabão e água clara ----- */
+:root[data-paleta="bolhas"] {
+  --color-white: #0b2440;
+  --color-texto: #0b2440;
+  --color-fundo: #eaf6ff;
+  --color-superficie: #ffffff;
+  --color-superficie-2: #dcefff;
+  --color-suave: #436180;
+  --color-rosa: #0369a1;
+  --color-roxo: #0284c7;
+  --color-azul: #0891b2;
+  --botao: linear-gradient(135deg, #0ea5e9, #0284c7 60%, #0369a1);
+  --brilho-botao: rgb(14 165 233 / 0.3);
+  --brilho-1: rgb(255 255 255 / 0.6);
+  --brilho-2: rgb(125 211 252 / 0.2);
+  --fundo-desenho: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='340' height='340' fill='rgba(255,255,255,0.35)' stroke='%2338bdf8' stroke-width='1.6' opacity='0.55'%3E %3Ccircle cx='60' cy='70' r='28'/%3E %3Cpath d='M44.599999999999994 65.8 a16.8 16.8 0 0 1 11.76 -12.6' stroke='%23ffffff' stroke-width='2.8' opacity='.9'/%3E %3Ccircle cx='205' cy='42' r='12'/%3E %3Cpath d='M198.4 40.2 a7.199999999999999 7.199999999999999 0 0 1 5.04 -5.4' stroke='%23ffffff' stroke-width='1.5' opacity='.9'/%3E %3Ccircle cx='262' cy='158' r='40'/%3E %3Cpath d='M240 152 a24 24 0 0 1 16.8 -18' stroke='%23ffffff' stroke-width='4' opacity='.9'/%3E %3Ccircle cx='112' cy='228' r='19'/%3E %3Cpath d='M101.55 225.15 a11.4 11.4 0 0 1 7.9799999999999995 -8.55' stroke='%23ffffff' stroke-width='1.9' opacity='.9'/%3E %3Ccircle cx='36' cy='288' r='10'/%3E %3Ccircle cx='290' cy='298' r='16'/%3E %3Cpath d='M281.2 295.6 a9.6 9.6 0 0 1 6.72 -7.2' stroke='%23ffffff' stroke-width='1.6' opacity='.9'/%3E %3Ccircle cx='168' cy='120' r='7'/%3E %3Ccircle cx='320' cy='60' r='6'/%3E %3Ccircle cx='200' cy='300' r='24'/%3E %3Cpath d='M186.8 296.4 a14.399999999999999 14.399999999999999 0 0 1 10.08 -10.8' stroke='%23ffffff' stroke-width='2.4' opacity='.9'/%3E %3C/svg%3E"), linear-gradient(180deg, #d4eeff 0%, #ecf8ff 45%, #f7fcff 100%);
+  --fundo-tamanho: 340px 340px, 100% 100%;
 }

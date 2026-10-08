@@ -30,6 +30,7 @@ import { CampoValor, Chip } from "@/components/Campos";
 import { definirSenha, emailLogado, nuvemAtiva, sair } from "@/lib/nuvem";
 import RecuperarDados from "@/components/RecuperarDados";
 import InstalarApp from "@/components/InstalarApp";
+import SeletorTema from "@/components/SeletorTema";
 
 const AUTOMATICAS = ["Fatura do cartão", "Guardar (metas)"];
 
@@ -127,26 +128,10 @@ export default function Configuracoes() {
 
       {/* Aparência */}
       <Secao titulo="🎨 Aparência">
-        <div className="grid grid-cols-3 gap-1 rounded-full bg-fundo p-1 text-sm" role="radiogroup" aria-label="Tema">
-          {(
-            [
-              ["escuro", "🌙 Escuro"],
-              ["claro", "☀️ Claro"],
-              ["auto", "Automático"],
-            ] as const
-          ).map(([id, nomeTema]) => (
-            <button
-              key={id}
-              role="radio"
-              aria-checked={prefs.tema === id}
-              onClick={() => mudarPreferencias({ tema: id })}
-              className={`rounded-full py-2 transition-colors ${prefs.tema === id ? "bg-white font-semibold text-fundo" : "text-suave"}`}
-            >
-              {nomeTema}
-            </button>
-          ))}
-        </div>
-        <p className="mt-2 text-xs text-suave">O tema claro ajuda a ler na rua, de dia. “Automático” segue o celular.</p>
+        <SeletorTema />
+        <p className="mt-3 text-xs text-suave">
+          Sóbrio: só as cores. Temático: as cores e um desenho no fundo. Os claros ajudam a ler na rua, de dia.
+        </p>
       </Secao>
 
       {/* Lembretes */}

@@ -6,6 +6,7 @@
 import { useSyncExternalStore } from "react";
 import { diasEntre, hojeISO, lerValor, mesAtual, somarMeses } from "./formato";
 import { DIAS_POR_UNIDADE, melhorUnidade } from "./duracao";
+import type { EscolhaTema } from "./temas";
 
 // ---------- Tipos ----------
 
@@ -1910,7 +1911,7 @@ export function definirOrcamento(categoria: string, valor: number | null) {
 // ---------- Preferências ----------
 
 export type Preferencias = {
-  tema: "auto" | "escuro" | "claro";
+  tema: EscolhaTema; // "auto" (segue o celular), NAXXO escuro/claro, ou um tema de cor (ver lib/temas)
   lembretes: boolean; // avisos de contas que vencem (notificação no celular)
   necessidades?: string[]; // categorias que a pessoa considera necessidade (regra 50/30/20)
   ultimaConta?: string; // a última conta usada no "+" (já vem marcada na próxima vez)

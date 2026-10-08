@@ -7,6 +7,7 @@ import { useCartoes, useFontes, usePerfil, usePreferencias } from "@/lib/store";
 import { registrarRendaQueJaCaiu } from "@/lib/rendaAutomatica";
 import { useLembretes } from "@/lib/lembretes";
 import { useEstadoNuvem } from "@/lib/nuvem";
+import { temaPorId } from "@/lib/temas";
 import Logo from "./Logo";
 import SeletorMes from "./SeletorMes";
 import NavInferior, { ITENS_MENU, itemAtivo } from "./NavInferior";
@@ -20,7 +21,13 @@ function useTema() {
   useEffect(() => {
     const raiz = document.documentElement;
     const midia = window.matchMedia("(prefers-color-scheme: light)");
-    const aplicar = () => (raiz.dataset.tema = tema === "auto" ? (midia.matches ? "claro" : "escuro") : tema);
+    const aplicar = () => {
+      // base: letras claras (escuro) ou escuras (claro); paleta: a cor e o estilo do tema (NAXXO não tem paleta)
+      const escolhido = temaPorId(tema);
+      raiz.dataset.tema = tema === "auto" || !escolhido ? (midia.matches ? "claro" : "escuro") : escolhido.base;
+      if (escolhido && escolhido.cor !== "NAXXO") raiz.dataset.paleta = escolhido.id;
+      else delete raiz.dataset.paleta;
+    };
     aplicar();
     midia.addEventListener("change", aplicar);
     return () => midia.removeEventListener("change", aplicar);
