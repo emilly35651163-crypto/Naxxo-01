@@ -733,6 +733,11 @@ body::before {
   --topo: linear-gradient(180deg, rgb(250 247 255 / 0.92), rgb(214 198 241 / 0.88));
   --topo-borda: rgb(124 91 214 / 0.3);
 }
+@media (min-aspect-ratio: 1/1) {
+  :root[data-paleta="gatinho"] {
+    --fundo-posicao: center 66%;
+  }
+}
 
 /* Rosa escuro (escuro sóbrio): Magenta e preto */
 :root[data-paleta="rosa-escuro"] {

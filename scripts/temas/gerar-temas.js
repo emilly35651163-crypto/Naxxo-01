@@ -152,6 +152,8 @@ let css = `/* ================= Temas por cor (Configurações → Temas) ======
 ${Object.entries(cenaUri).map(([id, u]) => `  --cena-${id}: url("${u}");`).join("\n")}
 }
 `;
+// Tela larga (computador): o fundo cobre pela largura e corta embaixo; aqui mostra a parte onde está o desenho principal
+const NO_COMPUTADOR = { gatinho: "center 66%" };
 for (const t of T) {
   const v = t.v;
   css += `
@@ -180,7 +182,12 @@ ${t.degrade ? `  --topo: color-mix(in srgb, ${t.topoCor} 92%, transparent);
   --topo: ${t.topo};
   --topo-borda: ${t.borda};
 ` : ""}}
-`;
+${NO_COMPUTADOR[t.id] ? `@media (min-aspect-ratio: 1/1) {
+  :root[data-paleta="${t.id}"] {
+    --fundo-posicao: ${NO_COMPUTADOR[t.id]};
+  }
+}
+` : ""}`;
 }
 const g = P + "src/app/globals.css";
 let gcss = fs.readFileSync(g, "utf8");

@@ -63,7 +63,7 @@ export default function SeletorTema() {
               <Bolinha
                 key={t.id}
                 fundo={t.bolinha}
-                nome={t.estilo === "tematico" ? t.nome : t.base === "escuro" ? "Escuro" : "Claro"}
+                nome={t.estilo === "tematico" || t.cor === "Neutros" ? t.nome : t.base === "escuro" ? "Escuro" : "Claro"}
                 ativo={tema === t.id}
                 onClick={() => escolher(t.id)}
               />
