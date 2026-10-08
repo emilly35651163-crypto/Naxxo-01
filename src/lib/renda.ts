@@ -75,6 +75,11 @@ export function partesDaRenda(f: FonteRenda, mes: string): ParteDaRenda[] {
       });
   }
 
+  // Vale-transporte: vem dentro do salário (uma entrada só, no dia e na conta do salário)
+  const vt = intervaloDaRenda(f)
+    ? 0
+    : (f.beneficios ?? []).filter((b) => b.tipo === "transporte").reduce((t, b) => t + b.valor, 0);
+
   // Salário (com adiantamento no meio do mês, se tiver)
   const pct = fixa && f.adiantamento ? Math.min(Math.max(f.adiantamento.percentual, 0), 100) / 100 : 0;
   if (pct > 0 && f.adiantamento) {
@@ -94,7 +99,7 @@ export function partesDaRenda(f: FonteRenda, mes: string): ParteDaRenda[] {
       parte: "salario",
       nome: fixa ? f.nome : `${f.nome} (média)`,
       data: dataSalario,
-      valor: round(f.valor * (1 - pct)),
+      valor: round(f.valor * (1 - pct) + vt),
     });
 
   // 13º (novembro e dezembro) e 1/3 de férias, para quem é CLT
@@ -131,6 +136,7 @@ export function partesDaRenda(f: FonteRenda, mes: string): ParteDaRenda[] {
 
   // Benefícios (vale-transporte, VR, VA…): vale vai para a conta de vale e não conta como dinheiro
   for (const b of f.beneficios ?? []) {
+    if (vt > 0 && b.tipo === "transporte") continue; // já está no salário
     const dinheiro = beneficioEmDinheiro(b);
     partes.push({
       chave: `ben-${f.id}-${b.tipo}-${b.nome}-${mes}`,

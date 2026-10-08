@@ -23,20 +23,21 @@ export type IdTema =
   | "natureza"
   | "azul-escuro"
   | "mar-profundo"
+  | "eletrico"
+  | "tecnologia"
   | "azul-claro"
   | "bolhas"
   | "roxo-escuro"
   | "universo"
   | "roxo-claro"
-  | "lavanda"
+  | "gatinho"
   | "rosa-escuro"
   | "glitter"
   | "rosa-claro"
-  | "algodao-doce"
-  | "cinza-escuro"
-  | "escritorio-noite"
-  | "cinza-claro"
-  | "escritorio";
+  | "boneca"
+  | "preto"
+  | "cinza"
+  | "branco";
 export type EscolhaTema = IdTema | "auto";
 
 export type Tema = {
@@ -84,7 +85,7 @@ export const TEMAS: Tema[] = [
     base: "escuro",
     estilo: "tematico",
     descricao: "Lava, brasas e rocha",
-    bolinha: "var(--cena-fogo) 50% 92% / 320% no-repeat",
+    bolinha: "var(--cena-fogo) 80% 40% / 320% no-repeat",
   },
   {
     id: "vermelho-claro",
@@ -102,7 +103,7 @@ export const TEMAS: Tema[] = [
     base: "claro",
     estilo: "tematico",
     descricao: "Cerejas e calda vermelha",
-    bolinha: "var(--cena-cereja) 86% 27% / 320% no-repeat",
+    bolinha: "var(--cena-cereja) 30% 18% / 320% no-repeat",
   },
   {
     id: "laranja-escuro",
@@ -120,7 +121,7 @@ export const TEMAS: Tema[] = [
     base: "escuro",
     estilo: "tematico",
     descricao: "Folhas secas e luz quente",
-    bolinha: "var(--cena-outono) 45% 45% / 320% no-repeat",
+    bolinha: "var(--cena-outono) 15% 30% / 320% no-repeat",
   },
   {
     id: "laranja-claro",
@@ -138,7 +139,7 @@ export const TEMAS: Tema[] = [
     base: "claro",
     estilo: "tematico",
     descricao: "Borboletas-monarca",
-    bolinha: "var(--cena-borboletas) 82% 14% / 320% no-repeat",
+    bolinha: "var(--cena-borboletas) 18% 9% / 320% no-repeat",
   },
   {
     id: "amarelo-escuro",
@@ -156,7 +157,7 @@ export const TEMAS: Tema[] = [
     base: "escuro",
     estilo: "tematico",
     descricao: "Favo de mel e mel escorrendo",
-    bolinha: "var(--cena-abelha) 80% 62% / 320% no-repeat",
+    bolinha: "var(--cena-abelha) 20% 14% / 320% no-repeat",
   },
   {
     id: "amarelo-claro",
@@ -174,7 +175,7 @@ export const TEMAS: Tema[] = [
     base: "claro",
     estilo: "tematico",
     descricao: "Girassóis e sol",
-    bolinha: "var(--cena-girassol) 88% 33% / 320% no-repeat",
+    bolinha: "var(--cena-girassol) 10% 6% / 320% no-repeat",
   },
   {
     id: "verde-escuro",
@@ -192,7 +193,7 @@ export const TEMAS: Tema[] = [
     base: "escuro",
     estilo: "tematico",
     descricao: "Pinheiros e névoa",
-    bolinha: "var(--cena-floresta) 50% 92% / 320% no-repeat",
+    bolinha: "var(--cena-floresta) 68% 26% / 320% no-repeat",
   },
   {
     id: "verde-claro",
@@ -210,7 +211,7 @@ export const TEMAS: Tema[] = [
     base: "claro",
     estilo: "tematico",
     descricao: "Colinas e folhas",
-    bolinha: "var(--cena-natureza) 50% 88% / 320% no-repeat",
+    bolinha: "var(--cena-natureza) 50% 80% / 320% no-repeat",
   },
   {
     id: "azul-escuro",
@@ -228,7 +229,25 @@ export const TEMAS: Tema[] = [
     base: "escuro",
     estilo: "tematico",
     descricao: "Luz descendo pela água",
-    bolinha: "var(--cena-mar-profundo) 50% 8% / 320% no-repeat",
+    bolinha: "var(--cena-mar-profundo) 48% 35% / 320% no-repeat",
+  },
+  {
+    id: "eletrico",
+    nome: "Elétrico",
+    cor: "Azul",
+    base: "escuro",
+    estilo: "tematico",
+    descricao: "Peixes de luz num céu estrelado",
+    bolinha: "var(--cena-eletrico) 56% 26% / 320% no-repeat",
+  },
+  {
+    id: "tecnologia",
+    nome: "Tecnologia",
+    cor: "Azul",
+    base: "escuro",
+    estilo: "tematico",
+    descricao: "Circuitos azuis brilhando",
+    bolinha: "var(--cena-tecnologia) 50% 70% / 320% no-repeat",
   },
   {
     id: "azul-claro",
@@ -246,7 +265,7 @@ export const TEMAS: Tema[] = [
     base: "claro",
     estilo: "tematico",
     descricao: "Bolhas de sabão",
-    bolinha: "var(--cena-bolhas) 80% 10% / 320% no-repeat",
+    bolinha: "var(--cena-bolhas) 18% 7% / 320% no-repeat",
   },
   {
     id: "roxo-escuro",
@@ -264,7 +283,7 @@ export const TEMAS: Tema[] = [
     base: "escuro",
     estilo: "tematico",
     descricao: "Nebulosa, estrelas e planeta",
-    bolinha: "var(--cena-universo) 14% 19% / 320% no-repeat",
+    bolinha: "var(--cena-universo) 70% 74% / 320% no-repeat",
   },
   {
     id: "roxo-claro",
@@ -276,13 +295,13 @@ export const TEMAS: Tema[] = [
     bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #ddd0f7 70%, #6d28d9 140%)",
   },
   {
-    id: "lavanda",
-    nome: "Lavanda",
+    id: "gatinho",
+    nome: "Gatinho",
     cor: "Roxo",
     base: "claro",
     estilo: "tematico",
-    descricao: "Campo de lavanda",
-    bolinha: "var(--cena-lavanda) 50% 97% / 320% no-repeat",
+    descricao: "Gatinho branco dormindo no lilás",
+    bolinha: "var(--cena-gatinho) 50% 68% / 320% no-repeat",
   },
   {
     id: "rosa-escuro",
@@ -312,49 +331,40 @@ export const TEMAS: Tema[] = [
     bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #fbcfe6 70%, #be185d 140%)",
   },
   {
-    id: "algodao-doce",
-    nome: "Algodão-doce",
+    id: "boneca",
+    nome: "Boneca",
     cor: "Rosa",
     base: "claro",
     estilo: "tematico",
-    descricao: "Nuvens fofas em tons pastel",
-    bolinha: "var(--cena-algodao-doce) 82% 15% / 320% no-repeat",
+    descricao: "Parede rosa, neon e cartões",
+    bolinha: "var(--cena-boneca) 28% 16% / 320% no-repeat",
   },
   {
-    id: "cinza-escuro",
-    nome: "Cinza escuro",
-    cor: "Cinza",
+    id: "preto",
+    nome: "Preto",
+    cor: "Neutros",
     base: "escuro",
     estilo: "sobrio",
-    descricao: "Grafite e preto",
-    bolinha: "radial-gradient(circle at 32% 30%, #94a3b8, #0f1114 78%)",
+    descricao: "Preto e branco",
+    bolinha: "radial-gradient(circle at 32% 30%, #a3a3a3, #0a0a0a 78%)",
   },
   {
-    id: "escritorio-noite",
-    nome: "Escritório à noite",
-    cor: "Cinza",
+    id: "cinza",
+    nome: "Cinza",
+    cor: "Neutros",
     base: "escuro",
-    estilo: "tematico",
-    descricao: "Papel quadriculado e luminária",
-    bolinha: "var(--cena-escritorio-noite) 14% 75% / 320% no-repeat",
+    estilo: "sobrio",
+    descricao: "Grafite",
+    bolinha: "radial-gradient(circle at 32% 30%, #aeb4bf, #26282c 78%)",
   },
   {
-    id: "cinza-claro",
-    nome: "Cinza claro",
-    cor: "Cinza",
+    id: "branco",
+    nome: "Branco",
+    cor: "Neutros",
     base: "claro",
     estilo: "sobrio",
-    descricao: "Cinza-claro e branco",
-    bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #d5d9df 70%, #334155 140%)",
-  },
-  {
-    id: "escritorio",
-    nome: "Escritório",
-    cor: "Cinza",
-    base: "claro",
-    estilo: "tematico",
-    descricao: "Caderno, post-its e clipe",
-    bolinha: "var(--cena-escritorio) 80% 19% / 320% no-repeat",
+    descricao: "Branco e cinza",
+    bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #e4e4e7 70%, #27272a 140%)",
   },
 ];
 
@@ -368,7 +378,7 @@ export const GRUPOS_TEMA: { cor: string; nome: string }[] = [
   { cor: "Azul", nome: "Azul" },
   { cor: "Roxo", nome: "Roxo" },
   { cor: "Rosa", nome: "Rosa" },
-  { cor: "Cinza", nome: "Cinza" },
+  { cor: "Neutros", nome: "Neutros" },
 ];
 
 /** A bolinha do "Automático": metade escuro, metade claro */

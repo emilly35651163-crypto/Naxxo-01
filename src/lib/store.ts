@@ -42,6 +42,7 @@ export type Lancamento = {
   jaNoSaldo?: boolean;
   extratoId?: string; // veio do extrato do banco: a linha de lá (para não importar duas vezes)
   importado?: boolean; // criado pela importação do extrato (dá para tirar tudo de uma vez)
+  vtJuntado?: boolean; // salário em que o vale-transporte (antes separado) já foi somado
 };
 
 /** As partes de uma renda que caem em datas diferentes. */
@@ -384,6 +385,8 @@ export const TIPOS_BENEFICIO: { id: TipoBeneficio; nome: string; icone: string }
 
 /** VR e VA costumam vir num cartão de vale (não é dinheiro livre); os outros, em dinheiro. */
 export function beneficioEmDinheiro(b: Pick<Beneficio, "tipo" | "emDinheiro">) {
+  // Vale-transporte vem dentro do salário: é dinheiro
+  if (b.tipo === "transporte") return true;
   return b.emDinheiro ?? !(b.tipo === "refeicao" || b.tipo === "alimentacao");
 }
 

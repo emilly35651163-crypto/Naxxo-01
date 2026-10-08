@@ -9,6 +9,7 @@ import {
   lerCartoes,
   lerFontes,
   lerLancamentos,
+  removerLancamento,
   rendaFixa,
   type Lancamento,
 } from "./store";
@@ -16,7 +17,40 @@ import { diasEntre, hojeISO, mesAtual, somarMeses } from "./formato";
 import { rendaNaoRegistrada } from "./renda";
 import { marcoDoSaldo } from "./contas";
 
+/**
+ * O vale-transporte agora vem dentro do salário. As entradas de VT separadas que já existiam somem;
+ * o valor delas vai para o salário do mesmo mês (se o salário já foi registrado), uma vez só.
+ */
+function juntarValeTransporteNoSalario() {
+  const lancamentos = lerLancamentos();
+  const vts = lancamentos.filter((l) => l.tipo === "entrada" && l.fonteId && l.beneficio === "transporte");
+  if (!vts.length) return;
+  // Agrupa por renda e mês: duas entradas de VT no mesmo mês (o problema de contar duas vezes) viram uma só
+  const grupos = new Map<string, typeof vts>();
+  for (const v of vts) {
+    const chave = `${v.fonteId}|${v.data.slice(0, 7)}`;
+    grupos.set(chave, [...(grupos.get(chave) ?? []), v]);
+  }
+  for (const [chave, lista] of grupos) {
+    const [fonteId, mes] = chave.split("|");
+    const salario = lancamentos.find(
+      (l) =>
+        l.tipo === "entrada" &&
+        l.fonteId === fonteId &&
+        l.data.startsWith(mes) &&
+        !l.beneficio &&
+        l.parteRenda !== "adiantamento" &&
+        !l.vtJuntado,
+    );
+    // O VT do mês é um só: o valor da primeira entrada (as repetidas eram o erro)
+    if (salario)
+      atualizarLancamento(salario.id, { valor: Math.round((salario.valor + lista[0].valor) * 100) / 100, vtJuntado: true });
+    lista.forEach((v) => removerLancamento(v.id));
+  }
+}
+
 export function registrarRendaQueJaCaiu(hoje = hojeISO()) {
+  juntarValeTransporteNoSalario();
   const fontes = lerFontes();
   if (!fontes.length) return;
   const lancamentos = lerLancamentos();
