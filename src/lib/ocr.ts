@@ -1,20 +1,42 @@
 // Ler o texto de prints (imagens) no próprio navegador, de graça (tesseract.js).
 // O leitor só é carregado quando alguém usa (ele é grande).
 
-/** Deixa o print num tamanho padrão (prints de celular são enormes): lê mais rápido e de um jeito mais previsível. */
+/**
+ * Deixa o print do jeito que o leitor lê melhor: largura padrão (aumenta os pequenos, diminui os enormes),
+ * preto e branco com bastante contraste e sempre letra escura em fundo claro (prints no modo escuro são invertidos).
+ */
 async function prepararImagem(arquivo: File): Promise<Blob | File> {
   try {
     const imagem = await createImageBitmap(arquivo);
-    const largura = Math.min(imagem.width, 1200);
+    const largura = 1400;
     const escala = largura / imagem.width;
     const canvas = document.createElement("canvas");
     canvas.width = largura;
-    canvas.height = Math.round(imagem.height * escala);
-    const ctx = canvas.getContext("2d");
+    canvas.height = Math.min(Math.round(imagem.height * escala), 12000);
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return arquivo;
     ctx.fillStyle = "#fff"; // fundo branco (prints com transparência)
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.imageSmoothingQuality = "high";
     ctx.drawImage(imagem, 0, 0, canvas.width, canvas.height);
+
+    // Tons de cinza; o fundo é o tom mais comum (a maior parte da tela é fundo)
+    const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const p = pixels.data;
+    const cinza = new Uint8ClampedArray(p.length / 4);
+    const contagem = new Uint32Array(256);
+    for (let i = 0; i < cinza.length; i++) {
+      cinza[i] = 0.299 * p[i * 4] + 0.587 * p[i * 4 + 1] + 0.114 * p[i * 4 + 2];
+      contagem[cinza[i]]++;
+    }
+    const fundo = contagem.indexOf(Math.max(...contagem));
+    // O que está perto da cor do fundo vira branco; o texto (longe dela) fica escuro.
+    // Assim o modo escuro (letra clara em fundo escuro) e textos coloridos viram letra preta em fundo branco.
+    for (let i = 0; i < cinza.length; i++) {
+      const v = 255 - Math.min(255, Math.abs(cinza[i] - fundo) * 2.2);
+      p[i * 4] = p[i * 4 + 1] = p[i * 4 + 2] = v;
+    }
+    ctx.putImageData(pixels, 0, 0);
     return await new Promise((ok) => canvas.toBlob((b) => ok(b ?? arquivo), "image/png"));
   } catch {
     return arquivo; // formato que o navegador não abre: tenta assim mesmo

@@ -24,7 +24,10 @@ const semAcento = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLo
 /** "1.234,56" · "-12.50" · "R$ 12,50" · "12,5" → número (com sinal) */
 export function lerNumero(texto: string) {
   let t = texto.replace(/[R$\s"]/g, "");
-  const negativo = /^-|-$|^\(.*\)$/.test(t);
+  // BB, Caixa e outros: "12,50 D" (débito, sai) e "12,50 C" (crédito, entra)
+  const dc = t.match(/^([DC])(?=[\d-])|(?<=\d)([DC])$/i);
+  if (dc) t = t.replace(/^[DC]|[DC]$/i, "");
+  const negativo = /^-|-$|^\(.*\)$/.test(t) || (!!dc && (dc[1] ?? dc[2]).toUpperCase() === "D");
   t = t.replace(/[-()+]/g, "");
   if (!t) return NaN;
   const virgula = t.lastIndexOf(",");
@@ -123,12 +126,15 @@ function capitalizar(texto: string) {
 
 /** Deixa o título do jeito que a pessoa escreveria: tira "Compra no débito -", CPF mascarado, agência… */
 export function limparDescricao(descricao: string) {
+  // "Pix - Enviado - Fulano" (BB) → "Pix enviado - Fulano"
+  descricao = descricao.replace(/\b(pix|ted|doc)\s+-\s+(enviad[oa]|recebid[oa])\b/i, "$1 $2");
   const partes = descricao.split(/\s+-\s+/).map((p) => p.trim());
-  const [inicio, nome] = [semAcento(partes[0] ?? ""), partes[1] ?? ""];
+  const [inicio, nome] = [semAcento(partes[0] ?? ""), partes[1] ?? ""]; // depois do nome vem CPF, agência… (fica de fora)
   if (nome) {
-    if (/transferencia enviada|pix enviado|transferencia pix enviada/.test(inicio)) return `Pix para ${capitalizar(nome)}`;
-    if (/transferencia recebida|pix recebido/.test(inicio)) return `Pix de ${capitalizar(nome)}`;
-    if (/^compra (no|com) (debito|cartao)|^compra$/.test(inicio)) return capitalizar(nome);
+    if (/transferencia enviada|pix enviado|(ted|doc) enviad|transferencia pix enviada/.test(inicio))
+      return `Pix para ${capitalizar(nome)}`;
+    if (/transferencia recebida|pix recebido|(ted|doc) recebid/.test(inicio)) return `Pix de ${capitalizar(nome)}`;
+    if (/^compra( (no|com|de|em))?( (debito|credito|cartao))*$/.test(inicio.trim())) return capitalizar(nome);
   }
   return capitalizar(descricao);
 }
@@ -170,7 +176,15 @@ function lerOFX(texto: string): Extrato {
   const blocos = texto.split(/<STMTTRN>/i).slice(1);
   const linhas = blocos.flatMap((b) => {
     const valor = lerNumero(campoOFX(b, "TRNAMT"));
-    const descricao = campoOFX(b, "MEMO") || campoOFX(b, "NAME");
+    // Uns bancos põem o nome em MEMO, outros em NAME, outros dividem ("PIX ENVIADO" + "FULANO"): junta sem repetir
+    const memo = campoOFX(b, "MEMO");
+    const nome = campoOFX(b, "NAME");
+    const descricao =
+      memo && nome && !semAcento(memo).includes(semAcento(nome)) && !semAcento(nome).includes(semAcento(memo))
+        ? `${memo} - ${nome}`
+        : memo.length >= nome.length
+          ? memo
+          : nome;
     // OFX de cartão também usa sinal negativo para compra: inverte para o padrão do cartão (compra positiva)
     const l = linha(campoOFX(b, "DTPOSTED"), descricao, ehCartao ? -valor : valor, campoOFX(b, "FITID") || undefined, ehCartao);
     return l ? [l] : [];
@@ -201,12 +215,15 @@ function separarCSV(linhaTexto: string, sep: string) {
 function lerCSV(texto: string): Extrato {
   const linhasTexto = texto.split(/\r?\n/).filter((l) => l.trim());
   if (linhasTexto.length === 0) return { linhas: [], ehCartao: false };
-  // Separador: o que mais aparece na primeira linha
-  const primeira = linhasTexto[0];
-  const sep = [";", ",", "\t"].sort((a, b) => primeira.split(b).length - primeira.split(a).length)[0];
+  // Separador: o que mais aparece nas primeiras linhas (a primeira às vezes é só um título, como "Extrato Conta Corrente")
+  const amostraTexto = linhasTexto.slice(0, 15).join("\n");
+  const sep = [";", ",", "\t"].sort((a, b) => amostraTexto.split(b).length - amostraTexto.split(a).length)[0];
+  const primeira = linhasTexto.find((l) => l.split(sep).length > 2) ?? linhasTexto[0];
 
   // Acha a linha do cabeçalho (algumas exportações têm linhas de título antes)
-  let inicio = linhasTexto.findIndex((l) => /data|date/i.test(l) && /valor|amount|value/i.test(l));
+  let inicio = linhasTexto.findIndex(
+    (l) => /data|date/i.test(l) && /valor|amount|value|entrada|sa[ií]da|cr[eé]dito|d[eé]bito/i.test(l) && l.split(sep).length > 2,
+  );
   const temCabecalho = inicio >= 0;
   if (!temCabecalho) inicio = -1;
   const cabecalho = temCabecalho ? separarCSV(linhasTexto[inicio], sep).map(semAcento) : [];
@@ -214,9 +231,23 @@ function lerCSV(texto: string): Extrato {
 
   let iData = coluna(/^data|date/);
   let iValor = coluna(/^valor|amount|^value/);
-  let iDesc = coluna(/descri|historico|title|lancamento|estabelecimento|memo/);
-  const iDetalhe = coluna(/detalhe/);
-  const iTipo = coluna(/tipo|natureza|d\/c|debito|credito/);
+  // Bancos com colunas separadas (C6, alguns cartões): "Entrada (R$)" e "Saída (R$)"
+  const iEntrada = iValor < 0 ? coluna(/^entrada|^credito|^credit/) : -1;
+  const iSaida = iValor < 0 ? coluna(/^saida|^debito|^debit/) : -1;
+  if (iValor < 0 && iEntrada >= 0 && iSaida >= 0) iValor = iSaida;
+  // O nome: a coluna mais "de nome" que não seja a da data nem a do valor ("Data Lançamento" não é nome!)
+  const livre = (i: number) => i >= 0 && i !== iData && i !== iValor && i !== iEntrada && i !== iSaida;
+  const colunaDeNome = (re: RegExp) => cabecalho.findIndex((c, i) => livre(i) && re.test(c));
+  let iDesc =
+    [/descri/, /historico/, /^titulo|title/, /estabelecimento/, /lancamento/, /memo/, /transaction_type|tipo de transacao/]
+      .map(colunaDeNome)
+      .find((i) => i >= 0) ?? -1;
+  // Nome em duas colunas ("Histórico: Pix enviado" + "Descrição: Fulano", como no Inter)
+  const iSegundo = cabecalho.findIndex((c, i) => livre(i) && i !== iDesc && /descri|historico|^titulo/.test(c));
+  // Na ordem das colunas: "Pix enviado" (histórico/título) vem antes de "Maria" (descrição)
+  const colunasDeNome = [iDesc, iSegundo].filter((i) => i >= 0).sort((a, b) => a - b);
+  const iDetalhe = cabecalho.findIndex((c, i) => livre(i) && i !== iDesc && /detalhe/.test(c));
+  const iTipo = cabecalho.findIndex((c, i) => livre(i) && i !== iDesc && /tipo|natureza|d\/c|^dc$/.test(c));
   const iId = coluna(/identificador|^id$|documento/);
   // Nubank cartão: "date,title,amount" (compra positiva)
   const ehCartao = /title/.test(cabecalho.join(" ")) && /amount/.test(cabecalho.join(" "));
@@ -234,6 +265,11 @@ function lerCSV(texto: string): Extrato {
   const linhas = linhasTexto.slice(inicio + 1).flatMap((texto) => {
     const c = separarCSV(texto, sep);
     let valor = lerNumero(c[iValor] ?? "");
+    if (iEntrada >= 0 && iSaida >= 0) {
+      // Colunas separadas: o que entrou menos o que saiu (a vazia conta como zero)
+      const n = (x?: string) => (x && Number.isFinite(lerNumero(x)) ? Math.abs(lerNumero(x)) : 0);
+      valor = n(c[iEntrada]) - n(c[iSaida]);
+    }
     // "Saldo do dia" / "Saldo": guarda o último (é o saldo da conta no fim do extrato)
     if (/^s ?a ?l ?d ?o/.test(semAcento(c[iDesc] ?? "")) && Number.isFinite(valor)) {
       saldo = valor;
@@ -242,7 +278,10 @@ function lerCSV(texto: string): Extrato {
     const tipoTexto = semAcento(c[iTipo] ?? "");
     // Banco que manda o valor sempre positivo e diz o tipo em outra coluna
     if (iTipo >= 0 && valor > 0 && /saida|debito|^d$/.test(tipoTexto)) valor = -valor;
-    const descricao = [c[iDesc] ?? "", iDetalhe >= 0 ? (c[iDetalhe] ?? "") : ""].filter(Boolean).join(" · ");
+    // O detalhe do BB vem com data e hora na frente ("05/10 10:00 Fulano"): fica só o nome
+    const detalhe =
+      iDetalhe >= 0 ? (c[iDetalhe] ?? "").replace(/^(\d{1,2}\/\d{1,2}(\/\d{2,4})?\s*)?(\d{1,2}:\d{2}\s*)?/, "") : "";
+    const descricao = [...colunasDeNome.map((i) => c[i] ?? ""), detalhe].filter(Boolean).join(" - ");
     const l = linha(c[iData] ?? "", descricao, valor, iId >= 0 ? c[iId] || undefined : undefined, ehCartao);
     return l ? [l] : [];
   });
@@ -252,6 +291,15 @@ function lerCSV(texto: string): Extrato {
 /** Lê um extrato (OFX ou CSV). Linhas repetidas no próprio arquivo ficam uma vez só. */
 export function lerExtrato(texto: string): Extrato {
   const extrato = /<OFX>|<STMTTRN>/i.test(texto) ? lerOFX(texto) : lerCSV(texto);
+  if (extrato.ehCartao) {
+    // Cada banco usa um sinal para a compra; a maioria das linhas de uma fatura é compra: se deu o contrário, inverte
+    const entradas = extrato.linhas.filter((l) => l.tipo === "entrada").length;
+    if (entradas > extrato.linhas.length / 2)
+      extrato.linhas = extrato.linhas.map((l) => {
+        const tipo: Tipo = l.tipo === "entrada" ? "saida" : "entrada";
+        return { ...l, tipo, categoria: categoriaPelaDescricao(l.descricao, tipo) };
+      });
+  }
   const vistos = new Map<string, number>();
   // Duas compras iguais no mesmo dia são possíveis: numera em vez de descartar
   const linhas = extrato.linhas.map((l) => {

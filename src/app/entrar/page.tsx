@@ -16,7 +16,6 @@ export default function Entrar() {
   const [codigo, setCodigo] = useState("");
   const [etapa, setEtapa] = useState<"email" | "codigo" | "senha">("email");
   const [senha, setSenha] = useState("");
-  const [comCodigo, setComCodigo] = useState(false);
   const [erro, setErro] = useState("");
   const [enviando, setEnviando] = useState(false);
 
@@ -68,10 +67,15 @@ export default function Entrar() {
           {etapa === "senha"
             ? "Entre com o seu e-mail e a sua senha."
             : etapa === "email"
-              ? "Sem senha: mandamos um link de entrada para o seu e-mail."
-              : `Mandamos um e-mail para ${email.trim()}. Abra neste aparelho e toque em “Sign in”: você volta para cá já dentro do app.`}
+              ? "Sem senha: mandamos um código de entrada para o seu e-mail."
+              : `Mandamos um e-mail para ${email.trim()}. Digite aqui o código de 6 números que veio nele.`}
         </p>
-        {etapa === "codigo" && <p className="mt-2 text-xs text-suave">Não chegou? Olhe a caixa de spam ou promoções.</p>}
+        {etapa === "codigo" && (
+          <p className="mt-2 text-xs text-suave">
+            Não chegou? Olhe a caixa de spam ou promoções. Se o e-mail tiver só um botão de entrar, toque nele neste mesmo
+            aparelho.
+          </p>
+        )}
       </div>
 
       <div className="mt-8 space-y-3">
@@ -108,10 +112,6 @@ export default function Entrar() {
             aria-label="E-mail"
             className="campo text-center"
           />
-        ) : !comCodigo ? (
-          <button type="button" onClick={() => setComCodigo(true)} className="w-full text-sm text-rosa">
-            O e-mail veio com um código de números?
-          </button>
         ) : (
           <input
             autoFocus
@@ -129,7 +129,7 @@ export default function Entrar() {
             {erro}
           </p>
         )}
-        {(etapa !== "codigo" || comCodigo) && (
+        {
           <button
             type="submit"
             disabled={enviando}
@@ -138,12 +138,12 @@ export default function Entrar() {
             {enviando
               ? "Um instante…"
               : etapa === "email"
-                ? "Receber link de entrada"
+                ? "Receber código de entrada"
                 : etapa === "senha"
                   ? "Entrar"
                   : "Entrar com o código"}
           </button>
-        )}
+        }
         {etapa === "email" && (
           <button
             type="button"
@@ -165,7 +165,7 @@ export default function Entrar() {
             }}
             className="w-full text-sm text-suave"
           >
-            Não tenho senha: receber link por e-mail
+            Não tenho senha: receber código por e-mail
           </button>
         )}
         {etapa === "codigo" && (

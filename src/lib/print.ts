@@ -30,7 +30,15 @@ const MESES: Record<string, number> = {
 
 const semAcento = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
-const DINHEIRO = /(-|−)?\s*(?:R[$S5]\s*)?(\d{1,3}(?:[.\s]\d{3})*[,.]\d{2})(?![\d/])/;
+// Valor: "R$ 1.234,56", "1234,56" (o leitor às vezes come o ponto), "− R$ 10,00" (estorno) e "+ R$ 50,00" (crédito)
+const DINHEIRO = /([-−+])?\s*(?:R[$S5]\s*)?(?<![\d.,])(\d{1,3}(?:[.\s]\d{3})+[,.]\d{2}|\d+[,.]\d{2})(?![\d/])/;
+
+/** O leitor confunde letras e números dentro dos valores: "R$ 1O,5O" → "R$ 10,50", "R$ l2,00" → "R$ 12,00" */
+const corrigirValores = (linha: string) =>
+  linha.replace(
+    /(R[$S5]\s*)([0-9OoIl|.,\s]*[0-9][0-9OoIl|.,]*)/g,
+    (_, rs: string, n: string) => rs + n.replace(/[Oo]/g, "0").replace(/[Il|]/g, "1"),
+  );
 // Linhas que não são compras (resumo da fatura, limite, pagamentos…)
 const NAO_E_COMPRA =
   /total|fatura|limite|disponivel|pagamento|pago|saldo|vencimento|fechamento|minimo|estorno|credito de|ajuste|anuidade gratis|resumo/;
@@ -100,7 +108,7 @@ const DIAS_DA_SEMANA = /\b(domingo|segunda|terca|quarta|quinta|sexta|sabado)(-fe
 export function comprasDoTextoDoPrint(texto: string, hoje = new Date()): CompraDoPrint[] {
   const linhas = texto
     .split(/\r?\n/)
-    .map((l) => l.trim())
+    .map((l) => corrigirValores(l.trim()))
     .filter(Boolean);
   const compras: CompraDoPrint[] = [];
   let dataAtual: string | undefined; // muitos apps agrupam por dia ("05 OUT")
@@ -115,7 +123,7 @@ export function comprasDoTextoDoPrint(texto: string, hoje = new Date()): CompraD
       else if (/parcelas de compras|compras anteriores/.test(semAcento(linha))) dataAtual = undefined;
       continue;
     }
-    if (valorAchado[1]) continue; // valor negativo: estorno/pagamento
+    if (valorAchado[1]) continue; // com sinal: estorno/pagamento (−) ou crédito (+), não é compra
     const valor = lerNumero(valorAchado[2].replace(/\s/g, ""));
     if (!(valor > 0)) continue;
     // O nome: na própria linha; se não tiver, na linha de cima (o valor costuma vir à direita ou embaixo)
