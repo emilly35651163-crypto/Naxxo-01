@@ -33,29 +33,67 @@ export default function Desejos() {
   const [icone, setIcone] = useState("✨");
   const [valor, setValor] = useState("");
   const [comprando, setComprando] = useState<Desejo | null>(null);
-  // Arrastar para mudar a prioridade: enquanto arrasta, a ordem nova fica só aqui; ao soltar, é gravada
-  const [arrastando, setArrastando] = useState<{ id: string; ordem: string[] } | null>(null);
+  // Arrastar para mudar a prioridade: o item segue o dedo e os outros deslizam para abrir espaço.
+  // A lista só muda de ordem de verdade ao soltar.
+  const [arrasto, setArrasto] = useState<{
+    id: string;
+    de: number; // posição de onde saiu
+    para: number; // posição onde vai cair
+    dy: number; // quanto o dedo andou
+    y0: number;
+    centros: number[]; // o meio de cada item quando começou
+    altura: number; // altura do item arrastado (o quanto os outros deslizam)
+  } | null>(null);
   const lista = useRef<HTMLUListElement>(null);
-  const emOrdem = arrastando
-    ? arrastando.ordem.map((id) => desejos.find((d) => d.id === id)).filter((d): d is Desejo => !!d)
-    : desejos;
+  const vibrar = () => {
+    try {
+      navigator.vibrate?.(8);
+    } catch {}
+  };
+
+  function pegar(e: React.PointerEvent, i: number, id: string) {
+    if (!lista.current) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const caixas = [...lista.current.children].map((li) => li.getBoundingClientRect());
+    setArrasto({
+      id,
+      de: i,
+      para: i,
+      dy: 0,
+      y0: e.clientY,
+      centros: caixas.map((c) => c.top + c.height / 2),
+      altura: caixas[i].height,
+    });
+    vibrar();
+  }
 
   function arrastar(e: React.PointerEvent) {
-    if (!arrastando || !lista.current) return;
-    const outros = [...lista.current.children].filter((li) => (li as HTMLElement).dataset.id !== arrastando.id);
-    // A posição nova é quantos itens (fora o arrastado) ficaram acima do dedo
-    const pos = outros.filter((li) => {
-      const r = li.getBoundingClientRect();
-      return r.top + r.height / 2 < e.clientY;
-    }).length;
-    const ordem = arrastando.ordem.filter((id) => id !== arrastando.id);
-    ordem.splice(pos, 0, arrastando.id);
-    if (ordem.join() !== arrastando.ordem.join()) setArrastando({ ...arrastando, ordem });
+    if (!arrasto) return;
+    const dy = e.clientY - arrasto.y0;
+    const meio = arrasto.centros[arrasto.de] + dy;
+    // Cai na posição de quantos outros itens têm o meio acima do meio do arrastado
+    const para = arrasto.centros.filter((c, j) => j !== arrasto.de && c < meio).length;
+    if (para !== arrasto.para) vibrar();
+    setArrasto({ ...arrasto, dy, para });
   }
 
   function soltar() {
-    if (arrastando) ordenarDesejos(arrastando.ordem);
-    setArrastando(null);
+    if (!arrasto) return;
+    if (arrasto.para !== arrasto.de) {
+      const ordem = desejos.map((d) => d.id).filter((id) => id !== arrasto.id);
+      ordem.splice(arrasto.para, 0, arrasto.id);
+      ordenarDesejos(ordem);
+    }
+    setArrasto(null);
+  }
+
+  /** Quanto cada item se desloca agora (o arrastado segue o dedo; os do caminho abrem espaço) */
+  function deslocamento(i: number) {
+    if (!arrasto) return 0;
+    if (i === arrasto.de) return arrasto.dy;
+    if (arrasto.de < arrasto.para && i > arrasto.de && i <= arrasto.para) return -arrasto.altura;
+    if (arrasto.para < arrasto.de && i >= arrasto.para && i < arrasto.de) return arrasto.altura;
+    return 0;
   }
 
   /** Pelo teclado: setas para cima e para baixo */
@@ -166,8 +204,8 @@ export default function Desejos() {
           <div>
             <h3 className="font-display font-bold">Plano dos desejos</h3>
             <p className="text-xs text-suave">
-              Todos juntos, na ordem de prioridade (arraste pelos pontinhos para mudar). A sobra de cada mês vai sendo usada e juntada, sempre
-              com uma folga para imprevistos.
+              Todos juntos, na ordem de prioridade (arraste pelos pontinhos para mudar). A sobra de cada mês vai sendo usada e
+              juntada, sempre com uma folga para imprevistos.
             </p>
           </div>
           <p className={`text-sm font-semibold ${plano.todosCabem ? "text-entrada" : "text-amber-300"}`}>
@@ -215,30 +253,33 @@ export default function Desejos() {
 
       {desejos.length > 0 ? (
         <ul ref={lista} className="cartao divide-y divide-white/5 px-4">
-          {emOrdem.map((d, i) => {
+          {desejos.map((d, i) => {
             const v = d.mensal ? avaliarMensal(d) : avaliarDesejo(d.valor, dados);
             return (
               <li
                 key={d.id}
-                data-id={d.id}
-                className={`flex items-center gap-3 py-3 ${arrastando?.id === d.id ? "-mx-4 rounded-2xl bg-rosa/10 px-4 shadow-lg ring-1 ring-rosa/40" : ""}`}
+                style={{
+                  transform: `translateY(${deslocamento(i)}px)${arrasto?.id === d.id ? " scale(1.03)" : ""}`,
+                  // O arrastado acompanha o dedo sem atraso; os outros deslizam suave
+                  transition: arrasto?.id === d.id ? "box-shadow 150ms" : arrasto ? "transform 200ms ease" : "none",
+                }}
+                className={`relative flex items-center gap-3 py-3 ${arrasto?.id === d.id ? "z-10 -mx-4 rounded-2xl bg-superficie px-4 shadow-2xl ring-1 ring-rosa/50" : ""}`}
               >
                 {desejos.length > 1 && (
                   <button
                     type="button"
-                    onPointerDown={(e) => {
-                      e.currentTarget.setPointerCapture(e.pointerId);
-                      setArrastando({ id: d.id, ordem: desejos.map((x) => x.id) });
-                    }}
+                    onPointerDown={(e) => pegar(e, i, d.id)}
                     onPointerMove={arrastar}
                     onPointerUp={soltar}
                     onPointerCancel={soltar}
                     onKeyDown={(e) => moverComTeclado(e, i)}
                     aria-label={`${i + 1}º: arraste para mudar a prioridade de ${d.nome}`}
-                    className={`flex shrink-0 touch-none select-none flex-col items-center text-suave hover:text-rosa ${arrastando?.id === d.id ? "cursor-grabbing text-rosa" : "cursor-grab"}`}
+                    className={`-my-3 -ml-2 flex shrink-0 touch-none select-none flex-col items-center justify-center self-stretch px-2 text-suave hover:text-rosa ${arrasto?.id === d.id ? "cursor-grabbing text-rosa" : "cursor-grab"}`}
                   >
                     <DotsSixVertical size={20} weight="bold" />
-                    <span className="text-[0.65rem] font-semibold tabular-nums">{i + 1}º</span>
+                    <span className="text-[0.65rem] font-semibold tabular-nums">
+                      {arrasto?.id === d.id ? arrasto.para + 1 : i + 1}º
+                    </span>
                   </button>
                 )}
                 <span className="text-2xl" aria-hidden>
