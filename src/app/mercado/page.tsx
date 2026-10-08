@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import {
+  atualizarItemMercado,
+  type UnidadeDuracao,
   acabouHoje,
   CATEGORIAS_MERCADO,
   comprarItemDaLista,
@@ -19,7 +21,7 @@ import {
   usePreferencias,
   type ItemLista,
 } from "@/lib/store";
-import { brl, formatarData, nomeMes } from "@/lib/formato";
+import { brl, formatarData, hojeISO, nomeMes } from "@/lib/formato";
 import { DURACOES, previsaoDoMes, situacaoDoItem } from "@/lib/mercado";
 import { comDesfazer, mostrarAviso } from "@/lib/avisos";
 import FormItemLista from "./FormItemLista";
@@ -206,17 +208,7 @@ export default function Mercado() {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">{item.nome}</span>
-                  <span
-                    className={`block text-xs ${s.faltam !== null && s.faltam < 0 ? "text-saida" : s.faltam !== null && s.faltam <= 3 ? "text-amber-300" : "text-suave"}`}
-                  >
-                    {s.faltam === null
-                      ? "sem previsão de acabar"
-                      : s.faltam < 0
-                        ? "já deve ter acabado"
-                        : s.faltam === 0
-                          ? "acaba hoje"
-                          : `acaba em ${s.faltam} ${s.faltam === 1 ? "dia" : "dias"}`}
-                  </span>
+                  <PrevisaoDeAcabar id={item.id} faltam={s.faltam} />
                 </span>
                 <ExcluirDeCasa
                   nome={item.nome}
@@ -391,4 +383,73 @@ function cada(unidade?: string) {
       : unidade === "g" || unidade === "ml"
         ? "cada " + unidade
         : "cada um";
+}
+
+/** "Quando acaba?": tocando no prazo, escolhe quanto ainda dura a partir de hoje (1 semana, 1 mês, ou outro). */
+function PrevisaoDeAcabar({ id, faltam }: { id: string; faltam: number | null }) {
+  const [aberto, setAberto] = useState(false);
+  const [numero, setNumero] = useState("");
+  const [unidade, setUnidade] = useState<UnidadeDuracao>("dias");
+  function salvar(duracao: number, u: UnidadeDuracao) {
+    if (!(duracao > 0)) return;
+    // Conta a partir de hoje
+    atualizarItemMercado(id, { duracao, unidade: u, origemDuracao: "informada", ultimaCompra: hojeISO() });
+    setAberto(false);
+    mostrarAviso({ texto: "Previsão salva ✓" });
+  }
+  const cor = faltam !== null && faltam < 0 ? "text-saida" : faltam !== null && faltam <= 3 ? "text-amber-300" : "text-suave";
+  return (
+    <span className="block">
+      <button type="button" onClick={() => setAberto(!aberto)} className={`text-left text-xs ${cor} hover:text-rosa`}>
+        {faltam === null
+          ? "sem previsão de acabar · definir ✏️"
+          : faltam < 0
+            ? "já deve ter acabado ✏️"
+            : faltam === 0
+              ? "acaba hoje ✏️"
+              : `acaba em ${faltam} ${faltam === 1 ? "dia" : "dias"} ✏️`}
+      </button>
+      {aberto && (
+        <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          <span className="text-xs text-suave">Acaba em:</span>
+          {DURACOES.map((d) => (
+            <button
+              key={d.rotulo}
+              type="button"
+              onClick={() => salvar(Number(d.duracao), d.unidade)}
+              className="rounded-full border border-white/15 px-2 py-0.5 text-xs hover:border-rosa"
+            >
+              {d.rotulo}
+            </button>
+          ))}
+          <input
+            inputMode="numeric"
+            value={numero}
+            onChange={(e) => setNumero(e.target.value.replace(/D/g, "").slice(0, 3))}
+            placeholder="outro"
+            aria-label="Quanto tempo"
+            className="w-14 rounded-lg bg-superficie px-2 py-0.5 text-center text-xs"
+          />
+          <select
+            value={unidade}
+            onChange={(e) => setUnidade(e.target.value as UnidadeDuracao)}
+            aria-label="Unidade"
+            className="rounded-lg bg-superficie px-1 py-0.5 text-xs"
+          >
+            <option value="dias">dias</option>
+            <option value="semanas">semanas</option>
+            <option value="meses">meses</option>
+          </select>
+          <button
+            type="button"
+            onClick={() => salvar(Number(numero), unidade)}
+            disabled={!(Number(numero) > 0)}
+            className="rounded-full bg-rosa/20 px-2 py-0.5 text-xs text-rosa disabled:opacity-40"
+          >
+            ok
+          </button>
+        </span>
+      )}
+    </span>
+  );
 }
