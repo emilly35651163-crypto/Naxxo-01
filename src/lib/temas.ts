@@ -70,6 +70,10 @@ export const GRUPOS_TEMA: { cor: string; nome: string }[] = [
 /** A bolinha do "Automático": metade escuro, metade claro */
 export const BOLINHA_AUTO = "linear-gradient(135deg, #0b0f1a 50%, #f6f0fb 50%)";
 
+// Temas que mudaram de nome (quem escolheu antes continua com o equivalente)
+const ANTIGOS: Record<string, IdTema> = { cinza: "neutro-medio", "cinza-escuro": "neutro-escuro", "cinza-claro": "neutro-claro", escritorio: "neutro-claro", "escritorio-noite": "neutro-escuro" };
+
 export function temaPorId(id: string | undefined) {
-  return TEMAS.find((t) => t.id === id);
+  const certo = id && ANTIGOS[id] ? ANTIGOS[id] : id;
+  return TEMAS.find((t) => t.id === certo);
 }

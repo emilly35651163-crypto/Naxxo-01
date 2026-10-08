@@ -48,6 +48,8 @@ export async function GET(request: Request) {
       compras: tamanho(de("naxxo:compras")),
       mercado: tamanho(de("naxxo:mercado-lista")) + tamanho(de("naxxo:mercado-itens")),
       metas: tamanho(de("naxxo:metas")),
+      // Tema escolhido em Configurações (sem escolha: o escuro original)
+      tema: (de("naxxo:preferencias") as { tema?: string } | undefined)?.tema ?? "escuro",
     };
   });
 

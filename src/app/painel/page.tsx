@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Tutorial, { type Etapa } from "./Tutorial";
 import Icone from "@/components/Icone";
+import { BOLINHA_AUTO, temaPorId } from "@/lib/temas";
 
 // Painel de controle (localhost): quantas pessoas criaram conta, quem está usando e o quanto.
 // Os dados vêm de /api/painel, que só funciona no seu computador (com a chave secreta no .env.local).
@@ -19,7 +20,26 @@ type Pessoa = {
   compras: number;
   mercado: number;
   metas: number;
+  tema: string;
 };
+
+/** O tema da pessoa no fundo da linha dela (a cena nos temáticos, as cores nos sóbrios), com o nome escrito */
+function fundoDoTema(id: string) {
+  const t = temaPorId(id);
+  const desenho =
+    id === "auto"
+      ? BOLINHA_AUTO
+      : !t
+        ? "none"
+        : t.estilo === "tematico"
+          ? `var(--cena-${t.id}) center 30% / cover no-repeat`
+          : t.bolinha;
+  return {
+    nome: id === "auto" ? "Automático (NAXXO)" : (t?.nome ?? id),
+    // Uma película da cor do painel à esquerda deixa o texto legível; o tema aparece forte à direita
+    fundo: `linear-gradient(90deg, var(--color-fundo) 25%, color-mix(in srgb, var(--color-fundo) 50%, transparent) 70%, transparent), ${desenho}`,
+  };
+}
 
 const DIA = 86_400_000;
 const quando = (iso: string | null) => {
@@ -150,10 +170,13 @@ export default function Painel() {
             </thead>
             <tbody className="divide-y divide-white/5">
               {lista.map((p) => (
-                <tr key={p.email}>
+                <tr key={p.email} style={{ background: fundoDoTema(p.tema).fundo }}>
                   <td className="px-4 py-3">
                     <span className="block font-medium">{p.nome || "—"}</span>
-                    <span className="text-xs text-suave">{p.email}</span>
+                    <span className="block text-xs text-suave">{p.email}</span>
+                    <span className="mt-1 inline-block rounded-full bg-fundo/80 px-2 py-0.5 text-[0.65rem] font-semibold text-rosa">
+                      Tema: {fundoDoTema(p.tema).nome}
+                    </span>
                   </td>
                   <td className="px-4 py-3 text-suave">{data(p.criadoEm)}</td>
                   <td className="px-4 py-3">{quando(p.ultimoLogin)}</td>
