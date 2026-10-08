@@ -44,6 +44,9 @@ export default function FormColarLista({ onFechar, emCasa = false }: { onFechar:
           categoria: i.categoria,
           quantidade: `${i.qtd} ${i.unidadeQtd}`,
           valor: Math.round(i.total * 100) / 100,
+          // Quanto dura ainda não se sabe: o app descobre quando acabar ("Acabou hoje")
+          duracao: null,
+          unidade: "meses",
           ultimaCompra: hojeISO(),
           repor: true,
         });
