@@ -209,6 +209,7 @@ body::before {
   --cena-borboletas: url("/temas/borboletas.svg?v=a175e303");
   --cena-abelha: url("/temas/abelha.svg?v=725bd118");
   --cena-girassol: url("/temas/girassol.svg?v=b1dfc0ee");
+  --cena-esponja: url("/temas/esponja.svg?v=a8bbcfc5");
   --cena-floresta: url("/temas/floresta.svg?v=b6b72473");
   --cena-natureza: url("/temas/natureza.svg?v=f86ae9af");
   --cena-mar-profundo: url("/temas/mar-profundo.svg?v=6263a6e5");
@@ -453,6 +454,29 @@ body::before {
   --fundo-repetir: no-repeat;
   --topo: linear-gradient(180deg, rgb(255 255 255 / 0.92), rgb(255 241 166 / 0.88));
   --topo-borda: rgb(234 179 8 / 0.35);
+}
+
+/* Esponja (claro temático): Esponja amarela e flores do fundo do mar */
+:root[data-paleta="esponja"] {
+  --color-white: #241d02;
+  --color-texto: #241d02;
+  --color-fundo: #fbe54a;
+  --color-superficie: #fffdf0;
+  --color-superficie-2: #fff4a8;
+  --color-suave: #5e5110;
+  --color-rosa: #0b7fa8;
+  --color-roxo: #0e6f8f;
+  --color-azul: #0e9fb5;
+  --botao: linear-gradient(135deg, #18b4d4, #0b6f9a);
+  --brilho-botao: rgb(14 159 181 / 0.35);
+  --brilho-1: transparent;
+  --brilho-2: transparent;
+  --fundo-desenho: var(--cena-esponja);
+  --fundo-tamanho: cover;
+  --fundo-posicao: center top;
+  --fundo-repetir: no-repeat;
+  --topo: radial-gradient(circle at 92% 50%, rgb(169 139 232 / 0.55) 0 7px, transparent 8px), radial-gradient(circle at 85% 30%, rgb(255 158 199 / 0.6) 0 5px, transparent 6px), linear-gradient(180deg, rgb(255 253 230 / 0.94), rgb(251 229 74 / 0.88));
+  --topo-borda: rgb(201 168 0 / 0.5);
 }
 
 /* Verde escuro (escuro sóbrio): Verde-garrafa e preto */

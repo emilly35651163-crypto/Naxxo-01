@@ -130,6 +130,12 @@ tema({ id: "neutro-claro", nome: "Claro", cor: "Neutros", base: "claro", estilo:
   v: V("#f4f4f5", "#ffffff", "#e4e4e7", "#52525b", "#18181b", "#27272a", "#3f3f46", "#52525b", "linear-gradient(135deg, #3f3f46, #18181b)", "rgb(24 24 27 / 0.2)"),
   degrade: "radial-gradient(60rem 40rem at 80% -10%, rgb(255 255 255 / 1), transparent 60%), linear-gradient(180deg, #ffffff 0%, #ececee 55%, #d9d9dd 100%)", topoCor: "#ffffff" });
 
+// Esponja (amarelo claro): definido por último para não mudar o desenho dos outros temas; na tela fica logo depois do Girassol
+tematico("esponja", "Esponja", "Amarelo", "claro", "Esponja amarela e flores do fundo do mar",
+  V("#fbe54a", "#fffdf0", "#fff4a8", "#5e5110", "#241d02", "#0b7fa8", "#0e6f8f", "#0e9fb5", "linear-gradient(135deg, #18b4d4, #0b6f9a)", "rgb(14 159 181 / 0.35)"),
+  cenas.esponja(), "radial-gradient(circle at 92% 50%, rgb(169 139 232 / 0.55) 0 7px, transparent 8px), radial-gradient(circle at 85% 30%, rgb(255 158 199 / 0.6) 0 5px, transparent 6px), linear-gradient(180deg, rgb(255 253 230 / 0.94), rgb(251 229 74 / 0.88))", "rgb(201 168 0 / 0.5)");
+T.splice(T.findIndex((x) => x.id === "girassol") + 1, 0, ...T.splice(T.findIndex((x) => x.id === "esponja"), 1));
+
 // ---------- CSS ----------
 const pasta = P + "public/temas/";
 fs.mkdirSync(pasta, { recursive: true });
@@ -198,7 +204,7 @@ fs.writeFileSync(g, gcss);
 
 // ---------- temas.ts ----------
 // Onde fica o desenho principal de cada cena (para a bolinha mostrar ele)
-const FOCO = { fogo: "80% 40%", cereja: "30% 18%", outono: "15% 30%", borboletas: "18% 9%", abelha: "20% 14%", girassol: "10% 6%", floresta: "68% 26%", natureza: "50% 80%", "mar-profundo": "48% 35%", eletrico: "50% 20%", tecnologia: "50% 70%", bolhas: "18% 7%", universo: "70% 74%", gatinho: "50% 68%", glitter: "50% 40%", barbiecore: "28% 16%" };
+const FOCO = { esponja: "15% 8%", fogo: "80% 40%", cereja: "30% 18%", outono: "15% 30%", borboletas: "18% 9%", abelha: "20% 14%", girassol: "10% 6%", floresta: "68% 26%", natureza: "50% 80%", "mar-profundo": "48% 35%", eletrico: "50% 20%", tecnologia: "50% 70%", bolhas: "18% 7%", universo: "70% 74%", gatinho: "50% 68%", glitter: "50% 40%", barbiecore: "28% 16%" };
 const bolinhaSobria = (t) => t.degrade ? t.degrade.replace(/60rem 40rem/g, "120% 120%") :
   t.base === "escuro" ? `radial-gradient(circle at 32% 30%, ${t.v.roxo}, ${t.v.fundo} 78%)` : `radial-gradient(circle at 32% 30%, #ffffff, ${t.v.sup2} 70%, ${t.v.rosa} 140%)`;
 const ts = `// Os temas do app. Cada cor tem 4 versões: escuro sóbrio, escuro temático, claro sóbrio, claro temático.

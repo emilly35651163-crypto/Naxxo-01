@@ -501,4 +501,38 @@ function barbiecore() {
   );
 }
 
-module.exports = { fogo, cereja, outono, borboletas, abelha, girassol, floresta, natureza, marProfundo, eletrico, tecnologia, bolhas, universo, gatinho, glitter, barbiecore };
+
+// ===================== AMARELO (extra) =====================
+
+// Esponja: textura de esponja amarela com furinhos, flores-nuvem coloridas do céu do fundo do mar e bolhas
+function esponja() {
+  // Furinhos da esponja: buracos ovais com sombra embaixo e luz em cima (menos no meio, onde ficam os cartões)
+  const furo = (x, y, s) => `<g transform='translate(${f(x)} ${f(y)}) rotate(${f(r(-30, 30))})'>
+    <ellipse cx='0' cy='${f(s * 0.12)}' rx='${f(s)}' ry='${f(s * 0.78)}' fill='#e8c900' opacity='.55'/>
+    <ellipse cx='0' cy='0' rx='${f(s)}' ry='${f(s * 0.78)}' fill='#c9a800'/>
+    <ellipse cx='${f(s * 0.15)}' cy='${f(s * 0.2)}' rx='${f(s * 0.7)}' ry='${f(s * 0.5)}' fill='#a88a00' opacity='.6'/></g>`;
+  const furos = Array.from({ length: 150 }, () => {
+    const x = r(0, 1000), y = r(0, 2000);
+    const meio = x > 140 && x < 860 && y > 300 && y < 1700;
+    return meio && rnd() < 0.6 ? "" : furo(x, y, meio ? r(8, 18) : r(14, 38));
+  }).join("");
+  // Flor-nuvem: 5 pétalas redondas, com o miolo mais claro
+  const flor = (x, y, R, cor, miolo, rot) => {
+    const petalas = Array.from({ length: 5 }, (_, i) => {
+      const a = ((360 / 5) * i + rot) * Math.PI / 180;
+      return `<circle cx='${f(x + Math.cos(a) * R * 0.62)}' cy='${f(y + Math.sin(a) * R * 0.62)}' r='${f(R * 0.5)}' fill='${cor}'/>`;
+    }).join("");
+    return `<g opacity='.92'><g filter='url(#sombra)' opacity='.35'><circle cx='${f(x + 6)}' cy='${f(y + 10)}' r='${f(R * 1.05)}' fill='#7a6400'/></g>${petalas}<circle cx='${f(x)}' cy='${f(y)}' r='${f(R * 0.5)}' fill='${cor}'/><circle cx='${f(x)}' cy='${f(y)}' r='${f(R * 0.34)}' fill='${miolo}'/></g>`;
+  };
+  const cores = [["#7fd6e8", "#c9f1f8"], ["#a98be8", "#ddd0fb"], ["#ff9ec7", "#ffd6e8"], ["#8fdc8a", "#d3f5cf"], ["#5fb8ff", "#c6e5ff"]];
+  const lugares = [[150, 160, 120], [520, 90, 70], [860, 210, 130], [60, 520, 80], [950, 640, 90], [40, 1000, 95], [960, 1120, 75], [70, 1480, 110], [930, 1500, 120], [180, 1880, 130], [560, 1940, 80], [880, 1900, 100], [700, 330, 50], [300, 1700, 55]];
+  const flores = lugares.map(([x, y, R], i) => { const [c, m] = cores[i % cores.length]; return flor(x, y, R, c, m, r(0, 72)); }).join("");
+  const bolha = (x, y, s) => `<circle cx='${f(x)}' cy='${f(y)}' r='${f(s)}' fill='#ffffff' fill-opacity='.18' stroke='#ffffff' stroke-width='${f(Math.max(s * 0.08, 1.5))}' opacity='.85'/><circle cx='${f(x - s * 0.35)}' cy='${f(y - s * 0.35)}' r='${f(s * 0.18)}' fill='#ffffff'/>`;
+  const bolhas = Array.from({ length: 34 }, () => { const lado = rnd() < 0.5; return bolha(lado ? r(0, 160) : r(840, 1000), r(0, 2000), r(6, 22)); }).join("");
+  return svg(
+    rad("esponjaLuz", [[0, "#fff6a8"], [0.7, "#fbe54a"], [1, "#f2d321"]], 0.5, 0.45, 0.8) + blur("sombra", 6),
+    `<rect width='1000' height='2000' fill='url(#esponjaLuz)'/>${furos}${flores}${bolhas}`,
+  );
+}
+
+module.exports = { esponja, fogo, cereja, outono, borboletas, abelha, girassol, floresta, natureza, marProfundo, eletrico, tecnologia, bolhas, universo, gatinho, glitter, barbiecore };

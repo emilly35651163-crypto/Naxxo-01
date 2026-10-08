@@ -2,7 +2,7 @@
 // Sóbrio = só as cores. Temático = as cores + uma cena parada no fundo e na barra de cima (sem animação).
 // As cores e as cenas ficam no globals.css (data-paleta / --cena-<id>), geradas junto com este arquivo.
 
-export type IdTema = "escuro" | "claro" | "vermelho-escuro" | "fogo" | "vermelho-claro" | "cereja" | "laranja-escuro" | "outono" | "laranja-claro" | "borboletas" | "amarelo-escuro" | "abelha" | "amarelo-claro" | "girassol" | "verde-escuro" | "floresta" | "verde-claro" | "natureza" | "azul-escuro" | "mar-profundo" | "tecnologia" | "azul-claro" | "bolhas" | "eletrico" | "roxo-escuro" | "universo" | "roxo-claro" | "gatinho" | "rosa-escuro" | "glitter" | "rosa-claro" | "barbiecore" | "neutro-escuro" | "neutro-medio" | "neutro-claro";
+export type IdTema = "escuro" | "claro" | "vermelho-escuro" | "fogo" | "vermelho-claro" | "cereja" | "laranja-escuro" | "outono" | "laranja-claro" | "borboletas" | "amarelo-escuro" | "abelha" | "amarelo-claro" | "girassol" | "esponja" | "verde-escuro" | "floresta" | "verde-claro" | "natureza" | "azul-escuro" | "mar-profundo" | "tecnologia" | "azul-claro" | "bolhas" | "eletrico" | "roxo-escuro" | "universo" | "roxo-claro" | "gatinho" | "rosa-escuro" | "glitter" | "rosa-claro" | "barbiecore" | "neutro-escuro" | "neutro-medio" | "neutro-claro";
 export type EscolhaTema = IdTema | "auto";
 
 export type Tema = {
@@ -31,6 +31,7 @@ export const TEMAS: Tema[] = [
   { id: "abelha", nome: "Abelha", cor: "Amarelo", base: "escuro", estilo: "tematico", descricao: "Favo de mel e mel escorrendo", bolinha: "var(--cena-abelha) 20% 14% / 320% no-repeat", barra: "#0e0902" },
   { id: "amarelo-claro", nome: "Amarelo claro", cor: "Amarelo", base: "claro", estilo: "sobrio", descricao: "Amarelo-manteiga e branco", bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #ffe98a 70%, #a16207 140%)", barra: "#fff2b8" },
   { id: "girassol", nome: "Girassol", cor: "Amarelo", base: "claro", estilo: "tematico", descricao: "Girassóis e sol", bolinha: "var(--cena-girassol) 10% 6% / 320% no-repeat", barra: "#fff1b3" },
+  { id: "esponja", nome: "Esponja", cor: "Amarelo", base: "claro", estilo: "tematico", descricao: "Esponja amarela e flores do fundo do mar", bolinha: "var(--cena-esponja) 15% 8% / 320% no-repeat", barra: "#fff4a8" },
   { id: "verde-escuro", nome: "Verde escuro", cor: "Verde", base: "escuro", estilo: "sobrio", descricao: "Verde-garrafa e preto", bolinha: "radial-gradient(circle at 32% 30%, #10b981, #04120b 78%)", barra: "#04120b" },
   { id: "floresta", nome: "Floresta", cor: "Verde", base: "escuro", estilo: "tematico", descricao: "Pinheiros e névoa", bolinha: "var(--cena-floresta) 68% 26% / 320% no-repeat", barra: "#04100a" },
   { id: "verde-claro", nome: "Verde claro", cor: "Verde", base: "claro", estilo: "sobrio", descricao: "Verde-menta e branco", bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #c2e9cf 70%, #047857 140%)", barra: "#d6f2df" },
