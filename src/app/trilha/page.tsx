@@ -27,6 +27,7 @@ import { CampoValor, Chip } from "@/components/Campos";
 import EscolhaConta, { lerEscolha } from "@/components/EscolhaConta";
 import EstadoVazio from "@/components/EstadoVazio";
 import Desejos from "./Desejos";
+import CabeNoMes from "./CabeNoMes";
 import Icone, { TextoComIcones } from "@/components/Icone";
 
 export default function Trilha() {
@@ -130,6 +131,7 @@ export default function Trilha() {
       )}
 
       <Desejos />
+      <CabeNoMes />
 
       {/* Histórico de conquistas */}
       {conquistas.length > 0 && (
