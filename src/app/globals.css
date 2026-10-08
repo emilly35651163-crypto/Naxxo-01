@@ -127,9 +127,10 @@ body {
   }
 }
 
-/* No celular, campos com letra menor que 16px fazem o iPhone dar zoom ao tocar: todos ficam com 16px */
+/* No celular, campos com letra menor que 16px fazem o iPhone dar zoom ao tocar: os pequenos sobem para 16px.
+   Os campos de letra grande (ex.: o valor do lançamento) ficam do tamanho deles. */
 @media (max-width: 640px) {
-  input,
+  input:not([class*="text-2xl"]):not([class*="text-3xl"]):not([class*="text-4xl"]):not([class*="text-5xl"]),
   select,
   textarea {
     font-size: 16px !important;
