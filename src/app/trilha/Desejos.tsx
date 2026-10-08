@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { adicionarDesejo, moverDesejo, removerDesejo, useDesejos, type Desejo } from "@/lib/store";
+import { useRef, useState } from "react";
+import { DotsSixVertical } from "@phosphor-icons/react";
+import { adicionarDesejo, ordenarDesejos, removerDesejo, useDesejos, type Desejo } from "@/lib/store";
 import { brl, lerValor } from "@/lib/formato";
 import { avaliarDesejo } from "@/lib/desejos";
 import { assumirGastoMensal, avaliarGastoMensal, planoDosDesejos } from "@/lib/cabe";
@@ -32,6 +33,40 @@ export default function Desejos() {
   const [icone, setIcone] = useState("✨");
   const [valor, setValor] = useState("");
   const [comprando, setComprando] = useState<Desejo | null>(null);
+  // Arrastar para mudar a prioridade: enquanto arrasta, a ordem nova fica só aqui; ao soltar, é gravada
+  const [arrastando, setArrastando] = useState<{ id: string; ordem: string[] } | null>(null);
+  const lista = useRef<HTMLUListElement>(null);
+  const emOrdem = arrastando
+    ? arrastando.ordem.map((id) => desejos.find((d) => d.id === id)).filter((d): d is Desejo => !!d)
+    : desejos;
+
+  function arrastar(e: React.PointerEvent) {
+    if (!arrastando || !lista.current) return;
+    const outros = [...lista.current.children].filter((li) => (li as HTMLElement).dataset.id !== arrastando.id);
+    // A posição nova é quantos itens (fora o arrastado) ficaram acima do dedo
+    const pos = outros.filter((li) => {
+      const r = li.getBoundingClientRect();
+      return r.top + r.height / 2 < e.clientY;
+    }).length;
+    const ordem = arrastando.ordem.filter((id) => id !== arrastando.id);
+    ordem.splice(pos, 0, arrastando.id);
+    if (ordem.join() !== arrastando.ordem.join()) setArrastando({ ...arrastando, ordem });
+  }
+
+  function soltar() {
+    if (arrastando) ordenarDesejos(arrastando.ordem);
+    setArrastando(null);
+  }
+
+  /** Pelo teclado: setas para cima e para baixo */
+  function moverComTeclado(e: React.KeyboardEvent, i: number) {
+    const j = e.key === "ArrowUp" ? i - 1 : e.key === "ArrowDown" ? i + 1 : -1;
+    if (j < 0 || j >= desejos.length) return;
+    e.preventDefault();
+    const ordem = desejos.map((d) => d.id);
+    [ordem[i], ordem[j]] = [ordem[j], ordem[i]];
+    ordenarDesejos(ordem);
+  }
   const plano = desejos.length > 1 ? planoDosDesejos(desejos, dados) : null;
   const mesCurto = (m: string) => (m === mesAtual() ? "este mês" : nomeMes(m).toLowerCase());
 
@@ -131,7 +166,7 @@ export default function Desejos() {
           <div>
             <h3 className="font-display font-bold">Plano dos desejos</h3>
             <p className="text-xs text-suave">
-              Todos juntos, na ordem de prioridade (mude com as setinhas). A sobra de cada mês vai sendo usada e juntada, sempre
+              Todos juntos, na ordem de prioridade (arraste pelos pontinhos para mudar). A sobra de cada mês vai sendo usada e juntada, sempre
               com uma folga para imprevistos.
             </p>
           </div>
@@ -179,31 +214,32 @@ export default function Desejos() {
       )}
 
       {desejos.length > 0 ? (
-        <ul className="cartao divide-y divide-white/5 px-4">
-          {desejos.map((d, i) => {
+        <ul ref={lista} className="cartao divide-y divide-white/5 px-4">
+          {emOrdem.map((d, i) => {
             const v = d.mensal ? avaliarMensal(d) : avaliarDesejo(d.valor, dados);
             return (
-              <li key={d.id} className="flex items-center gap-3 py-3">
+              <li
+                key={d.id}
+                data-id={d.id}
+                className={`flex items-center gap-3 py-3 ${arrastando?.id === d.id ? "-mx-4 rounded-2xl bg-rosa/10 px-4 shadow-lg ring-1 ring-rosa/40" : ""}`}
+              >
                 {desejos.length > 1 && (
-                  <div className="flex shrink-0 flex-col items-center text-suave">
-                    <button
-                      onClick={() => moverDesejo(d.id, -1)}
-                      disabled={i === 0}
-                      aria-label={`Subir ${d.nome} na prioridade`}
-                      className="px-1 leading-none hover:text-rosa disabled:opacity-20"
-                    >
-                      ▲
-                    </button>
+                  <button
+                    type="button"
+                    onPointerDown={(e) => {
+                      e.currentTarget.setPointerCapture(e.pointerId);
+                      setArrastando({ id: d.id, ordem: desejos.map((x) => x.id) });
+                    }}
+                    onPointerMove={arrastar}
+                    onPointerUp={soltar}
+                    onPointerCancel={soltar}
+                    onKeyDown={(e) => moverComTeclado(e, i)}
+                    aria-label={`${i + 1}º: arraste para mudar a prioridade de ${d.nome}`}
+                    className={`flex shrink-0 touch-none select-none flex-col items-center text-suave hover:text-rosa ${arrastando?.id === d.id ? "cursor-grabbing text-rosa" : "cursor-grab"}`}
+                  >
+                    <DotsSixVertical size={20} weight="bold" />
                     <span className="text-[0.65rem] font-semibold tabular-nums">{i + 1}º</span>
-                    <button
-                      onClick={() => moverDesejo(d.id, 1)}
-                      disabled={i === desejos.length - 1}
-                      aria-label={`Descer ${d.nome} na prioridade`}
-                      className="px-1 leading-none hover:text-rosa disabled:opacity-20"
-                    >
-                      ▼
-                    </button>
-                  </div>
+                  </button>
                 )}
                 <span className="text-2xl" aria-hidden>
                   <Icone e={d.icone} />
