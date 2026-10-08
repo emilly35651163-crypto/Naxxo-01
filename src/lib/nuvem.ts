@@ -117,17 +117,38 @@ function sincronizar() {
   return emAndamento;
 }
 
+/** Login guardado mas vencido (ex.: app recém-instalado no iPhone, que copia o login antigo do Safari): sai e pede para entrar */
+async function loginVencido() {
+  if (!supabase) return false;
+  const { error } = await supabase.auth.getUser(); // pergunta ao servidor, não só ao aparelho
+  // Sem resposta (internet): não dá para saber, segue com o que tem
+  if (!error || /fetch|network|internet/i.test(error.message)) return false;
+  await supabase.auth.signOut({ scope: "local" });
+  sessao = null;
+  mudar("fora");
+  return true;
+}
+
 async function fazerSincronizacao() {
   if (!supabase || !sessao) return;
   mudar("sincronizando");
-  const { data, error } = await supabase.from("dados").select("chave, valor");
+  const local = fotografarDados();
+  let resposta = await supabase.from("dados").select("chave, valor");
+  // Aparelho vazio e a nuvem não respondeu: tenta de novo (nunca abrir o questionário por engano de internet)
+  for (let tentativa = 1; resposta.error && !temConteudo(local) && tentativa <= 3; tentativa++) {
+    await new Promise((r) => setTimeout(r, 1500 * tentativa));
+    resposta = await supabase.from("dados").select("chave, valor");
+  }
+  const { data, error } = resposta;
   if (error) {
+    if (await loginVencido()) return;
     // Sem internet: segue com o que tem no aparelho
     mudar("pronto");
     return;
   }
-  const local = fotografarDados();
   const nuvem = Object.fromEntries((data ?? []).map((l) => [l.chave, l.valor]));
+  // Nuvem vazia pode ser login vencido (o servidor responde "nada" em vez de erro): confere antes de seguir
+  if (!temConteudo(nuvem) && (await loginVencido())) return;
   if (!temConteudo(nuvem)) {
     if (temConteudo(local)) {
       Object.entries(local).forEach(([chave, valor]) => pendentes.set(chave, valor));
