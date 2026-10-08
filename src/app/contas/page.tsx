@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   definirContaDosLancamentos,
   iconeDaCategoria,
+  removerLancamento,
   useCartoes,
   useCompras,
   useGastosFixos,
@@ -65,6 +67,7 @@ export default function Contas() {
   const [pagandoFixo, setPagandoFixo] = useState<{ fixo: GastoFixo; vencimento: string } | null>(null);
   const [divida, setDivida] = useState<Meta | "nova" | null>(null);
   const [contaDosAntigos, setContaDosAntigos] = useState("");
+  const [vendoSemConta, setVendoSemConta] = useState(false);
   const [transferindo, setTransferindo] = useState(false);
 
   // Chegou do questionário (/contas?nova=1): já abre o cadastro da primeira conta
@@ -110,36 +113,103 @@ export default function Contas() {
       {contas.length > 0 && <BotaoImportarExtrato />}
 
       {semConta.length > 0 && contas.length > 0 && (
-        <section className="flex flex-wrap items-center gap-2 rounded-2xl border border-amber-300/40 bg-amber-300/10 p-3 text-sm">
-          <span className="min-w-0 flex-1">⚠️ {semConta.length} lançamentos sem conta.</span>
-          <select
-            value={contaDosAntigos}
-            onChange={(e) => setContaDosAntigos(e.target.value)}
-            className="campo w-auto cursor-pointer py-1.5"
-          >
-            <option value="">Escolher conta…</option>
-            {contas.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nome}
-              </option>
-            ))}
-          </select>
-          <button
-            disabled={!contaDosAntigos}
-            onClick={() => {
-              const nome = contas.find((c) => c.id === contaDosAntigos)?.nome;
-              comDesfazer(`${semConta.length} lançamentos colocados na conta ${nome}`, () =>
-                definirContaDosLancamentos(
-                  semConta.map((l) => l.id),
-                  contaDosAntigos,
-                ),
-              );
-              setContaDosAntigos("");
-            }}
-            className="botao-gradiente rounded-full px-4 py-1.5 font-semibold disabled:opacity-40"
-          >
-            Aplicar
+        <section className="space-y-3 rounded-2xl border border-amber-300/40 bg-amber-300/10 p-3 text-sm">
+          <button onClick={() => setVendoSemConta(!vendoSemConta)} className="flex w-full items-center gap-2 text-left">
+            <span className="min-w-0 flex-1">
+              ⚠️ <b>{semConta.length}</b> {semConta.length === 1 ? "lançamento está" : "lançamentos estão"} sem conta: não sei de
+              qual conta {semConta.length === 1 ? "saiu ou entrou" : "saíram ou entraram"}.
+            </span>
+            <span className="shrink-0 text-xs text-rosa">{vendoSemConta ? "esconder ▴" : "ver quais ▾"}</span>
           </button>
+          {vendoSemConta && (
+            <ul className="divide-y divide-amber-300/20">
+              {semConta
+                .slice()
+                .sort((x, y) => y.data.localeCompare(x.data))
+                .map((l) => (
+                  <li key={l.id} className="flex flex-wrap items-center gap-2 py-2">
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-medium">
+                        {iconeDaCategoria(l.tipo, l.categoria)} {l.descricao}
+                      </span>
+                      <span className="text-xs text-suave">
+                        {formatarData(l.data)} · {l.categoria}
+                      </span>
+                    </span>
+                    <span className={`tabular-nums ${l.tipo === "entrada" ? "text-entrada" : "text-saida"}`}>
+                      {l.tipo === "entrada" ? "+" : "−"} {brl(l.valor)}
+                    </span>
+                    <select
+                      value=""
+                      onChange={(e) => {
+                        const nome = contas.find((c) => c.id === e.target.value)?.nome;
+                        comDesfazer(`“${l.descricao}” foi para ${nome}`, () =>
+                          definirContaDosLancamentos([l.id], e.target.value),
+                        );
+                      }}
+                      aria-label={`Conta de ${l.descricao}`}
+                      className="campo w-auto cursor-pointer py-1 text-xs"
+                    >
+                      <option value="">Colocar na conta…</option>
+                      {contas.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.nome}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => comDesfazer(`“${l.descricao}” excluído`, () => removerLancamento(l.id))}
+                      aria-label={`Excluir ${l.descricao}`}
+                      className="text-lg leading-none text-suave hover:text-saida"
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+            </ul>
+          )}
+          {semConta.some((l) => l.fonteId) && (
+            <p className="text-xs text-suave">
+              💡 Os que são de renda ficam sem conta porque a renda não diz onde cai. Em{" "}
+              <Link href="/renda" className="text-rosa underline">
+                Renda
+              </Link>
+              , edite cada uma e escolha a conta: os próximos meses já caem no lugar certo.
+            </p>
+          )}
+          {semConta.length > 1 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-suave">Todos de uma vez:</span>
+              <select
+                value={contaDosAntigos}
+                onChange={(e) => setContaDosAntigos(e.target.value)}
+                className="campo w-auto cursor-pointer py-1.5"
+              >
+                <option value="">Escolher conta…</option>
+                {contas.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nome}
+                  </option>
+                ))}
+              </select>
+              <button
+                disabled={!contaDosAntigos}
+                onClick={() => {
+                  const nome = contas.find((c) => c.id === contaDosAntigos)?.nome;
+                  comDesfazer(`${semConta.length} lançamentos colocados na conta ${nome}`, () =>
+                    definirContaDosLancamentos(
+                      semConta.map((l) => l.id),
+                      contaDosAntigos,
+                    ),
+                  );
+                  setContaDosAntigos("");
+                }}
+                className="botao-gradiente rounded-full px-4 py-1.5 font-semibold disabled:opacity-40"
+              >
+                Aplicar
+              </button>
+            </div>
+          )}
         </section>
       )}
 

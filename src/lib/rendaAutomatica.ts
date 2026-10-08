@@ -22,6 +22,9 @@ export function registrarRendaQueJaCaiu(hoje = hojeISO()) {
   const lancamentos = lerLancamentos();
   const contas = lerCartoes();
   const novos: Omit<Lancamento, "id">[] = [];
+  // Renda sem conta e a pessoa só tem uma conta de dinheiro: cai nela
+  const contasDeDinheiro = contas.filter((c) => c.tipo !== "vale");
+  const unica = contasDeDinheiro.length === 1 ? contasDeDinheiro[0].id : undefined;
   const usados = new Set<string>();
 
   // O mês passado também (se o app ficou fechado na virada), mas só depois do cadastro da fonte
@@ -30,7 +33,7 @@ export function registrarRendaQueJaCaiu(hoje = hojeISO()) {
       for (const p of rendaNaoRegistrada(f, mes, lancamentos)) {
         if (p.data >= hoje || !(p.valor > 0)) continue;
         if (mes < mesAtual() && !(f.criadoEm && p.data >= f.criadoEm)) continue;
-        const contaId = p.contaId ?? f.contaId;
+        const contaId = p.contaId ?? f.contaId ?? (p.dinheiro ? unica : undefined);
         const ligacao = { fonteId: f.id, parteRenda: p.parte, beneficio: p.beneficio?.tipo };
 
         // Já tem uma entrada parecida (do extrato ou lançada à mão): é ela
