@@ -6,6 +6,7 @@ import { brl, dataDoRecebimento, formatarData, hojeISO, mesAtual, nomeMes } from
 import { eventosAte, projetarDia, type Evento } from "@/lib/projecao";
 import { previstosDoMes, resumoDoMes } from "@/lib/previstos";
 import { useDados } from "@/lib/dados";
+import Icone from "@/components/Icone";
 
 const DIAS_DA_SEMANA = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
 
@@ -192,7 +193,9 @@ export default function Projecao() {
               <ul className="space-y-1.5 text-sm">
                 {doDia.map((e) => (
                   <li key={e.chave} className="flex items-center gap-2">
-                    <span aria-hidden>{e.icone}</span>
+                    <span aria-hidden>
+                      <Icone e={e.icone} />
+                    </span>
                     <span className="min-w-0 flex-1 truncate">
                       {e.nome}
                       {!e.feito && <span className="ml-1 text-xs text-suave">· previsto</span>}
@@ -260,7 +263,9 @@ export default function Projecao() {
                   <ul className="space-y-1">
                     {eventos.map((e) => (
                       <li key={e.chave} className="flex items-center gap-2">
-                        <span>{e.icone}</span>
+                        <span>
+                          <Icone e={e.icone} />
+                        </span>
                         <span className="min-w-0 flex-1 truncate">
                           {e.nome}
                           <span className="ml-1 text-xs text-suave">· {ORIGEM[e.origem]}</span>

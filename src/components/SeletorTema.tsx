@@ -1,68 +1,101 @@
 "use client";
 
+import { useState } from "react";
 import { mudarPreferencias, usePreferencias } from "@/lib/store";
-import { TEMAS, type Tema } from "@/lib/temas";
+import { BOLINHA_AUTO, GRUPOS_TEMA, TEMAS, temaPorId } from "@/lib/temas";
 
-// Escolher o tema: agrupado por cor, cada um com uma prévia (fundo, cartão, botão e letras de verdade).
+// "Temas" em Configurações: fechado, mostra o tema atual. Aberto, as cores (Oficial NAXXO, Azul…);
+// tocando numa cor, aparecem só as bolinhas das versões dela (escuro, claro, temáticos).
 export default function SeletorTema() {
   const { tema } = usePreferencias();
-  const grupos = [...new Set(TEMAS.map((t) => t.cor))];
+  const atual = temaPorId(tema);
+  const [aberto, setAberto] = useState(false);
+  const [grupo, setGrupo] = useState(atual?.cor ?? "NAXXO");
+
+  const versoes = TEMAS.filter((t) => t.cor === grupo);
+  const nomeAtual = tema === "auto" ? "Automático" : (atual?.nome ?? "NAXXO escuro");
 
   return (
-    <div className="space-y-4">
-      {grupos.map((cor) => (
-        <div key={cor} className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-widest text-suave">{cor}</p>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {TEMAS.filter((t) => t.cor === cor).map((t) => (
-              <CartaoTema key={t.id} tema={t} ativo={tema === t.id} onEscolher={() => mudarPreferencias({ tema: t.id })} />
-            ))}
-          </div>
-        </div>
-      ))}
+    <div className="space-y-3">
       <button
         type="button"
-        onClick={() => mudarPreferencias({ tema: "auto" })}
-        aria-pressed={tema === "auto"}
-        className={`w-full rounded-2xl border px-4 py-2.5 text-left text-sm ${
-          tema === "auto" ? "border-rosa bg-rosa/10" : "border-white/10 text-suave hover:text-white"
-        }`}
+        onClick={() => setAberto(!aberto)}
+        aria-expanded={aberto}
+        className="flex w-full items-center gap-3 rounded-2xl border border-white/10 px-4 py-3 text-left hover:border-white/25"
       >
-        {tema === "auto" && "✓ "}Automático: NAXXO escuro ou claro, seguindo o celular
+        <span
+          className="size-7 shrink-0 rounded-full border border-white/20"
+          style={{ background: tema === "auto" ? BOLINHA_AUTO : (atual?.bolinha ?? TEMAS[0].bolinha) }}
+          aria-hidden
+        />
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold">Temas</span>
+          <span className="block text-xs text-suave">{nomeAtual}</span>
+        </span>
+        <span className="text-sm text-rosa">{aberto ? "fechar ▴" : "trocar ▾"}</span>
       </button>
+
+      {aberto && (
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-2" role="tablist" aria-label="Cores">
+            {GRUPOS_TEMA.map((g) => (
+              <button
+                key={g.cor}
+                type="button"
+                role="tab"
+                aria-selected={grupo === g.cor}
+                onClick={() => setGrupo(g.cor)}
+                className={`rounded-full border px-4 py-1.5 text-sm ${
+                  grupo === g.cor ? "border-rosa bg-rosa/15 font-semibold" : "border-white/10 text-suave hover:text-white"
+                }`}
+              >
+                {g.nome}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap gap-4 px-1">
+            {versoes.map((t) => (
+              <Bolinha
+                key={t.id}
+                fundo={t.bolinha}
+                nome={t.estilo === "tematico" ? t.nome : t.base === "escuro" ? "Escuro" : "Claro"}
+                ativo={tema === t.id}
+                onClick={() => mudarPreferencias({ tema: t.id })}
+              />
+            ))}
+            {grupo === "NAXXO" && (
+              <Bolinha
+                fundo={BOLINHA_AUTO}
+                nome="Automático"
+                ativo={tema === "auto"}
+                onClick={() => mudarPreferencias({ tema: "auto" })}
+              />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function CartaoTema({ tema: t, ativo, onEscolher }: { tema: Tema; ativo: boolean; onEscolher: () => void }) {
-  const p = t.previa;
+function Bolinha({ fundo, nome, ativo, onClick }: { fundo: string; nome: string; ativo: boolean; onClick: () => void }) {
   return (
     <button
       type="button"
-      onClick={onEscolher}
+      onClick={onClick}
       aria-pressed={ativo}
-      className={`overflow-hidden rounded-2xl border text-left transition-colors ${
-        ativo ? "border-rosa ring-2 ring-rosa/40" : "border-white/10 hover:border-white/30"
-      }`}
+      aria-label={nome}
+      className="flex w-16 flex-col items-center gap-1.5"
     >
-      {/* A prévia: fundo, um cartãozinho com texto e o botão do tema */}
-      <span className="block h-20 p-2" style={{ background: p.fundo }} aria-hidden>
-        <span className="block rounded-lg p-2" style={{ background: p.cartao, color: p.texto }}>
-          <span className="block text-[0.6rem] opacity-70">Saldo</span>
-          <span className="block text-xs font-bold">R$ 1.250</span>
-        </span>
-        <span className="mt-1.5 block h-2 w-2/3 rounded-full" style={{ background: p.destaque }} />
-      </span>
-      <span className="block px-2.5 py-2">
-        <span className="block text-sm font-semibold">
-          {ativo && "✓ "}
-          {t.nome}
-        </span>
-        <span className="block text-[0.65rem] text-suave">
-          {t.base === "escuro" ? "🌙 Escuro" : "☀️ Claro"} · {t.estilo === "tematico" ? "Temático" : "Sóbrio"}
-        </span>
-        <span className="block text-[0.65rem] text-suave">{t.descricao}</span>
-      </span>
+      <span
+        className={`size-12 rounded-full border shadow-md transition-transform ${
+          ativo ? "scale-110 border-transparent ring-2 ring-rosa ring-offset-2 ring-offset-superficie" : "border-white/20"
+        }`}
+        style={{ background: fundo }}
+        aria-hidden
+      />
+      <span className={`text-center text-[0.65rem] leading-tight ${ativo ? "font-semibold" : "text-suave"}`}>{nome}</span>
     </button>
   );
 }

@@ -5,6 +5,7 @@ import { mesAtual } from "@/lib/formato";
 import { dataDeFechamento, faturaAberta } from "@/lib/cartoes";
 import { Campo, CampoValor, Chip } from "./Campos";
 import CampoMes from "./CampoMes";
+import Icone from "@/components/Icone";
 
 // Campos de uma assinatura no cartão (Netflix, Spotify…): não tem parcelas nem fim.
 // Pode ser mensal, semestral ou anual. Basta o mês da fatura em que cobra: o dia o app calcula.
@@ -78,14 +79,16 @@ export default function CamposAssinatura({
       <div className="flex flex-wrap gap-2">
         {SUGESTOES.map((s) => (
           <Chip key={s.nome} ativo={r.nome === s.nome} onClick={() => mudar({ nome: s.nome, icone: s.icone })}>
-            {s.icone} {s.nome}
+            <Icone e={s.icone} /> {s.nome}
           </Chip>
         ))}
       </div>
 
       <Campo rotulo="Qual assinatura?">
         <div className="flex gap-2">
-          <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-fundo text-xl">{r.icone}</span>
+          <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-fundo text-xl">
+            <Icone e={r.icone} />
+          </span>
           <input value={r.nome} onChange={(e) => mudar({ nome: e.target.value })} placeholder="Ex.: Netflix" className="campo" />
         </div>
       </Campo>

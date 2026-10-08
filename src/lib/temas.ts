@@ -12,8 +12,8 @@ export type Tema = {
   base: "escuro" | "claro"; // letras claras em fundo escuro, ou o contrário
   estilo: "sobrio" | "tematico";
   descricao: string;
-  // Para a prévia na tela de escolha
-  previa: { fundo: string; cartao: string; destaque: string; texto: string };
+  // A bolinha da tela de escolha (um fundo CSS)
+  bolinha: string;
 };
 
 export const TEMAS: Tema[] = [
@@ -24,12 +24,7 @@ export const TEMAS: Tema[] = [
     base: "escuro",
     estilo: "sobrio",
     descricao: "O original",
-    previa: {
-      fundo: "#0b0f1a",
-      cartao: "#121729",
-      destaque: "linear-gradient(135deg,#d4239f,#7c3aed,#2563eb)",
-      texto: "#f4f5fb",
-    },
+    bolinha: "radial-gradient(circle at 32% 30%, #2b3150, #0b0f1a 72%)",
   },
   {
     id: "claro",
@@ -38,12 +33,7 @@ export const TEMAS: Tema[] = [
     base: "claro",
     estilo: "sobrio",
     descricao: "O original, de dia",
-    previa: {
-      fundo: "#f4f3fa",
-      cartao: "#ffffff",
-      destaque: "linear-gradient(135deg,#b5179e,#6d28d9,#1d4ed8)",
-      texto: "#151a2d",
-    },
+    bolinha: "linear-gradient(135deg, #fde3f6, #ece2ff 60%, #e3ecff)",
   },
   {
     id: "azul-escuro",
@@ -52,7 +42,7 @@ export const TEMAS: Tema[] = [
     base: "escuro",
     estilo: "sobrio",
     descricao: "Azul-marinho e preto",
-    previa: { fundo: "#050b18", cartao: "#0c1628", destaque: "linear-gradient(135deg,#0369a1,#1d4ed8)", texto: "#eaf2ff" },
+    bolinha: "radial-gradient(circle at 32% 30%, #1e40af, #050b18 75%)",
   },
   {
     id: "mar-profundo",
@@ -61,12 +51,8 @@ export const TEMAS: Tema[] = [
     base: "escuro",
     estilo: "tematico",
     descricao: "Águas-vivas, peixes e corais",
-    previa: {
-      fundo: "linear-gradient(180deg,#07324a,#030d1a)",
-      cartao: "#082033",
-      destaque: "linear-gradient(135deg,#0891b2,#0e7490)",
-      texto: "#e6fbff",
-    },
+    bolinha:
+      "linear-gradient(110deg, transparent 32%, rgb(186 244 255 / 0.6) 44%, transparent 58%), linear-gradient(180deg, #0e6a8f, #031628)",
   },
   {
     id: "azul-claro",
@@ -75,7 +61,7 @@ export const TEMAS: Tema[] = [
     base: "claro",
     estilo: "sobrio",
     descricao: "Azul-céu e branco",
-    previa: { fundo: "#eef5fd", cartao: "#ffffff", destaque: "linear-gradient(135deg,#0284c7,#1d4ed8)", texto: "#0f1e36" },
+    bolinha: "radial-gradient(circle at 32% 30%, #ffffff, #b9dcff 80%)",
   },
   {
     id: "bolhas",
@@ -84,14 +70,19 @@ export const TEMAS: Tema[] = [
     base: "claro",
     estilo: "tematico",
     descricao: "Bolhas de sabão e água clara",
-    previa: {
-      fundo: "linear-gradient(180deg,#d6efff,#f4fbff)",
-      cartao: "#ffffff",
-      destaque: "linear-gradient(135deg,#0ea5e9,#0284c7)",
-      texto: "#0b2440",
-    },
+    bolinha:
+      "radial-gradient(circle at 36% 34%, rgb(255 255 255 / 0.95) 0 2px, transparent 3px), radial-gradient(circle at 40% 40%, transparent 8px, #93c5fd 9px, #f9a8d4 10.5px, transparent 12px), radial-gradient(circle at 72% 70%, transparent 4px, #67e8f9 5px, transparent 6.5px), linear-gradient(160deg, #d8eeff, #f5fbff)",
   },
 ];
+
+/** Os grupos da tela de escolha, na ordem */
+export const GRUPOS_TEMA: { cor: string; nome: string }[] = [
+  { cor: "NAXXO", nome: "Oficial NAXXO" },
+  { cor: "Azul", nome: "Azul" },
+];
+
+/** A bolinha do "Automático": metade escuro, metade claro */
+export const BOLINHA_AUTO = "linear-gradient(135deg, #0b0f1a 50%, #f6f0fb 50%)";
 
 export function temaPorId(id: string | undefined) {
   return TEMAS.find((t) => t.id === id);

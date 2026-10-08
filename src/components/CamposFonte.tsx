@@ -15,6 +15,7 @@ import { ehVale } from "@/lib/contas";
 import { Campo, CampoSelect, CampoValor, Chip, DIAS_DO_MES } from "./Campos";
 import EscolhaConta, { lerEscolha } from "./EscolhaConta";
 import CampoDiaRecebimento from "./CampoDiaRecebimento";
+import Icone from "@/components/Icone";
 
 // Os campos de uma fonte de renda, usados no questionário e na aba Renda (criar e editar).
 // Enquanto a pessoa digita, os valores ficam como texto (o "rascunho").
@@ -198,7 +199,7 @@ export default function CamposFonte({
         <div className="flex flex-wrap gap-2">
           {FORMAS_RENDA.map((f) => (
             <Chip key={f.id} ativo={r.forma === f.id} onClick={() => mudar({ forma: f.id })}>
-              {f.icone} {f.nome}
+              <Icone e={f.icone} /> {f.nome}
             </Chip>
           ))}
         </div>
@@ -373,7 +374,7 @@ export default function CamposFonte({
               onClick={() => adicionarBeneficio(t.id)}
               className="rounded-full border border-dashed border-white/15 px-3 py-1.5 text-xs text-suave hover:border-rosa hover:text-white"
             >
-              + {t.icone} {t.nome}
+              + <Icone e={t.icone} /> {t.nome}
             </button>
           ))}
         </div>
@@ -384,7 +385,7 @@ export default function CamposFonte({
             <div key={i} className="space-y-2 rounded-2xl bg-superficie/60 p-3">
               <div className="flex items-center gap-2">
                 <span className="grid size-10 shrink-0 place-items-center rounded-full bg-superficie-2" aria-hidden>
-                  {tipo?.icone}
+                  <Icone e={tipo?.icone} />
                 </span>
                 {b.tipo === "outro" ? (
                   <input

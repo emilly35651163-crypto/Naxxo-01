@@ -23,6 +23,7 @@ import { cartoesDeCredito, marcoDoSaldo, saldoDaConta } from "@/lib/contas";
 import { compraDoExtrato, jaExiste, lerExtrato, parcelaRepetida, type Existente, type LinhaExtrato } from "@/lib/extrato";
 import { comDesfazer } from "@/lib/avisos";
 import Modal from "./Modal";
+import Icone from "@/components/Icone";
 
 /** Lê o arquivo como UTF-8; se vier com acentos quebrados (bancos antigos), lê de novo como Windows-1252. */
 async function lerArquivo(arquivo: File) {
@@ -480,7 +481,7 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
                           <p>
                             💡 Parece ser{" "}
                             <b>
-                              {l.sugestao.icone} {l.sugestao.nome}
+                              <Icone e={l.sugestao.icone} /> {l.sugestao.nome}
                             </b>{" "}
                             (previsto para {formatarData(l.sugestao.data)}, {brl(l.sugestao.valor)}). É isso?
                           </p>

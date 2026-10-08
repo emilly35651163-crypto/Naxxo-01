@@ -39,6 +39,7 @@ import { cartoesDeCredito, contaNoSaldo, ehVale, iconeDaConta, saldoDaConta, tem
 import { calcularMeta } from "@/lib/metas";
 import { brl, diasAte, formatarData, hojeISO, nomeMes } from "@/lib/formato";
 import { comDesfazer } from "@/lib/avisos";
+import Icone from "@/components/Icone";
 
 const ROTULO_SITUACAO: Record<SituacaoFatura, { texto: string; cor: string }> = {
   aberta: { texto: "Aberta", cor: "bg-azul/20 text-azul" },
@@ -130,7 +131,7 @@ export default function Contas() {
                   <li key={l.id} className="flex flex-wrap items-center gap-2 py-2">
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-medium">
-                        {iconeDaCategoria(l.tipo, l.categoria)} {l.descricao}
+                        <Icone e={iconeDaCategoria(l.tipo, l.categoria)} /> {l.descricao}
                       </span>
                       <span className="text-xs text-suave">
                         {formatarData(l.data)} · {l.categoria}
@@ -252,7 +253,7 @@ export default function Contas() {
                       style={{ background: conta.cor }}
                       aria-hidden
                     >
-                      {iconeDaConta(conta)}
+                      <Icone e={iconeDaConta(conta)} />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-medium">{conta.nome}</span>
@@ -318,7 +319,7 @@ export default function Contas() {
                 <li key={f.id}>
                   <button onClick={() => setFixoAberto(f)} className="flex w-full items-center gap-3 py-3 text-left">
                     <span className="text-lg" aria-hidden>
-                      {f.icone}
+                      <Icone e={f.icone} />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-medium">{f.nome}</span>
@@ -364,7 +365,7 @@ export default function Contas() {
                 <li key={f.id} className="flex items-center gap-3 py-3">
                   <button onClick={() => setFixoAberto(f)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
                     <span className="text-lg" aria-hidden>
-                      {f.icone}
+                      <Icone e={f.icone} />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-medium">{f.nome}</span>
@@ -395,7 +396,7 @@ export default function Contas() {
                 <li key={m.id}>
                   <button onClick={() => setDivida(m)} className="flex w-full items-center gap-3 py-3 text-left">
                     <span className="text-lg" aria-hidden>
-                      {m.icone}
+                      <Icone e={m.icone} />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-medium">{m.nome}</span>
@@ -549,7 +550,7 @@ function CartaoConta({
         <div className="relative flex items-start justify-between">
           <div>
             <p className="font-display text-lg font-bold">
-              {iconeDaConta(conta)} {conta.nome}
+              <Icone e={iconeDaConta(conta)} /> {conta.nome}
             </p>
             {credito && (
               <p className="text-xs text-white/75">
@@ -682,7 +683,7 @@ function CartaoConta({
                       className="group flex w-full items-center gap-3 py-3 text-left"
                     >
                       <span className="grid size-10 shrink-0 place-items-center rounded-full bg-superficie-2 text-lg">
-                        {m.item.fixo?.icone ?? iconeDaCategoria("saida", m.item.compra?.categoria ?? "Outros")}
+                        <Icone e={m.item.fixo?.icone ?? iconeDaCategoria("saida", m.item.compra?.categoria ?? "Outros")} />
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate font-medium group-hover:text-rosa">{m.item.descricao}</span>

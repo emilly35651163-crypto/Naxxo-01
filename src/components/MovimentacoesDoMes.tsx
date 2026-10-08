@@ -9,6 +9,7 @@ import { itensDaFatura } from "@/lib/cartoes";
 import type { Dados } from "@/lib/previstos";
 import ItemLancamento from "./ItemLancamento";
 import ConfirmarPrevisto from "./ConfirmarPrevisto";
+import Icone from "@/components/Icone";
 
 // "Este mês" no Início: fechado, só o essencial (quanto entrou/saiu, o que falta e as próximas contas).
 // Aberto: tudo o que está previsto (com "pago") e tudo o que já aconteceu nas contas (editável).
@@ -65,7 +66,9 @@ export default function MovimentacoesDoMes({ mes, dados }: { mes: string; dados:
             const atrasada = dias < 0 || !!p.item?.atrasado;
             return (
               <li key={p.chave} className="flex items-center gap-2">
-                <span aria-hidden>{p.icone}</span>
+                <span aria-hidden>
+                  <Icone e={p.icone} />
+                </span>
                 <span className={`min-w-0 flex-1 truncate ${atrasada ? "text-saida" : ""}`}>{p.nome}</span>
                 <span
                   className={`text-xs ${atrasada ? "font-semibold text-saida" : dias <= 3 ? "text-amber-300" : "text-suave"}`}
@@ -118,7 +121,7 @@ export default function MovimentacoesDoMes({ mes, dados }: { mes: string; dados:
                     <li key={p.chave} className="py-2.5">
                       <div className="flex items-center gap-3">
                         <span className="text-lg" aria-hidden>
-                          {p.icone}
+                          <Icone e={p.icone} />
                         </span>
                         <div className="min-w-0 flex-1">
                           <p className={`truncate text-sm font-medium ${atrasado ? "text-saida" : ""}`}>{p.nome}</p>

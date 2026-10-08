@@ -23,6 +23,7 @@ import CamposPreco from "./CamposPreco";
 import { mostrarAviso } from "@/lib/avisos";
 import Modal from "@/components/Modal";
 import { Campo, Chip } from "@/components/Campos";
+import Icone from "@/components/Icone";
 
 type Rascunho = {
   categoria: CategoriaMercado;
@@ -152,7 +153,7 @@ export default function FormItemLista({
           <div className="flex flex-wrap gap-2">
             {CATEGORIAS_MERCADO.map((c) => (
               <Chip key={c.id} ativo={r.categoria === c.id} onClick={() => mudar({ categoria: c.id, unidadeQtd: c.unidade })}>
-                {c.icone} {c.nome}
+                <Icone e={c.icone} /> {c.nome}
               </Chip>
             ))}
           </div>

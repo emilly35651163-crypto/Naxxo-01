@@ -14,6 +14,7 @@ import NavInferior, { ITENS_MENU, itemAtivo } from "./NavInferior";
 import BarraLateral from "./BarraLateral";
 import FormLancamento from "./FormLancamento";
 import Avisos from "./Avisos";
+import Icone from "./Icone";
 
 /** O tema escolhido em Configurações ("auto" segue o celular/computador). */
 function useTema() {
@@ -113,7 +114,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <BarraLateral />
 
       <div className="mx-auto flex min-h-dvh w-full min-w-0 max-w-lg flex-col px-4 lg:max-w-6xl lg:px-10">
-        <header className="sticky top-0 z-10 -mx-4 bg-fundo/85 px-4 py-3 backdrop-blur print:hidden lg:-mx-10 lg:px-10 lg:py-6">
+        <header className="topo sticky top-0 z-10 -mx-4 px-4 py-3 backdrop-blur print:hidden lg:-mx-10 lg:px-10 lg:py-6">
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-3 lg:hidden">
               <Logo />
@@ -135,7 +136,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 aria-current={caminho === "/configuracoes" ? "page" : undefined}
                 className={`grid size-10 place-items-center rounded-full border text-lg ${caminho === "/configuracoes" ? "border-rosa bg-rosa/15" : "border-roxo/30 bg-superficie"}`}
               >
-                ⚙️
+                <Icone e="⚙️" />
               </Link>
               <Link
                 href="/mercado"
@@ -143,7 +144,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 aria-current={caminho === "/mercado" ? "page" : undefined}
                 className={`grid size-10 place-items-center rounded-full border text-lg ${caminho === "/mercado" ? "border-rosa bg-rosa/15" : "border-roxo/30 bg-superficie"}`}
               >
-                🛒
+                <Icone e="🛒" />
               </Link>
               <button
                 onClick={() => setNovoAberto(true)}

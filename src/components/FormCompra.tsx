@@ -28,6 +28,7 @@ import CamposAssinatura, { assinaturaVazia, salvarAssinatura, type RascunhoAssin
 import { comDesfazer, mostrarAviso } from "@/lib/avisos";
 import { criarRepeticao } from "@/lib/repeticao";
 import EscolhaRepeticao, { lerRepeticao, type Repeticao } from "./EscolhaRepeticao";
+import Icone from "@/components/Icone";
 
 // "Fatura do cartão" não faz sentido como categoria de uma compra
 export const CATEGORIAS_COMPRA = CATEGORIAS.saida.filter((c) => c.nome !== "Fatura do cartão");
@@ -253,7 +254,7 @@ export default function FormCompra({
                 <div className="flex flex-wrap gap-2">
                   {metasDisponiveis.map((m) => (
                     <Chip key={m.id} ativo={metaId === m.id} onClick={() => trazerDaMeta(m)}>
-                      {m.icone} {m.nome}
+                      <Icone e={m.icone} /> {m.nome}
                     </Chip>
                   ))}
                 </div>
@@ -336,7 +337,7 @@ export default function FormCompra({
               <div className="flex flex-wrap gap-2">
                 {categorias.map((c) => (
                   <Chip key={c.nome} ativo={categoria === c.nome} onClick={() => setCategoria(c.nome)}>
-                    {c.icone} {c.nome}
+                    <Icone e={c.icone} /> {c.nome}
                   </Chip>
                 ))}
                 <Chip ativo={criando} onClick={() => setCriando(!criando)}>

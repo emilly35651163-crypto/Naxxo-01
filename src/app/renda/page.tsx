@@ -43,6 +43,7 @@ import CamposFonte, {
 } from "@/components/CamposFonte";
 import EscolhaConta, { lerEscolha } from "@/components/EscolhaConta";
 import EstadoVazio from "@/components/EstadoVazio";
+import Icone from "@/components/Icone";
 
 export default function Renda() {
   const fontes = useFontes();
@@ -169,7 +170,7 @@ export default function Renda() {
                 <article key={f.id} className="cartao p-5">
                   <div className="flex items-start gap-3">
                     <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-superficie-2 text-xl" aria-hidden>
-                      {forma?.icone}
+                      <Icone e={forma?.icone} />
                     </span>
                     <div className="min-w-0 flex-1">
                       <h3 className="truncate font-semibold">{f.nome}</h3>
@@ -503,7 +504,7 @@ function FormRecebimento({ fonte, mes, onFechar }: { fonte: FonteRenda; mes: str
             <div className="flex flex-wrap gap-2">
               {partesPrincipais.map((p) => (
                 <Chip key={p.chave} ativo={parte?.chave === p.chave} onClick={() => escolherParte(p)}>
-                  {p.icone} {p.nome.replace(` · ${fonte.nome}`, "")} · {formatarData(p.data)}
+                  <Icone e={p.icone} /> {p.nome.replace(` · ${fonte.nome}`, "")} · {formatarData(p.data)}
                 </Chip>
               ))}
             </div>
@@ -566,7 +567,7 @@ function FormRecebimento({ fonte, mes, onFechar }: { fonte: FonteRenda; mes: str
                   className="size-5 accent-rosa"
                 />
                 <span className="flex-1 text-sm">
-                  {b.icone} {b.beneficio?.nome}
+                  <Icone e={b.icone} /> {b.beneficio?.nome}
                   {!b.dinheiro && (
                     <span className="block text-xs text-suave">
                       vale · {b.contaId ? "cai na conta do vale" : "sem conta de vale"}

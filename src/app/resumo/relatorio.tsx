@@ -10,6 +10,7 @@ import { fixosDoMes, valorNoMes } from "@/lib/fixos";
 import { balancoDoMes, despesasPorCategoria, gastosDoMes, NECESSIDADES_PADRAO } from "@/lib/analise";
 import { useDados } from "@/lib/dados";
 import { brl, nomeMes } from "@/lib/formato";
+import Icone from "@/components/Icone";
 
 function porcento(parte: number, total: number) {
   return total > 0 ? Math.round((parte / total) * 100) : 0;
@@ -135,7 +136,9 @@ export default function Relatorio() {
                     className="group -mx-2 block rounded-lg px-2 py-1 hover:bg-white/5"
                   >
                     <div className="flex items-center gap-2">
-                      <span>{iconeDaCategoria("saida", c.categoria)}</span>
+                      <span>
+                        <Icone e={iconeDaCategoria("saida", c.categoria)} />
+                      </span>
                       <span className="flex-1">{c.categoria}</span>
                       <span className="tabular-nums text-suave">
                         {porcento(c.valor, forma === "tudo" ? totalDespesas : totalDaLista)}%
@@ -224,7 +227,9 @@ export default function Relatorio() {
               return (
                 <li key={m.id}>
                   <Link href="/trilha" className="flex items-center gap-3 py-2.5 hover:text-rosa">
-                    <span>{m.icone}</span>
+                    <span>
+                      <Icone e={m.icone} />
+                    </span>
                     <span className="min-w-0 flex-1 truncate">{m.nome}</span>
                     <span className="text-suave tabular-nums">
                       {brl(m.guardado)} de {brl(m.alvo)}

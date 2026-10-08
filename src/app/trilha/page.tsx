@@ -27,6 +27,7 @@ import { CampoValor, Chip } from "@/components/Campos";
 import EscolhaConta, { lerEscolha } from "@/components/EscolhaConta";
 import EstadoVazio from "@/components/EstadoVazio";
 import Desejos from "./Desejos";
+import Icone from "@/components/Icone";
 
 export default function Trilha() {
   const dados = useDados();
@@ -146,7 +147,7 @@ export default function Trilha() {
               {conquistas.map((m) => (
                 <li key={m.id} className="flex items-center gap-3 py-3">
                   <span className="grid size-10 shrink-0 place-items-center rounded-full bg-superficie-2 text-lg" aria-hidden>
-                    {m.icone}
+                    <Icone e={m.icone} />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium">{m.nome}</span>
@@ -243,7 +244,7 @@ function CartaoMeta({
           🎉
         </p>
         <h3 className="mt-2 font-display text-xl font-bold">
-          {meta.icone} {meta.nome}
+          <Icone e={meta.icone} /> {meta.nome}
         </h3>
         <p className="mt-1 text-sm text-suave">
           {quitar ? "Quitada! Uma dívida a menos 💚" : `Você juntou ${brl(meta.alvo)}! Conquista realizada.`}
@@ -271,7 +272,7 @@ function CartaoMeta({
     <article className="cartao relative overflow-hidden p-5">
       <div className="flex items-start gap-3">
         <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-superficie-2 text-2xl" aria-hidden>
-          {meta.icone}
+          <Icone e={meta.icone} />
         </span>
         <div className="min-w-0 flex-1">
           <h3 className="truncate font-display text-lg font-semibold">{meta.nome}</h3>

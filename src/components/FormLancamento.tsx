@@ -46,6 +46,7 @@ import Modal from "./Modal";
 import { Campo, Chip } from "./Campos";
 import EscolhaConta, { lerEscolha } from "./EscolhaConta";
 import EscolhaParcelas from "./EscolhaParcelas";
+import Icone from "@/components/Icone";
 
 // Para onde vai um gasto que se repete (vira gasto fixo)
 const CATEGORIA_DO_FIXO: Record<string, CategoriaFixo> = {
@@ -477,7 +478,7 @@ export default function FormLancamento({
                     setSubcategoria("");
                   }}
                 >
-                  {c.icone} {c.nome}
+                  <Icone e={c.icone} /> {c.nome}
                 </Chip>
               ))}
               <Chip

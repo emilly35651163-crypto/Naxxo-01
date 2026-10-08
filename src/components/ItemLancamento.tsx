@@ -13,6 +13,7 @@ import {
 import { brl, formatarData } from "@/lib/formato";
 import { comDesfazer, mostrarAviso } from "@/lib/avisos";
 import FormLancamento from "./FormLancamento";
+import Icone from "@/components/Icone";
 
 // Uma linha de lançamento. Tocar abre o formulário para editar (e excluir).
 // Transferência aparece como "Conta A → Conta B". Dentro de uma conta (daConta), mostra se saiu ou entrou nela.
@@ -44,7 +45,7 @@ export default function ItemLancamento({
     <li className="flex items-center gap-3 py-3">
       <button onClick={() => setEditando(true)} className="group flex min-w-0 flex-1 items-center gap-3 text-left">
         <span className="grid size-10 shrink-0 place-items-center rounded-full bg-superficie-2 text-lg" aria-hidden>
-          {iconeDaCategoria(l.tipo, l.categoria)}
+          <Icone e={iconeDaCategoria(l.tipo, l.categoria)} />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate font-medium group-hover:text-rosa">{l.descricao}</span>

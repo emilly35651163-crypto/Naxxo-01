@@ -28,9 +28,9 @@ import { pedirPermissaoDeNotificacao } from "@/lib/lembretes";
 import { comDesfazer, mostrarAviso } from "@/lib/avisos";
 import { CampoValor, Chip } from "@/components/Campos";
 import { definirSenha, emailLogado, nuvemAtiva, sair } from "@/lib/nuvem";
-import RecuperarDados from "@/components/RecuperarDados";
 import InstalarApp from "@/components/InstalarApp";
 import SeletorTema from "@/components/SeletorTema";
+import Icone, { ComIcone } from "@/components/Icone";
 
 const AUTOMATICAS = ["Fatura do cartão", "Guardar (metas)"];
 
@@ -77,7 +77,6 @@ export default function Configuracoes() {
   return (
     <div className="space-y-6">
       <InstalarApp />
-      <RecuperarDados />
 
       {nuvemAtiva && (
         <Secao titulo="☁️ Sua conta">
@@ -119,7 +118,7 @@ export default function Configuracoes() {
           <div className="flex flex-wrap gap-2">
             {OBJETIVOS.filter((o) => o.id !== "outro").map((o) => (
               <Chip key={o.id} ativo={!!perfil?.objetivos.includes(o.id)} onClick={() => alternarObjetivo(o.id)}>
-                {o.icone} {o.nome}
+                <Icone e={o.icone} /> {o.nome}
               </Chip>
             ))}
           </div>
@@ -129,9 +128,6 @@ export default function Configuracoes() {
       {/* Aparência */}
       <Secao titulo="🎨 Aparência">
         <SeletorTema />
-        <p className="mt-3 text-xs text-suave">
-          Sóbrio: só as cores. Temático: as cores e um desenho no fundo. Os claros ajudam a ler na rua, de dia.
-        </p>
       </Secao>
 
       {/* Lembretes */}
@@ -290,7 +286,7 @@ export default function Configuracoes() {
           {gastos.map((c) => (
             <li key={c.nome} className="flex items-center gap-2 py-2">
               <span className="min-w-0 flex-1">
-                {c.icone} {c.nome}
+                <Icone e={c.icone} /> {c.nome}
               </span>
               {orcando?.categoria === c.nome ? (
                 <>
@@ -419,7 +415,9 @@ export default function Configuracoes() {
 function Secao({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
     <section className="cartao p-5">
-      <h2 className="mb-3 font-display font-semibold">{titulo}</h2>
+      <h2 className="mb-3 font-display font-semibold">
+        <ComIcone texto={titulo} />
+      </h2>
       {children}
     </section>
   );

@@ -22,6 +22,7 @@ import { hojeISO, lerValor, mesAtual, nomeMes, somarMeses, soNumeros, valorParaC
 import Modal from "./Modal";
 import { Campo, CampoSelect, CampoValor, Chip, DIAS_DO_MES } from "./Campos";
 import { comDesfazer, mostrarAviso } from "@/lib/avisos";
+import Icone from "@/components/Icone";
 
 // Criar ou editar um gasto fixo (aluguel, conta de luz, Netflix…).
 // Com `assinaturaNoCartao`, já abre como assinatura paga naquele cartão (usado na aba Contas).
@@ -138,7 +139,7 @@ export default function FormGastoFixo({
             <div className="flex max-h-32 flex-wrap gap-2 overflow-y-auto">
               {sugestoes.map((s) => (
                 <Chip key={s.nome} ativo={nome === s.nome} onClick={() => usarSugestao(s)}>
-                  {s.icone} {s.nome}
+                  <Icone e={s.icone} /> {s.nome}
                 </Chip>
               ))}
             </div>
@@ -147,7 +148,9 @@ export default function FormGastoFixo({
 
         <Campo rotulo="Nome">
           <div className="flex gap-2">
-            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-fundo text-xl">{icone}</span>
+            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-fundo text-xl">
+              <Icone e={icone} />
+            </span>
             <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Aluguel" className="campo" />
           </div>
         </Campo>
@@ -157,7 +160,7 @@ export default function FormGastoFixo({
           <div className="flex flex-wrap gap-2">
             {CATEGORIAS_FIXO.map((c) => (
               <Chip key={c.id} ativo={categoria === c.id} onClick={() => setCategoria(c.id)}>
-                {c.icone} {c.nome}
+                <Icone e={c.icone} /> {c.nome}
               </Chip>
             ))}
           </div>
@@ -240,7 +243,7 @@ export default function FormGastoFixo({
           <div className="flex flex-wrap gap-2">
             {FORMAS_PAGAMENTO.map((f) => (
               <Chip key={f.id} ativo={pagamento === f.id} onClick={() => setPagamento(f.id)}>
-                {f.icone} {f.nome}
+                <Icone e={f.icone} /> {f.nome}
               </Chip>
             ))}
           </div>

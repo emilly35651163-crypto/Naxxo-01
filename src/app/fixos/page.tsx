@@ -22,6 +22,7 @@ import { brl, formatarData, nomeMes } from "@/lib/formato";
 import FormGastoFixo from "@/components/FormGastoFixo";
 import FormPagarFixo from "@/components/FormPagarFixo";
 import EstadoVazio from "@/components/EstadoVazio";
+import Icone from "@/components/Icone";
 
 export default function Fixos() {
   const todos = useGastosFixos();
@@ -130,7 +131,7 @@ export default function Fixos() {
               <section key={categoria.id} className="cartao p-4">
                 <div className="mb-1 flex items-baseline justify-between px-1">
                   <h3 className="font-semibold">
-                    {categoria.icone} {categoria.nome}
+                    <Icone e={categoria.icone} /> {categoria.nome}
                   </h3>
                   <span className="text-sm tabular-nums text-suave">
                     {brl(daCategoria.reduce((t, f) => t + valorNoMes(f, mes), 0))}
@@ -174,7 +175,7 @@ export default function Fixos() {
                     className="grid size-10 shrink-0 place-items-center rounded-full bg-superficie-2 text-lg opacity-60"
                     aria-hidden
                   >
-                    {f.icone}
+                    <Icone e={f.icone} />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium">{f.nome}</span>
@@ -223,7 +224,9 @@ function LinhaFixo({
   return (
     <li className="flex items-center gap-3 py-3">
       <button onClick={onEditar} className="flex min-w-0 flex-1 items-center gap-3 text-left" aria-label={`Editar ${fixo.nome}`}>
-        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-superficie-2 text-lg">{fixo.icone}</span>
+        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-superficie-2 text-lg">
+          <Icone e={fixo.icone} />
+        </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate font-medium">{fixo.nome}</span>
           <span className="block truncate text-xs text-suave">

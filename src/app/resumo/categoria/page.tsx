@@ -21,6 +21,7 @@ import { useDados } from "@/lib/dados";
 import FormLancamento from "@/components/FormLancamento";
 import FormCompra from "@/components/FormCompra";
 import FormGastoFixo from "@/components/FormGastoFixo";
+import Icone from "@/components/Icone";
 
 // Onde ver (e mexer) mais sobre cada categoria
 const LINKS: Record<string, { href: string; texto: string }> = {
@@ -87,7 +88,7 @@ function Detalhe() {
       <section className="cartao p-5">
         <div className="flex items-center gap-3">
           <span className="grid size-12 shrink-0 place-items-center rounded-full bg-superficie-2 text-2xl">
-            {iconeDaCategoria("saida", nome)}
+            <Icone e={iconeDaCategoria("saida", nome)} />
           </span>
           <div className="min-w-0 flex-1">
             <h1 className="font-display text-xl font-bold">{nome}</h1>
@@ -197,7 +198,7 @@ function Detalhe() {
                     className="group flex w-full items-center gap-3 text-left disabled:cursor-default"
                   >
                     <span className="grid size-10 shrink-0 place-items-center rounded-full bg-superficie-2 text-lg">
-                      {g.icone}
+                      <Icone e={g.icone} />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-medium group-enabled:group-hover:text-rosa">{g.descricao}</span>
@@ -245,7 +246,7 @@ function Detalhe() {
                   href={`/resumo/categoria?nome=${encodeURIComponent(c.categoria)}&de=${parametros.get("de") ?? "graficos"}`}
                   className="rounded-full border border-white/10 px-3 py-1.5 text-sm text-suave hover:border-rosa/50 hover:text-white"
                 >
-                  {iconeDaCategoria("saida", c.categoria)} {c.categoria} · {brl(c.valor)}
+                  <Icone e={iconeDaCategoria("saida", c.categoria)} /> {c.categoria} · {brl(c.valor)}
                 </Link>
               ))}
           </div>

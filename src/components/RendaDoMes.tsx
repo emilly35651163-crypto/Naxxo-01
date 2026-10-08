@@ -7,6 +7,7 @@ import { brl, diasAte, formatarData, hojeISO, lerValor, nomeMes, valorParaCampo 
 import { previstosDoMes, resumoDoMes, type Dados, type Previsto } from "@/lib/previstos";
 import { mostrarAviso } from "@/lib/avisos";
 import { CampoValor } from "./Campos";
+import Icone from "./Icone";
 import ConfirmarPrevisto from "./ConfirmarPrevisto";
 
 // Renda do mês no Início. A regra é simples: o dia passou, caiu (o app registra sozinho).
@@ -84,14 +85,14 @@ export default function RendaDoMes({ mes, dados }: { mes: string; dados: Dados }
         {grupos.map((grupo) => {
           const g = [...grupo].sort((a, b) => Number(a.origem === "benefício") - Number(b.origem === "benefício"));
           const p = g[0];
-          const nome =
-            g.length === 1
-              ? `${p.icone} ${p.nome}`
-              : `${g.map((x) => x.icone).join("")} ${g.map((x) => x.nome.replace(` · ${p.fonte?.nome}`, "")).join(" + ")}`;
+          const nome = g.length === 1 ? p.nome : g.map((x) => x.nome.replace(` · ${p.fonte?.nome}`, "")).join(" + ");
           const dias = diasAte(p.data);
           return (
             <li key={p.chave} className="flex items-center gap-2 text-suave">
               <span className="min-w-0 flex-1 truncate">
+                {g.map((x) => (
+                  <Icone key={x.chave} e={x.icone} className="mr-0.5" />
+                ))}{" "}
                 {nome}
                 <span className="text-xs"> · {formatarData(p.data)}</span>
               </span>

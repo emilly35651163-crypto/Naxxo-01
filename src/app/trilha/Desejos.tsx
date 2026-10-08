@@ -8,6 +8,7 @@ import { useDados } from "@/lib/dados";
 import { comDesfazer } from "@/lib/avisos";
 import { CampoValor } from "@/components/Campos";
 import FormLancamento from "@/components/FormLancamento";
+import Icone from "@/components/Icone";
 
 const IDEIAS = [
   { nome: "Perfume", icone: "🌸" },
@@ -62,7 +63,7 @@ export default function Desejos() {
                 }}
                 className={`rounded-full border px-3 py-1 text-sm ${nome === i.nome ? "border-rosa bg-rosa/15" : "border-white/10"}`}
               >
-                {i.icone} {i.nome}
+                <Icone e={i.icone} /> {i.nome}
               </button>
             ))}
           </div>
@@ -91,7 +92,7 @@ export default function Desejos() {
             return (
               <li key={d.id} className="flex items-center gap-3 py-3">
                 <span className="text-2xl" aria-hidden>
-                  {d.icone}
+                  <Icone e={d.icone} />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block font-medium">

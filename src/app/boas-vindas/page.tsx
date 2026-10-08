@@ -37,6 +37,7 @@ import BoasVindasExtratos, {
   type BancoExtrato,
 } from "@/components/BoasVindasExtratos";
 import { lerRascunhoQuitar, RASCUNHO_QUITAR_VAZIO, type RascunhoQuitar } from "@/components/CamposQuitar";
+import Icone from "@/components/Icone";
 
 type Etapa = "inicio" | "objetivos" | "extratos" | "situacao" | "renda" | "sonhos" | "reserva" | "pronto";
 type Reserva = "tenho" | "quero" | "nao";
@@ -580,7 +581,7 @@ export default function BoasVindas() {
             <div className="flex flex-wrap gap-2">
               {SUGESTOES_SONHOS.map((s) => (
                 <BotaoSugestao key={s.nome} ativo={escolhido("juntar", s.nome)} onClick={() => alternarSonho("juntar", s)}>
-                  {s.icone} {s.nome}
+                  <Icone e={s.icone} /> {s.nome}
                 </BotaoSugestao>
               ))}
               <BotaoSugestao tracejado onClick={() => alternarSonho("juntar", { nome: "", icone: "⭐" })}>
@@ -597,7 +598,7 @@ export default function BoasVindas() {
                   className={`cartao flex items-center gap-3 p-4 ${erro?.alvo === `sonho-${s.id}` ? "border-saida/70" : ""}`}
                 >
                   <span className="text-xl" aria-hidden>
-                    {s.icone}
+                    <Icone e={s.icone} />
                   </span>
                   <input
                     value={s.nome}
@@ -813,7 +814,7 @@ function CartaoOpcao({
       }`}
     >
       <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-superficie-2 text-2xl" aria-hidden>
-        {icone}
+        <Icone e={icone} />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block font-semibold">{nome}</span>
@@ -844,7 +845,7 @@ function LinhaResumo({
     <li>
       <button type="button" onClick={onClick} className="group flex w-full gap-4 py-4 text-left">
         <span className="text-2xl" aria-hidden>
-          {icone}
+          <Icone e={icone} />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-xs text-suave">{rotulo}</span>

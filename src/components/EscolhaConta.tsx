@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCartoes, useLancamentos } from "@/lib/store";
 import { brl } from "@/lib/formato";
 import { iconeDaConta, saldoDaConta, temCredito } from "@/lib/contas";
+import Icone from "@/components/Icone";
 
 /**
  * Escolher de qual conta sai (ou em qual entra) o dinheiro.
@@ -95,7 +96,7 @@ export default function EscolhaConta({
               valor === o.valor ? "border-rosa bg-rosa/15 text-white" : "border-white/10 text-suave hover:text-white"
             }`}
           >
-            {o.icone} {o.nome}
+            <Icone e={o.icone} /> {o.nome}
             <span className="block text-[0.65rem] text-suave">{o.detalhe}</span>
           </button>
         ))}

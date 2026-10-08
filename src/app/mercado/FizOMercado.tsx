@@ -4,6 +4,7 @@ import { useState } from "react";
 import { comprarItemDaLista, totalDoItemLista, type ItemLista } from "@/lib/store";
 import { brl } from "@/lib/formato";
 import { mostrarAviso } from "@/lib/avisos";
+import Icone from "@/components/Icone";
 
 // Fim da lista: "Fiz o mercado". Pergunta se faltou algo; o resto vai para o gasto de hoje e para "Em casa".
 export default function FizOMercado({ lista, contaId }: { lista: ItemLista[]; contaId?: string }) {
@@ -58,7 +59,7 @@ export default function FizOMercado({ lista, contaId }: { lista: ItemLista[]; co
                     className="size-5 accent-rosa"
                   />
                   <span className="min-w-0 flex-1">
-                    {l.icone} {l.nome}
+                    <Icone e={l.icone} /> {l.nome}
                   </span>
                   <span className="text-xs tabular-nums text-suave">
                     {totalDoItemLista(l) > 0 ? brl(totalDoItemLista(l)) : ""}

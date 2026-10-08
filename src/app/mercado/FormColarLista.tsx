@@ -16,6 +16,7 @@ import { brl, hojeISO, valorParaCampo } from "@/lib/formato";
 import { lerListaColada } from "@/lib/mercado";
 import { mostrarAviso } from "@/lib/avisos";
 import Modal from "@/components/Modal";
+import Icone from "@/components/Icone";
 
 // Colar uma lista (ou a nota do mercado) de uma vez: "5kg Arroz 24,99", "4 Sabonete de 5,88"…
 // Com `emCasa`: é o que a pessoa já tem em casa (vai direto para "Em casa", sem lista e sem gasto).
@@ -100,7 +101,9 @@ export default function FormColarLista({ onFechar, emCasa = false }: { onFechar:
             <ul className="max-h-56 divide-y divide-white/5 overflow-y-auto rounded-2xl bg-fundo/50 px-3 text-sm">
               {itens.map((i) => (
                 <li key={i.nome} className="flex items-center gap-2 py-1.5">
-                  <span aria-hidden>{CATEGORIAS_MERCADO.find((c) => c.id === i.categoria)?.icone}</span>
+                  <span aria-hidden>
+                    <Icone e={CATEGORIAS_MERCADO.find((c) => c.id === i.categoria)?.icone} />
+                  </span>
                   <span className="min-w-0 flex-1 truncate">
                     {i.nome}{" "}
                     <span className="text-xs text-suave">

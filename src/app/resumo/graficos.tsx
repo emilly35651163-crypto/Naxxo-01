@@ -9,6 +9,7 @@ import { eventosAte, projetarDia } from "@/lib/projecao";
 import { calcularMeta } from "@/lib/metas";
 import { planoDoMes } from "@/lib/previstos";
 import { useDados } from "@/lib/dados";
+import Icone from "@/components/Icone";
 
 const CORES = ["#ff4ed8", "#8b5cf6", "#3b82f6", "#00e6a1", "#fbbf24", "#fb7185", "#22d3ee", "#a3e635", "#9aa3b8"];
 
@@ -120,7 +121,7 @@ export default function Graficos() {
                     <>
                       <span className="size-2.5 shrink-0 rounded-full" style={{ background: c.cor }} />
                       <span className="min-w-0 flex-1 truncate">
-                        {iconeDaCategoria("saida", c.categoria)} {c.categoria}
+                        <Icone e={iconeDaCategoria("saida", c.categoria)} /> {c.categoria}
                       </span>
                       <span className="tabular-nums text-suave">{brl(c.valor).replace(",00", "")}</span>
                       <span className="w-9 text-right tabular-nums text-suave">{Math.round(c.tamanho * 100)}%</span>
@@ -249,7 +250,7 @@ export default function Graficos() {
                     <Link href="/trilha" className="block rounded-lg p-1 -m-1 hover:bg-white/5">
                       <div className="flex items-baseline justify-between gap-2 text-sm">
                         <span className="min-w-0 truncate">
-                          {m.icone} {m.nome}
+                          <Icone e={m.icone} /> {m.nome}
                         </span>
                         <span className="shrink-0 text-xs text-suave">
                           {c.previsao
@@ -294,7 +295,7 @@ export default function Graficos() {
                   <Link href={detalhe(c.categoria)} className="block hover:text-rosa">
                     <div className="flex justify-between gap-2 text-sm">
                       <span>
-                        {iconeDaCategoria("saida", c.categoria)} {c.categoria}
+                        <Icone e={iconeDaCategoria("saida", c.categoria)} /> {c.categoria}
                       </span>
                       <span className={`tabular-nums ${passou ? "text-saida" : "text-suave"}`}>
                         {brl(c.valor)} / {brl(limite)}

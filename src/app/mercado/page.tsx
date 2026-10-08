@@ -30,6 +30,7 @@ import FizOMercado from "./FizOMercado";
 import { gastosDoMes } from "@/lib/analise";
 import { useDados } from "@/lib/dados";
 import CamposPreco from "./CamposPreco";
+import Icone from "@/components/Icone";
 
 export default function Mercado() {
   const lista = useListaCompras();
@@ -165,7 +166,7 @@ export default function Mercado() {
                 return (
                   <div key={cat.id} className="mt-4">
                     <p className="titulo-secao">
-                      {cat.icone} {cat.nome}
+                      <Icone e={cat.icone} /> {cat.nome}
                     </p>
                     <ul className="space-y-2">
                       {itens.map((l) => (
@@ -210,7 +211,7 @@ export default function Mercado() {
             {emCasa.map(({ item, s }) => (
               <li key={item.id} className="flex items-center gap-3 py-2.5">
                 <span className="text-xl" aria-hidden>
-                  {CATEGORIAS_MERCADO.find((c) => c.id === item.categoria)?.icone ?? item.icone}
+                  <Icone e={CATEGORIAS_MERCADO.find((c) => c.id === item.categoria)?.icone ?? item.icone} />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">{item.nome}</span>
