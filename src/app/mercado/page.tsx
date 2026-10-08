@@ -21,7 +21,7 @@ import {
   usePreferencias,
   type ItemLista,
 } from "@/lib/store";
-import { brl, formatarData, hojeISO, nomeMes } from "@/lib/formato";
+import { brl, formatarData, hojeISO, mesAtual, nomeMes } from "@/lib/formato";
 import { DURACOES, previsaoDoMes, situacaoDoItem } from "@/lib/mercado";
 import { comDesfazer, mostrarAviso } from "@/lib/avisos";
 import FormItemLista from "./FormItemLista";
@@ -52,8 +52,14 @@ export default function Mercado() {
   const gastosMercado = gastosDoMes(mes, dados).filter((g) => g.categoria === "Mercado" && !g.previsto);
   const gastoNoMes = gastosMercado.reduce((t, g) => t + g.valor, 0);
   const [verGastos, setVerGastos] = useState(false);
-  const previsto = previsaoDoMes(despensa, mes).total;
   const totalLista = lista.reduce((t, l) => t + totalDoItemLista(l), 0);
+  // Repor este mês: o que já está na lista de compras + o que vai acabar em casa (sem contar duas vezes o que está nos dois)
+  const naLista = (nome: string) => lista.some((l) => l.nome.trim().toLowerCase() === nome.trim().toLowerCase());
+  const previsto =
+    previsaoDoMes(
+      despensa.filter((i) => !naLista(i.nome)),
+      mes,
+    ).total + (mes >= mesAtual() ? totalLista : 0);
 
   // Pós-compra: o que está em casa, do que acaba primeiro para o que acaba depois
   const emCasa = despensa
@@ -178,20 +184,20 @@ export default function Mercado() {
       {/* Pós-compra: o que tem em casa e quando acaba (sempre aparece, para dar para adicionar o que já tem) */}
       {(emCasa.length > 0 || lista.length > 0) && (
         <section className="cartao p-4">
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <h2 className="font-display font-semibold">🏠 Em casa</h2>
-            <div className="flex flex-wrap justify-end gap-2">
-              <button
-                onClick={() => setColandoEmCasa(true)}
-                className="rounded-full border border-white/15 px-3 py-1.5 text-sm text-suave hover:text-white"
-              >
-                📋 Colar lista
-              </button>
+          <div className="mb-3 space-y-3">
+            <h2 className="whitespace-nowrap font-display font-semibold">🏠 Em casa</h2>
+            <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => setEmCasaNovo(true)}
-                className="rounded-full border border-rosa/50 px-3 py-1.5 text-sm text-rosa"
+                className="rounded-full border border-rosa/50 px-3 py-2 text-sm text-rosa hover:bg-rosa/10"
               >
                 + Já tenho em casa
+              </button>
+              <button
+                onClick={() => setColandoEmCasa(true)}
+                className="rounded-full border border-white/15 px-3 py-2 text-sm text-suave hover:text-white"
+              >
+                📋 Colar lista
               </button>
             </div>
           </div>
