@@ -1091,6 +1091,16 @@ export function adicionarDesejo(novo: Omit<Desejo, "id" | "criadoEm">) {
   desejos.gravar([...desejos.ler(), { ...novo, id: novoId(), criadoEm: hojeISO() }]);
 }
 
+/** Prioridade: a ordem da lista (o primeiro é o mais importante). delta -1 sobe, +1 desce */
+export function moverDesejo(id: string, delta: number) {
+  const lista = [...desejos.ler()];
+  const i = lista.findIndex((d) => d.id === id);
+  const j = i + delta;
+  if (i < 0 || j < 0 || j >= lista.length) return;
+  [lista[i], lista[j]] = [lista[j], lista[i]];
+  desejos.gravar(lista);
+}
+
 export function removerDesejo(id: string) {
   desejos.gravar(desejos.ler().filter((d) => d.id !== id));
 }

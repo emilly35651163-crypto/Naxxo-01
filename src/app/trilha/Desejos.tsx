@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { adicionarDesejo, removerDesejo, useDesejos, type Desejo } from "@/lib/store";
+import { adicionarDesejo, moverDesejo, removerDesejo, useDesejos, type Desejo } from "@/lib/store";
 import { brl, lerValor } from "@/lib/formato";
 import { avaliarDesejo } from "@/lib/desejos";
-import { assumirGastoMensal, avaliarGastoMensal } from "@/lib/cabe";
+import { assumirGastoMensal, avaliarGastoMensal, planoDosDesejos } from "@/lib/cabe";
 import { mesAtual, nomeMes } from "@/lib/formato";
 import { useDados } from "@/lib/dados";
 import { comDesfazer } from "@/lib/avisos";
@@ -32,6 +32,8 @@ export default function Desejos() {
   const [icone, setIcone] = useState("✨");
   const [valor, setValor] = useState("");
   const [comprando, setComprando] = useState<Desejo | null>(null);
+  const plano = desejos.length > 1 ? planoDosDesejos(desejos, dados) : null;
+  const mesCurto = (m: string) => (m === mesAtual() ? "este mês" : nomeMes(m).toLowerCase());
 
   /** Desejo mensal: cabe começar este mês? (a mesma conta do "Cabe no meu mês?") */
   function avaliarMensal(d: Desejo) {
@@ -124,12 +126,85 @@ export default function Desejos() {
         </form>
       )}
 
+      {plano && (
+        <div className="cartao mb-3 space-y-3 p-4">
+          <div>
+            <h3 className="font-display font-bold">Plano dos desejos</h3>
+            <p className="text-xs text-suave">
+              Todos juntos, na ordem de prioridade (mude com as setinhas). A sobra de cada mês vai sendo usada e juntada, sempre
+              com uma folga para imprevistos.
+            </p>
+          </div>
+          <p className={`text-sm font-semibold ${plano.todosCabem ? "text-entrada" : "text-amber-300"}`}>
+            {plano.todosCabem ? (
+              <>
+                <Icone e="✅" /> Dá para todos nos próximos 12 meses
+              </>
+            ) : (
+              <>
+                <Icone e="⚠️" /> Nem todos cabem nos próximos 12 meses
+              </>
+            )}
+          </p>
+          <ol className="space-y-2">
+            {plano.linha.map((m) => (
+              <li key={m.mes} className="flex gap-3 text-sm">
+                <span className="w-24 shrink-0 font-semibold capitalize text-rosa">{mesCurto(m.mes)}</span>
+                <span className="min-w-0 flex-1">
+                  {m.itens.map((d) => (
+                    <span key={d.id} className="block">
+                      {d.mensal ? "começar" : "comprar"} <TextoComIcones texto={d.nome} />{" "}
+                      <span className="text-suave tabular-nums">
+                        ({brl(d.valor)}
+                        {d.mensal && "/mês"})
+                      </span>
+                    </span>
+                  ))}
+                </span>
+              </li>
+            ))}
+            {desejos
+              .filter((d) => plano.quando[d.id] === null)
+              .map((d) => (
+                <li key={d.id} className="flex gap-3 text-sm">
+                  <span className="w-24 shrink-0 font-semibold text-saida">não cabe</span>
+                  <span className="min-w-0 flex-1 text-suave">
+                    <TextoComIcones texto={d.nome} /> ({brl(d.valor)}
+                    {d.mensal && "/mês"}): um preço menor ou subir na prioridade pode ajudar.
+                  </span>
+                </li>
+              ))}
+          </ol>
+        </div>
+      )}
+
       {desejos.length > 0 ? (
         <ul className="cartao divide-y divide-white/5 px-4">
-          {desejos.map((d) => {
+          {desejos.map((d, i) => {
             const v = d.mensal ? avaliarMensal(d) : avaliarDesejo(d.valor, dados);
             return (
               <li key={d.id} className="flex items-center gap-3 py-3">
+                {desejos.length > 1 && (
+                  <div className="flex shrink-0 flex-col items-center text-suave">
+                    <button
+                      onClick={() => moverDesejo(d.id, -1)}
+                      disabled={i === 0}
+                      aria-label={`Subir ${d.nome} na prioridade`}
+                      className="px-1 leading-none hover:text-rosa disabled:opacity-20"
+                    >
+                      ▲
+                    </button>
+                    <span className="text-[0.65rem] font-semibold tabular-nums">{i + 1}º</span>
+                    <button
+                      onClick={() => moverDesejo(d.id, 1)}
+                      disabled={i === desejos.length - 1}
+                      aria-label={`Descer ${d.nome} na prioridade`}
+                      className="px-1 leading-none hover:text-rosa disabled:opacity-20"
+                    >
+                      ▼
+                    </button>
+                  </div>
+                )}
                 <span className="text-2xl" aria-hidden>
                   <Icone e={d.icone} />
                 </span>
@@ -147,6 +222,11 @@ export default function Desejos() {
                   <span className="block text-xs text-suave">
                     <TextoComIcones texto={v.texto} />
                   </span>
+                  {plano && (
+                    <span className="mt-0.5 block text-xs text-rosa">
+                      No plano com os outros: {plano.quando[d.id] ? mesCurto(plano.quando[d.id]!) : "não cabe em 12 meses"}
+                    </span>
+                  )}
                 </span>
                 <div className="flex shrink-0 flex-col items-end gap-1">
                   <button
