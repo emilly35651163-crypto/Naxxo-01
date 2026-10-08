@@ -21,10 +21,13 @@ const montserrat = Montserrat({
 export const metadata: Metadata = {
   title: "NAXXO Finanças",
   description: "Controle financeiro pessoal",
+  // App instalado no iPhone: a barra de cima (hora, bateria) fica transparente e mostra o topo do app por baixo
+  appleWebApp: { capable: true, title: "NAXXO", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = {
   themeColor: "#0b0f1a",
+  viewportFit: "cover", // o app vai até as bordas (por baixo da barra do iPhone); o topo compensa com a área segura
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

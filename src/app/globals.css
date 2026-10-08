@@ -170,6 +170,19 @@ body::before {
 /* Nos temas com cena no fundo, os títulos de seção ganham um contorno da cor do fundo (para ler bem por cima do desenho) */
 :root[data-estilo="tematico"] .titulo-secao { text-shadow: 0 0 8px var(--color-fundo), 0 0 3px var(--color-fundo), 0 0 1px var(--color-fundo); }
 
+/* App instalado no iPhone: a barra de cima é transparente e mostra o topo do app (a cor muda junto com o tema).
+   A hora fica sempre branca; nos temas claros, uma sombra suave só na faixa da barra do iPhone deixa ela legível. */
+.topo::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: env(safe-area-inset-top);
+  pointer-events: none;
+}
+:root[data-tema="claro"] .topo::before {
+  background: linear-gradient(180deg, rgb(0 0 0 / 0.28), rgb(0 0 0 / 0));
+}
+
 /* Temas claros: contornos na cor do tema (para cada claro ter personalidade e não parecer só branco) */
 :root[data-tema="claro"] .cartao {
   border-color: color-mix(in srgb, var(--color-rosa) 55%, transparent);

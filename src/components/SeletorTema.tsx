@@ -14,14 +14,8 @@ export default function SeletorTema() {
 
   const versoes = TEMAS.filter((t) => t.cor === grupo);
 
-  // No app instalado no iPhone, a barra de cima (onde fica a hora) só pega a cor nova quando o app recarrega
   function escolher(id: EscolhaTema) {
     mudarPreferencias({ tema: id });
-    const instalado =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (navigator as Navigator & { standalone?: boolean }).standalone === true;
-    // Espera salvar na conta (leva menos de 1 s) e recarrega
-    if (instalado) setTimeout(() => window.location.reload(), 1200);
   }
   const nomeAtual = tema === "auto" ? "Automático" : (atual?.nome ?? "NAXXO escuro");
 

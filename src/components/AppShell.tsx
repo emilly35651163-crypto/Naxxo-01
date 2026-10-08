@@ -120,7 +120,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <BarraLateral />
 
       <div className="mx-auto flex min-h-dvh w-full min-w-0 max-w-lg flex-col px-4 lg:max-w-6xl lg:px-10">
-        <header className="topo sticky top-0 z-10 -mx-4 px-4 py-3 backdrop-blur print:hidden lg:-mx-10 lg:px-10 lg:py-6">
+        <header className="topo sticky top-0 z-10 -mx-4 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur print:hidden lg:-mx-10 lg:px-10 lg:py-6">
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-3 lg:hidden">
               <Logo />

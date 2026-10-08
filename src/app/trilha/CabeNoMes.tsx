@@ -43,18 +43,28 @@ export default function CabeNoMes() {
   const a = numero > 0 ? avaliarGastoMensal(numero, inicio, Number(vezes) || null, dados) : null;
   const opcoesInicio = [0, 1, 2, 3].map((i) => somarMeses(mesAtual(), i));
 
+  /** Depois de incluir ou guardar: campos em branco para o próximo (o aviso continua aparecendo um tempo) */
+  function limpar(oQue: "fixo" | "desejo") {
+    setNome("");
+    setIcone("🏋️");
+    setValor("");
+    setVezes("");
+    setInicio(mesAtual());
+    setFeito(oQue);
+  }
+
   function incluir() {
     if (!a) return;
     const comeca = a.veredito === "depois" && a.aPartirDe ? a.aPartirDe : inicio;
     assumirGastoMensal({ nome, icone, valor: numero, inicio: comeca, vezes: Number(vezes) || null });
-    setFeito("fixo");
+    limpar("fixo");
     mostrarAviso({ texto: `${nome.trim() || "Gasto"} incluído a partir de ${mesCurto(comeca)} ✓` });
   }
 
   /** Ainda não: fica nos Desejos (mensal); quando começar, vira gasto fixo */
   function guardarComoDesejo() {
     adicionarDesejo({ nome: nome.trim() || "Gasto mensal", icone, valor: numero, mensal: { vezes: Number(vezes) || undefined } });
-    setFeito("desejo");
+    limpar("desejo");
     mostrarAviso({ texto: `${nome.trim() || "Gasto"} está nos seus desejos ✓` });
   }
 
@@ -194,17 +204,17 @@ export default function CabeNoMes() {
               </button>
             </div>
           )}
-          {feito === "fixo" && (
-            <p className="text-sm text-entrada">
-              <Icone e="✅" /> Incluído nos seus gastos fixos (dá para mudar o dia em Contas).
-            </p>
-          )}
-          {feito === "desejo" && (
-            <p className="text-sm text-entrada">
-              <Icone e="✅" /> Está nos Desejos (aqui em cima). Quando começar, toque em “Comecei” e ele vira gasto fixo.
-            </p>
-          )}
         </div>
+      )}
+      {feito === "fixo" && (
+        <p className="text-sm text-entrada">
+          <Icone e="✅" /> Incluído nos seus gastos fixos (dá para mudar o dia em Contas).
+        </p>
+      )}
+      {feito === "desejo" && (
+        <p className="text-sm text-entrada">
+          <Icone e="✅" /> Está nos Desejos (aqui em cima). Quando começar, toque em “Comecei” e ele vira gasto fixo.
+        </p>
       )}
     </section>
   );

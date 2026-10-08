@@ -54,7 +54,10 @@ export default function Entrar() {
   }
 
   return (
-    <form onSubmit={enviar} className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center px-6">
+    <form
+      onSubmit={enviar}
+      className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center px-6 pt-[env(safe-area-inset-top)]"
+    >
       <div className="flex flex-col items-center text-center">
         <Image src={simbolo} alt="" className="h-20 w-auto drop-shadow-[0_0_30px_rgb(255_78_216/0.5)]" priority />
         <NomeNaxxo className="mt-5 h-5 w-auto" />

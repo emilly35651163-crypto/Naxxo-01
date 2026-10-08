@@ -382,7 +382,7 @@ export default function BoasVindas() {
         e.preventDefault();
         continuar();
       }}
-      className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-5 pb-8 pt-6"
+      className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-5 pb-8 pt-[calc(env(safe-area-inset-top)+1.5rem)]"
     >
       {/* Barra de progresso */}
       <div className="mb-8 flex h-10 items-center gap-4">
