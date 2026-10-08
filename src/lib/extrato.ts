@@ -453,3 +453,10 @@ export function comoCartao(extrato: Extrato): Extrato {
   });
   return { linhas, ehCartao: true };
 }
+
+/**
+ * Tipos de arquivo do seletor. No Android, só a extensão (.ofx) não basta: o seletor deixa o arquivo cinza
+ * (não conhece o tipo). Por isso vão também os tipos genéricos com que os bancos mandam o OFX e o CSV.
+ */
+export const ARQUIVOS_DE_EXTRATO =
+  ".ofx,.qfx,.csv,.txt,text/plain,text/csv,text/comma-separated-values,application/x-ofx,application/vnd.intu.qfx,application/octet-stream,application/vnd.ms-excel";

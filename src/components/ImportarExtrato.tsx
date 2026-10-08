@@ -20,7 +20,15 @@ import { useDados } from "@/lib/dados";
 import { confirmarPrevisto } from "./ConfirmarPrevisto";
 import { PainelFrequente, PainelLigar, previstoParecido, type Frequente, type Ligacao } from "./LigarOuFrequente";
 import { cartoesDeCredito, marcoDoSaldo, saldoDaConta } from "@/lib/contas";
-import { compraDoExtrato, jaExiste, lerExtrato, parcelaRepetida, type Existente, type LinhaExtrato } from "@/lib/extrato";
+import {
+  ARQUIVOS_DE_EXTRATO,
+  compraDoExtrato,
+  jaExiste,
+  lerExtrato,
+  parcelaRepetida,
+  type Existente,
+  type LinhaExtrato,
+} from "@/lib/extrato";
 import { comDesfazer } from "@/lib/avisos";
 import Modal from "./Modal";
 import Icone, { TextoComIcones } from "@/components/Icone";
@@ -341,7 +349,7 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
           <TextoComIcones texto={nomeArquivo ? `📄 ${nomeArquivo} (trocar)` : "📂 Abrir o arquivo do extrato"} />
           <input
             type="file"
-            accept=".ofx,.csv,.txt,.qfx"
+            accept={ARQUIVOS_DE_EXTRATO}
             className="sr-only"
             onChange={(e) => {
               void escolherArquivo(e.target.files?.[0]);

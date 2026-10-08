@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { adicionarCartao, agoraLocal, CORES_CARTAO, semAcento, SUGESTOES_CARTAO, type Cartao } from "@/lib/store";
 import { brl, formatarData, hojeISO, lerValor, valorParaCampo } from "@/lib/formato";
-import { bancoDoArquivo, comoCartao, detectarSalario, lerExtrato, type Extrato } from "@/lib/extrato";
+import { ARQUIVOS_DE_EXTRATO, bancoDoArquivo, comoCartao, detectarSalario, lerExtrato, type Extrato } from "@/lib/extrato";
 import { Campo, CampoSelect, CampoValor, Chip, DIAS_DO_MES } from "./Campos";
 import ComprasManuais, {
   comprasDosPrints,
@@ -202,7 +202,7 @@ function ZonaArquivo({
       <span className="block text-xs text-suave">{ajuda}</span>
       <input
         type="file"
-        accept={onPrints ? ".ofx,.csv,.txt,.qfx,image/*" : ".ofx,.csv,.txt,.qfx"}
+        accept={onPrints ? `${ARQUIVOS_DE_EXTRATO},image/*` : ARQUIVOS_DE_EXTRATO}
         multiple={!!onPrints}
         className="sr-only"
         onChange={(e) => {
