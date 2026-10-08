@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  adicionarNaDespensa,
   adicionarNaLista,
   CATEGORIAS_MERCADO,
   comprarItemDaLista,
@@ -17,7 +18,8 @@ import { mostrarAviso } from "@/lib/avisos";
 import Modal from "@/components/Modal";
 
 // Colar uma lista (ou a nota do mercado) de uma vez: "5kg Arroz 24,99", "4 Sabonete de 5,88"…
-export default function FormColarLista({ onFechar }: { onFechar: () => void }) {
+// Com `emCasa`: é o que a pessoa já tem em casa (vai direto para "Em casa", sem lista e sem gasto).
+export default function FormColarLista({ onFechar, emCasa = false }: { onFechar: () => void; emCasa?: boolean }) {
   const contas = useCartoes();
   const prefs = usePreferencias();
   const [texto, setTexto] = useState("");
@@ -34,6 +36,20 @@ export default function FormColarLista({ onFechar }: { onFechar: () => void }) {
 
   function salvar() {
     if (itens.length === 0) return;
+    if (emCasa) {
+      for (const i of itens)
+        adicionarNaDespensa({
+          nome: i.nome,
+          icone: CATEGORIAS_MERCADO.find((c) => c.id === i.categoria)!.icone,
+          categoria: i.categoria,
+          quantidade: `${i.qtd} ${i.unidadeQtd}`,
+          valor: Math.round(i.total * 100) / 100,
+          ultimaCompra: hojeISO(),
+          repor: true,
+        });
+      mostrarAviso({ texto: `${itens.length} itens em casa 🏠` });
+      return onFechar();
+    }
     for (const i of itens) {
       adicionarNaLista({
         nome: i.nome,
@@ -57,7 +73,7 @@ export default function FormColarLista({ onFechar }: { onFechar: () => void }) {
   }
 
   return (
-    <Modal titulo="Colar uma lista" onFechar={onFechar}>
+    <Modal titulo={emCasa ? "Colar o que já tem em casa" : "Colar uma lista"} onFechar={onFechar}>
       <div className="space-y-4">
         <textarea
           autoFocus
@@ -99,20 +115,30 @@ export default function FormColarLista({ onFechar }: { onFechar: () => void }) {
               {itens.length} itens · <b className="tabular-nums">{brl(total)}</b>
             </p>
 
-            <div className="grid grid-cols-2 gap-1 rounded-full bg-fundo p-1 text-sm" role="radiogroup" aria-label="O que fazer">
-              {[true, false].map((v) => (
-                <button
-                  key={String(v)}
-                  role="radio"
-                  aria-checked={comprei === v}
-                  onClick={() => setComprei(v)}
-                  className={`rounded-full py-2 ${comprei === v ? "bg-white font-semibold text-fundo" : "text-suave"}`}
-                >
-                  {v ? "✓ Já comprei hoje" : "Só na lista"}
-                </button>
-              ))}
-            </div>
-            {comprei && contas.length > 0 && (
+            {emCasa ? (
+              <p className="rounded-2xl bg-roxo/10 px-3 py-2 text-xs text-suave">
+                🏠 Vão direto para “Em casa” (não entram na lista nem no gasto). Quando acabar, toque em “Acabou hoje”.
+              </p>
+            ) : (
+              <div
+                className="grid grid-cols-2 gap-1 rounded-full bg-fundo p-1 text-sm"
+                role="radiogroup"
+                aria-label="O que fazer"
+              >
+                {[true, false].map((v) => (
+                  <button
+                    key={String(v)}
+                    role="radio"
+                    aria-checked={comprei === v}
+                    onClick={() => setComprei(v)}
+                    className={`rounded-full py-2 ${comprei === v ? "bg-white font-semibold text-fundo" : "text-suave"}`}
+                  >
+                    {v ? "✓ Já comprei hoje" : "Só na lista"}
+                  </button>
+                ))}
+              </div>
+            )}
+            {!emCasa && comprei && contas.length > 0 && (
               <label className="flex items-center gap-2 text-sm text-suave">
                 Pago com
                 <select value={contaId} onChange={(e) => setContaId(e.target.value)} className="campo w-auto cursor-pointer py-2">
@@ -134,9 +160,11 @@ export default function FormColarLista({ onFechar }: { onFechar: () => void }) {
         >
           {itens.length === 0
             ? "Cole os itens acima"
-            : comprei
-              ? `Registrar compra de ${brl(total)}`
-              : `Pôr ${itens.length} itens na lista`}
+            : emCasa
+              ? `Pôr ${itens.length} itens em casa`
+              : comprei
+                ? `Registrar compra de ${brl(total)}`
+                : `Pôr ${itens.length} itens na lista`}
         </button>
       </div>
     </Modal>

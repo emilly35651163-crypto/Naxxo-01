@@ -39,6 +39,7 @@ export default function Mercado() {
   const [adicionando, setAdicionando] = useState(false);
   const [colando, setColando] = useState(false);
   const [emCasaNovo, setEmCasaNovo] = useState(false);
+  const [colandoEmCasa, setColandoEmCasa] = useState(false);
   const [editando, setEditando] = useState<ItemLista | null>(null);
   const [listaAberta, setListaAberta] = useState(true);
 
@@ -177,12 +178,20 @@ export default function Mercado() {
         <section className="cartao p-4">
           <div className="mb-3 flex items-center justify-between gap-2">
             <h2 className="font-display font-semibold">🏠 Em casa</h2>
-            <button
-              onClick={() => setEmCasaNovo(true)}
-              className="rounded-full border border-rosa/50 px-3 py-1.5 text-sm text-rosa"
-            >
-              + Já tenho em casa
-            </button>
+            <div className="flex flex-wrap justify-end gap-2">
+              <button
+                onClick={() => setColandoEmCasa(true)}
+                className="rounded-full border border-white/15 px-3 py-1.5 text-sm text-suave hover:text-white"
+              >
+                📋 Colar lista
+              </button>
+              <button
+                onClick={() => setEmCasaNovo(true)}
+                className="rounded-full border border-rosa/50 px-3 py-1.5 text-sm text-rosa"
+              >
+                + Já tenho em casa
+              </button>
+            </div>
           </div>
           {emCasa.length === 0 && (
             <p className="text-sm text-suave">
@@ -239,6 +248,7 @@ export default function Mercado() {
 
       {colando && <FormColarLista onFechar={() => setColando(false)} />}
       {emCasaNovo && <FormItemLista emCasa onFechar={() => setEmCasaNovo(false)} />}
+      {colandoEmCasa && <FormColarLista emCasa onFechar={() => setColandoEmCasa(false)} />}
       {(adicionando || editando) && (
         <FormItemLista
           inicial={editando ?? undefined}
