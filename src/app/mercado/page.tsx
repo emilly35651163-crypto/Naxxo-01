@@ -1,6 +1,7 @@
 "use client";
 
 import CarrinhoApps from "./CarrinhoApps";
+import LerNotinha from "./LerNotinha";
 import { useState } from "react";
 import {
   atualizarItemMercado,
@@ -110,6 +111,9 @@ function MercadoDaCasa() {
         <Numero rotulo="Repor este mês" valor={brl(previsto)} />
         <Numero rotulo="Na lista" valor={`${lista.length} ${lista.length === 1 ? "item" : "itens"}`} />
       </section>
+
+      {/* Foto da notinha → vira a compra (gasto + Em casa), como o "Fiz o mercado" */}
+      <LerNotinha />
 
       {/* As compras do mês (tocando no gasto): dá para excluir uma compra feita por engano */}
       {verGastos && (

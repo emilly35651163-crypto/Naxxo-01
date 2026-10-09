@@ -16,6 +16,7 @@ import { brl, lerValor, valorParaCampo } from "@/lib/formato";
 import { comDesfazer } from "@/lib/avisos";
 import { CampoValor, Chip } from "@/components/Campos";
 import FormLancamento from "@/components/FormLancamento";
+import LerPrintCarrinho from "./LerPrintCarrinho";
 import Icone, { TextoComIcones } from "@/components/Icone";
 
 /** As lojas mais usadas (a pessoa pode escrever outra) */
@@ -74,6 +75,8 @@ export default function CarrinhoApps() {
           + Item
         </button>
       </div>
+
+      <LerPrintCarrinho />
 
       {adicionando && <NovoItem lojaInicial={lojas[0]} onPronto={() => setAdicionando(false)} />}
 
