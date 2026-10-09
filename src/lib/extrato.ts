@@ -456,7 +456,11 @@ function lerCSV(texto: string): Extrato {
 
 /** Lê um extrato (OFX ou CSV). Linhas repetidas no próprio arquivo ficam uma vez só. */
 export function lerExtrato(texto: string): Extrato {
-  const extrato = /<OFX>|<STMTTRN>/i.test(texto) ? lerOFX(texto) : lerCSV(texto);
+  return arrumar(/<OFX>|<STMTTRN>/i.test(texto) ? lerOFX(texto) : lerCSV(texto));
+}
+
+/** Depois de ler (OFX, CSV ou PDF): sinal do cartão e linhas iguais numeradas */
+function arrumar(extrato: Extrato): Extrato {
   if (extrato.ehCartao) {
     // Cada banco usa um sinal para a compra; a maioria das linhas de uma fatura é compra: se deu o contrário, inverte
     const entradas = extrato.linhas.filter((l) => l.tipo === "entrada").length;
@@ -676,4 +680,114 @@ export function comoCartao(extrato: Extrato): Extrato {
  * (não conhece o tipo). Por isso vão também os tipos genéricos com que os bancos mandam o OFX e o CSV.
  */
 export const ARQUIVOS_DE_EXTRATO =
-  ".ofx,.qfx,.csv,.txt,text/plain,text/csv,text/comma-separated-values,application/x-ofx,application/vnd.intu.qfx,application/octet-stream,application/vnd.ms-excel";
+  ".ofx,.qfx,.csv,.txt,.pdf,application/pdf,text/plain,text/csv,text/comma-separated-values,application/x-ofx,application/vnd.intu.qfx,application/octet-stream,application/vnd.ms-excel";
+
+// ---------- PDF (o texto já tirado do PDF, uma linha por linha da página) ----------
+
+const MESES_PDF: Record<string, string> = {
+  jan: "01",
+  fev: "02",
+  mar: "03",
+  abr: "04",
+  mai: "05",
+  jun: "06",
+  jul: "07",
+  ago: "08",
+  set: "09",
+  out: "10",
+  nov: "11",
+  dez: "12",
+};
+// Valor em reais no padrão brasileiro (vírgula nos centavos), com o sinal antes (−, +) ou depois (D, C, −)
+const DINHEIRO_PDF = /(^|[\s|])([-−+])?\s*(?:R\$\s*)?(\d{1,3}(?:\.\d{3})+,\d{2}|\d+,\d{2})(\s*[DC]\b|\s*-(?!\d))?(?=$|[\s|])/gi;
+// Entrada sem sinal na linha: o que diz que entrou dinheiro
+const PALAVRAS_DE_ENTRADA =
+  /recebid|credito em conta|deposito|salario|estorno|rendimento|resgate|devolucao|reembolso|cashback|\bpix rec|\bted rec/;
+
+/** Data no começo da linha: "05/10/2026", "05/10/26", "05/10", "05 OUT", "05 de outubro de 2026" → "2026-10-05" */
+function dataDoPdf(texto: string, anoPadrao: string): { data: string; resto: string } | null {
+  const t = texto.trim();
+  let m = t.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/);
+  if (m) {
+    const ano = m[3] ? (m[3].length === 2 ? `20${m[3]}` : m[3]) : anoPadrao;
+    const dia = Number(m[1]);
+    const mes = Number(m[2]);
+    if (dia >= 1 && dia <= 31 && mes >= 1 && mes <= 12)
+      return { data: `${ano}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`, resto: t.slice(m[0].length) };
+  }
+  m = semAcento(t).match(
+    /^(\d{1,2})\s*(?:de\s+)?(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)[a-z]*\.?(?:\s*(?:de\s+)?(\d{4}))?/,
+  );
+  if (m) {
+    const dia = Number(m[1]);
+    if (dia >= 1 && dia <= 31)
+      return { data: `${m[3] ?? anoPadrao}-${MESES_PDF[m[2]]}-${String(dia).padStart(2, "0")}`, resto: t.slice(m[0].length) };
+  }
+  return null;
+}
+
+/**
+ * Extrato em PDF → movimentações. Cada banco monta o PDF de um jeito; o que quase todos têm em comum:
+ * a data no começo da linha (ou um título com a data e as movimentações embaixo), a descrição e o valor
+ * (às vezes seguido do saldo do dia). Sem sinal no valor: o texto diz se entrou (recebido, salário…) ou saiu.
+ */
+export function extratoDoPdf(linhasPdf: string[], hoje = new Date()): Extrato {
+  const tudo = semAcento(linhasPdf.join("\n"));
+  const ehCartao = /fatura/.test(tudo) && /vencimento/.test(tudo) && !/saldo anterior|saldo do dia|saldo em conta/.test(tudo);
+  // Ano das datas sem ano: o que mais aparece no documento (ou o atual)
+  const anos = (tudo.match(/\b20\d{2}\b/g) ?? []).reduce<Record<string, number>>((t, a) => ({ ...t, [a]: (t[a] ?? 0) + 1 }), {});
+  const anoPadrao = Object.entries(anos).sort((a, b) => b[1] - a[1])[0]?.[0] ?? String(hoje.getFullYear());
+
+  const linhas: LinhaExtrato[] = [];
+  let dataAtual = "";
+  let saldo: number | undefined;
+  let anterior = ""; // a linha de cima sem valor (alguns bancos põem a descrição numa linha e o valor na outra)
+  for (const bruta of linhasPdf) {
+    const d = dataDoPdf(bruta, anoPadrao);
+    const resto = d ? d.resto : bruta;
+    const valores = [...resto.matchAll(DINHEIRO_PDF)];
+    const textoSem = semAcento(resto);
+    if (d) dataAtual = d.data;
+    if (valores.length === 0) {
+      anterior = /[a-z]{3}/i.test(resto) ? resto.replace(/\|/g, " ").trim() : "";
+      continue;
+    }
+    // Saldo da conta (o último que aparecer)
+    if (/saldo (final|atual|do dia|disponivel|em conta)|^\s*saldo\b/.test(textoSem)) {
+      if (!ehCartao) {
+        const v = valores[valores.length - 1];
+        saldo = lerNumero(`${v[2] ?? ""}${v[3]}${v[4] ?? ""}`.replace("−", "-"));
+      }
+      anterior = "";
+      continue;
+    }
+    if (!dataAtual || /\btotal\b|limite|pagamento minimo|valor minimo/.test(textoSem)) {
+      anterior = "";
+      continue;
+    }
+    // O valor é o primeiro número de dinheiro da linha (o último, quando há dois, costuma ser o saldo)
+    const v = valores[0];
+    const sinalAntes = (v[2] ?? "").replace("−", "-");
+    const sinalDepois = (v[4] ?? "").trim().toUpperCase();
+    let numero = lerNumero(v[3]);
+    // Colunas viram "nome - detalhe" (como no CSV): "Pix enviado | Maria Souza" → "Pix para Maria Souza"
+    let descricao = resto
+      .replace(DINHEIRO_PDF, "$1")
+      .split("|")
+      .map((p) => p.replace(/\s+/g, " ").trim())
+      .filter(Boolean)
+      .join(" - ");
+    if (!/[a-z]{3}/i.test(descricao) && anterior) descricao = anterior;
+    anterior = "";
+    if (!descricao || !(numero > 0)) continue;
+    const negativo = sinalAntes === "-" || sinalDepois === "D" || sinalDepois === "-";
+    const positivo = sinalAntes === "+" || sinalDepois === "C";
+    if (ehCartao)
+      numero = negativo ? -numero : numero; // fatura: compra sem sinal; pagamento/estorno com −
+    else if (negativo) numero = -numero;
+    else if (!positivo && !PALAVRAS_DE_ENTRADA.test(semAcento(descricao))) numero = -numero;
+    const l = linha(dataAtual, descricao, numero, undefined, ehCartao);
+    if (l) linhas.push(l);
+  }
+  return arrumar({ linhas, ehCartao, ...(saldo !== undefined && !ehCartao ? { saldo } : {}) });
+}

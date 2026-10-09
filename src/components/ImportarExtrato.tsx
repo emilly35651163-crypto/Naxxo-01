@@ -1,6 +1,7 @@
 "use client";
 
 import { aplicarRegras, aprender } from "@/lib/regras";
+import { linhasDoPdf, PdfComSenha } from "@/lib/pdf";
 import { reconhecerTransferencias } from "@/lib/certeiros";
 import { ligarAosPadroes } from "@/lib/acompanhar";
 import { useEffect, useState } from "react";
@@ -28,6 +29,7 @@ import { cartoesDeCredito, marcoDoSaldo, saldoDaConta } from "@/lib/contas";
 import {
   ARQUIVOS_DE_EXTRATO,
   compraDoExtrato,
+  extratoDoPdf,
   jaExiste,
   lerExtrato,
   parcelaRepetida,
@@ -104,6 +106,10 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
   const [saldoArquivo, setSaldoArquivo] = useState<{ valor: number; data: string } | null>(null);
   // Quantos meses o arquivo cobre (o ideal são 6 ou mais, para o app achar os padrões)
   const [mesesNoArquivo, setMesesNoArquivo] = useState(0);
+  // PDF com senha (muitos bancos usam parte do CPF): guarda o arquivo até a pessoa digitar
+  const [pdfComSenha, setPdfComSenha] = useState<File | null>(null);
+  const [senhaPdf, setSenhaPdf] = useState("");
+  const [lendoPdf, setLendoPdf] = useState(false);
 
   const opcoes = ehCartao ? cartoesDeCredito(contas) : contas;
   const conta = opcoes.find((c) => c.id === contaId);
@@ -147,19 +153,34 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
       .sort((a, b) => b.data.localeCompare(a.data));
   }
 
-  async function escolherArquivo(arquivo: File | undefined) {
+  async function escolherArquivo(arquivo: File | undefined, senha?: string) {
     if (!arquivo) return;
-    const texto = await lerArquivo(arquivo);
     setErro("");
     setNomeArquivo(arquivo.name);
-    if (/^%PDF/.test(texto)) {
-      setLinhas(null);
-      return setErro("Esse é o PDF do extrato. Baixe de novo escolhendo OFX ou CSV (o PDF não dá para ler).");
-    }
-    const extrato = aplicarRegras(lerExtrato(texto));
+    setPdfComSenha(null);
+    let extrato;
+    const cabeca = new TextDecoder().decode(new Uint8Array(await arquivo.slice(0, 5).arrayBuffer()));
+    if (cabeca.startsWith("%PDF") || /\.pdf$/i.test(arquivo.name)) {
+      // PDF: o texto é tirado aqui mesmo, no aparelho
+      setLendoPdf(true);
+      try {
+        extrato = aplicarRegras(extratoDoPdf(await linhasDoPdf(arquivo, senha)));
+      } catch (e) {
+        setLinhas(null);
+        if (e instanceof PdfComSenha) {
+          setPdfComSenha(arquivo);
+          return setErro(senha ? "Senha errada. Tente de novo." : "");
+        }
+        return setErro("Não consegui abrir esse PDF. Tente baixar de novo (ou em OFX/CSV, se o banco tiver).");
+      } finally {
+        setLendoPdf(false);
+      }
+    } else extrato = aplicarRegras(lerExtrato(await lerArquivo(arquivo)));
     if (extrato.linhas.length === 0) {
       setLinhas(null);
-      return setErro("Não encontrei movimentações nesse arquivo. Ele precisa ser o extrato em OFX ou CSV.");
+      return setErro(
+        "Não encontrei movimentações nesse arquivo. Ele precisa ser o extrato do banco em OFX, CSV ou PDF (PDF escaneado, como foto, não dá para ler).",
+      );
     }
     const lista = extrato.ehCartao ? cartoesDeCredito(contas) : contas;
     const id = lista.some((c) => c.id === contaId) ? contaId : (lista[0]?.id ?? "");
@@ -409,8 +430,8 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
       <div className="space-y-4">
         <div className="rounded-2xl bg-roxo/10 px-4 py-3 text-sm text-suave">
           No app ou site do banco, procure <b className="text-white">Exportar extrato</b> e escolha o formato{" "}
-          <b className="text-white">OFX</b> ou <b className="text-white">CSV</b>. Depois escolha o arquivo aqui: eu mostro tudo
-          antes de importar.
+          <b className="text-white">OFX</b>, <b className="text-white">CSV</b> ou <b className="text-white">PDF</b>. Depois
+          escolha o arquivo aqui: eu mostro tudo antes de importar. O ideal são 6 meses ou mais.
         </div>
 
         <label
@@ -440,6 +461,41 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
             }}
           />
         </label>
+
+        {lendoPdf && (
+          <p className="text-sm text-suave">
+            <Icone e="⏳" /> Lendo o PDF…
+          </p>
+        )}
+
+        {pdfComSenha && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (senhaPdf) void escolherArquivo(pdfComSenha, senhaPdf);
+            }}
+            className="space-y-2 rounded-2xl border border-amber-300/40 bg-amber-300/5 p-3 text-sm"
+          >
+            <p>
+              <Icone e="🔐" /> Esse PDF tem senha. Muitos bancos usam os primeiros números do CPF ou a data de nascimento (o banco
+              diz qual no e-mail ou no app). A senha fica só aqui, no seu aparelho.
+            </p>
+            <div className="flex gap-2">
+              <input
+                autoFocus
+                type="password"
+                value={senhaPdf}
+                onChange={(e) => setSenhaPdf(e.target.value)}
+                placeholder="Senha do PDF"
+                aria-label="Senha do PDF"
+                className="campo min-w-0 flex-1"
+              />
+              <button type="submit" className="botao-gradiente rounded-full px-4 text-sm font-semibold">
+                Abrir
+              </button>
+            </div>
+          </form>
+        )}
 
         {linhas && (
           <>
