@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCartoes, useFontes, usePerfil, usePreferencias } from "@/lib/store";
 import { registrarRendaQueJaCaiu } from "@/lib/rendaAutomatica";
+import { converterCategoriasAntigas } from "@/lib/store";
 import { useLembretes } from "@/lib/lembretes";
 import { useEstadoNuvem } from "@/lib/nuvem";
 import { temaPorId } from "@/lib/temas";
@@ -81,7 +82,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const contas = useCartoes();
   const pronto = dadosProntos && !!perfil?.concluido;
   useEffect(() => {
-    if (pronto) registrarRendaQueJaCaiu();
+    if (pronto) {
+      converterCategoriasAntigas();
+      registrarRendaQueJaCaiu();
+    }
   }, [pronto, fontes, contas]);
 
   if (emPainel) return <>{children}</>;

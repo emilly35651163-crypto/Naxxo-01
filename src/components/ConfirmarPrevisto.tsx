@@ -43,7 +43,7 @@ export function confirmarPrevisto(p: Previsto, numero: number, data: string, con
       tipo: "entrada",
       valor: numero,
       descricao: p.nome,
-      categoria: p.origem === "benefício" ? "Benefícios" : rendaFixa(p.fonte.forma) ? "Salário" : "Freelance",
+      categoria: p.origem === "benefício" ? "Benefícios" : rendaFixa(p.fonte.forma) ? "Salário" : "Trabalho por conta",
       data,
       pago: true,
       fonteId: p.fonte.id,

@@ -37,7 +37,7 @@ export function registrarRendaNoSaldo(
       tipo: "entrada",
       valor,
       descricao: parte.nome,
-      categoria: parte.parte === "beneficio" ? "Benefícios" : rendaFixa(fonte.forma) ? "Salário" : "Freelance",
+      categoria: parte.parte === "beneficio" ? "Benefícios" : rendaFixa(fonte.forma) ? "Salário" : "Trabalho por conta",
       data: parte.data,
       pago: true,
       fonteId: fonte.id,

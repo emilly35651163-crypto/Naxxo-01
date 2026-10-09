@@ -62,7 +62,7 @@ export default function Relatorio() {
   const faturas = cartoes.reduce((t, c) => t + somar(itensDaFatura(c, mes, { compras, fixos, pagamentos })), 0);
   const parcelasDoMes =
     somar(pendentes.filter((p) => p.tipo === "parcela")) +
-    somar(doMesSelecionado.filter((l) => l.tipo === "saida" && l.categoria === "Parcelas e dívidas"));
+    somar(doMesSelecionado.filter((l) => l.tipo === "saida" && l.categoria === "Dívidas e juros"));
 
   return (
     <div className="space-y-6">

@@ -474,7 +474,7 @@ function FormRecebimento({ fonte, mes, onFechar }: { fonte: FonteRenda; mes: str
         tipo: "entrada",
         valor: total,
         descricao: parte?.nome ?? fonte.nome,
-        categoria: fonte.forma === "fixo" ? "Salário" : "Freelance",
+        categoria: fonte.forma === "fixo" ? "Salário" : "Trabalho por conta",
         data,
         pago: data <= hojeISO(),
         fonteId: fonte.id,

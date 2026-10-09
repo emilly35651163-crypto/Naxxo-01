@@ -42,6 +42,8 @@ export type Lancamento = {
   jaNoSaldo?: boolean;
   extratoId?: string; // veio do extrato do banco: a linha de lá (para não importar duas vezes)
   importado?: boolean; // criado pela importação do extrato (dá para tirar tudo de uma vez)
+  descricaoBanco?: string; // como veio escrito no extrato (para conferir e para o app aprender o nome que a pessoa dá)
+  revisar?: boolean; // o app não teve certeza da categoria: aparece em "Para revisar"
   vtJuntado?: boolean; // salário em que o vale-transporte (antes separado) já foi somado
 };
 
@@ -178,6 +180,8 @@ export type CompraCartao = {
   subcategoria?: string;
   extratoId?: string; // veio do extrato do cartão
   importado?: boolean; // criada pela importação do extrato
+  descricaoBanco?: string; // como veio escrito no extrato
+  revisar?: boolean; // categoria incerta: aparece em "Para revisar"
 };
 
 export type PagamentoFatura = {
@@ -264,31 +268,94 @@ export type FonteRenda = {
 
 // ---------- Listas fixas ----------
 
-export const CATEGORIAS: Record<Tipo, { nome: string; icone: string }[]> = {
+export type CategoriaFixa = { nome: string; icone: string; subs?: string[] };
+
+// As categorias do app (docs/NOVO-SISTEMA.md, seção 6). "Outros" existe, mas só a pessoa escolhe: o app nunca põe sozinho.
+// "Fatura do cartão" e "Guardar (metas)" não são gasto nem ganho (ficam fora dos totais), como "Transferência".
+export const CATEGORIAS: Record<Tipo, CategoriaFixa[]> = {
   saida: [
-    { nome: "Mercado", icone: "🛒" },
-    { nome: "Alimentação", icone: "🍔" },
-    { nome: "Moradia", icone: "🏠" },
-    { nome: "Contas", icone: "🧾" },
-    { nome: "Transporte", icone: "🚌" },
-    { nome: "Saúde", icone: "💊" },
-    { nome: "Lazer", icone: "🎬" },
-    { nome: "Compras", icone: "🛍️" },
-    { nome: "Assinaturas", icone: "📺" },
-    { nome: "Educação", icone: "📚" },
+    {
+      nome: "Moradia",
+      icone: "🏠",
+      subs: [
+        "Aluguel",
+        "Condomínio",
+        "Financiamento do imóvel",
+        "IPTU",
+        "Manutenção e reparos",
+        "Móveis e decoração",
+        "Seguro residencial",
+        "Diarista / faxina",
+      ],
+    },
+    { nome: "Contas da casa", icone: "💡", subs: ["Luz", "Água", "Gás", "Internet", "Celular", "TV a cabo"] },
+    { nome: "Mercado", icone: "🛒", subs: ["Compra do mês", "Compra avulsa", "Hortifrúti", "Açougue", "Padaria", "Atacarejo"] },
+    { nome: "Alimentação fora", icone: "🍔", subs: ["Restaurante", "Delivery", "Lanche", "Café", "Bar", "Marmita"] },
+    {
+      nome: "Transporte",
+      icone: "🚗",
+      subs: [
+        "Combustível",
+        "App de corrida",
+        "Ônibus / metrô",
+        "Estacionamento",
+        "Pedágio",
+        "Manutenção do carro",
+        "Seguro do carro",
+        "IPVA / licenciamento",
+        "Multa",
+        "Financiamento do carro",
+      ],
+    },
+    { nome: "Saúde", icone: "💊", subs: ["Farmácia", "Plano de saúde", "Consulta", "Exames", "Dentista", "Terapia", "Ótica"] },
+    { nome: "Cuidados pessoais", icone: "💇", subs: ["Cabelo", "Unha", "Estética", "Cosméticos", "Academia"] },
+    { nome: "Educação", icone: "📚", subs: ["Mensalidade", "Curso", "Livros", "Material escolar"] },
+    { nome: "Filhos", icone: "👶", subs: ["Escola", "Fraldas e higiene", "Roupas", "Brinquedos", "Babá / creche", "Mesada"] },
+    { nome: "Pets", icone: "🐾", subs: ["Ração", "Veterinário", "Banho e tosa", "Petshop"] },
+    {
+      nome: "Compras",
+      icone: "🛍️",
+      subs: ["Roupas", "Calçados", "Eletrônicos", "Casa e utilidades", "Presentes", "Lojas online"],
+    },
+    { nome: "Lazer", icone: "🎬", subs: ["Cinema / shows", "Viagem", "Hospedagem", "Passeios", "Jogos", "Hobbies"] },
+    { nome: "Assinaturas", icone: "📺", subs: ["Streaming", "Música", "Apps e nuvem", "IA", "Clube / revista"] },
+    { nome: "Trabalho", icone: "🧰", subs: ["Ferramentas", "Material", "Coworking", "MEI / impostos do trabalho"] },
+    { nome: "Impostos e taxas", icone: "🧾", subs: ["Imposto de renda", "Tarifas bancárias", "IOF", "Taxas de cartório"] },
+    {
+      nome: "Dívidas e juros",
+      icone: "💸",
+      subs: ["Empréstimo", "Parcelamento de fatura", "Juros", "Multa por atraso", "Cheque especial"],
+    },
+    { nome: "Doações e ajuda", icone: "🤲", subs: ["Família", "Igreja / dízimo", "Doação", "Vaquinha"] },
+    { nome: "Seguros", icone: "🛟", subs: ["Vida", "Outros seguros"] },
+    { nome: "Saque", icone: "💵", subs: ["Dinheiro em espécie"] },
     { nome: "Fatura do cartão", icone: "💳" },
-    { nome: "Parcelas e dívidas", icone: "💸" },
     { nome: "Guardar (metas)", icone: "🎯" },
     { nome: "Outros", icone: "📦" },
   ],
   entrada: [
-    { nome: "Salário", icone: "💼" },
-    { nome: "Freelance", icone: "💻" },
-    { nome: "Benefícios", icone: "🎟️" },
-    { nome: "Vendas", icone: "🏷️" },
-    { nome: "Investimentos", icone: "📈" },
+    { nome: "Salário", icone: "💼", subs: ["Salário", "Adiantamento", "13º", "Férias", "PLR / bônus", "Hora extra"] },
+    { nome: "Trabalho por conta", icone: "💻", subs: ["Freelance", "Serviços", "Comissão", "Vendas", "MEI"] },
+    { nome: "Benefícios", icone: "🎟️", subs: ["Vale-refeição", "Vale-alimentação", "Vale-transporte", "Auxílio do governo"] },
+    { nome: "Investimentos", icone: "📈", subs: ["Rendimento", "Dividendos", "Resgate"] },
+    { nome: "Reembolso e estorno", icone: "↩️", subs: ["Estorno de compra", "Reembolso", "Cashback"] },
+    { nome: "Recebido de pessoas", icone: "🤝", subs: ["Família", "Amigos", "Divisão de conta"] },
+    { nome: "Outras rendas", icone: "🏷️", subs: ["Aluguel recebido", "Venda de algo usado", "Prêmio"] },
     { nome: "Outros", icone: "💰" },
   ],
+};
+
+/** Nomes antigos → novos (os lançamentos de antes são convertidos ao abrir o app) */
+export const CATEGORIAS_RENOMEADAS: Record<Tipo, Record<string, { categoria: string; subcategoria?: string }>> = {
+  saida: {
+    Alimentação: { categoria: "Alimentação fora" },
+    Contas: { categoria: "Contas da casa" },
+    "Parcelas e dívidas": { categoria: "Dívidas e juros" },
+  },
+  entrada: {
+    Freelance: { categoria: "Trabalho por conta", subcategoria: "Freelance" },
+    Vendas: { categoria: "Trabalho por conta", subcategoria: "Vendas" },
+  },
 };
 
 export function iconeDaCategoria(tipo: Tipo, nome: string) {
@@ -490,7 +557,7 @@ export const SUGESTOES_MERCADO: {
 
 export const CATEGORIAS_FIXO: { id: CategoriaFixo; nome: string; icone: string; categoriaLancamento: string }[] = [
   { id: "moradia", nome: "Moradia", icone: "🏠", categoriaLancamento: "Moradia" },
-  { id: "contas", nome: "Contas da casa", icone: "💡", categoriaLancamento: "Contas" },
+  { id: "contas", nome: "Contas da casa", icone: "💡", categoriaLancamento: "Contas da casa" },
   { id: "assinaturas", nome: "Assinaturas", icone: "📺", categoriaLancamento: "Assinaturas" },
   { id: "saude", nome: "Saúde e bem-estar", icone: "🩺", categoriaLancamento: "Saúde" },
   { id: "educacao", nome: "Educação", icone: "🎓", categoriaLancamento: "Educação" },
@@ -1035,7 +1102,7 @@ export function pagarParcela(id: string, contaId?: string, valor?: number) {
     tipo: "saida",
     valor: valor ?? meta.parcela,
     descricao: `${meta.nome} (${parcelasPagas}/${meta.parcelas})`,
-    categoria: "Parcelas e dívidas",
+    categoria: "Dívidas e juros",
     data: hojeISO(),
     pago: true,
     contaId: contaId ?? meta.contaId,
@@ -1059,7 +1126,7 @@ export function registrarAdiantamento(id: string, quantas: number, economia: num
     tipo: "saida",
     valor: valorPago,
     descricao: `${meta.nome} (adiantou ${efetivas} parcela${efetivas > 1 ? "s" : ""})`,
-    categoria: "Parcelas e dívidas",
+    categoria: "Dívidas e juros",
     data: hojeISO(),
     contaId: contaId ?? meta.contaId,
     metaId: meta.id,
@@ -1916,7 +1983,17 @@ export function subcategoriasDe(
   categoria: string,
   personalizadas: CategoriaPersonalizada[] = categoriasPersonalizadas.ler(),
 ) {
-  return personalizadas.filter((c) => c.tipo === tipo && c.pai === categoria);
+  const doApp = (CATEGORIAS[tipo].find((c) => c.nome === categoria)?.subs ?? []).map((nome) => ({
+    id: `app:${categoria}:${nome}`,
+    tipo,
+    nome,
+    icone: "",
+    pai: categoria,
+  }));
+  return [
+    ...doApp,
+    ...personalizadas.filter((c) => c.tipo === tipo && c.pai === categoria && !doApp.some((s) => s.nome === c.nome)),
+  ];
 }
 
 // ---------- Orçamento por categoria (limite por mês) ----------
@@ -2038,3 +2115,35 @@ export function migrarDados() {
 }
 
 migrarDados();
+
+/**
+ * Categorias antigas → novas ("Contas" → "Contas da casa", "Freelance" → "Trabalho por conta › Freelance"…).
+ * Pode rodar sempre: só mexe no que ainda tem nome antigo (inclusive dados que chegam da nuvem depois).
+ */
+export function converterCategoriasAntigas() {
+  const nova = (tipo: Tipo, categoria: string) => CATEGORIAS_RENOMEADAS[tipo][categoria];
+  const antigos = new Set([...Object.keys(CATEGORIAS_RENOMEADAS.saida), ...Object.keys(CATEGORIAS_RENOMEADAS.entrada)]);
+
+  if (lancamentos.ler().some((l) => nova(l.tipo, l.categoria)))
+    lancamentos.gravar(
+      lancamentos.ler().map((l) => {
+        const n = nova(l.tipo, l.categoria);
+        return n ? { ...l, categoria: n.categoria, subcategoria: l.subcategoria ?? n.subcategoria } : l;
+      }),
+    );
+  if (compras.ler().some((c) => nova("saida", c.categoria)))
+    compras.gravar(
+      compras.ler().map((c) => (nova("saida", c.categoria) ? { ...c, categoria: nova("saida", c.categoria).categoria } : c)),
+    );
+  const o = orcamentos.ler();
+  if (Object.keys(o).some((k) => nova("saida", k)))
+    orcamentos.gravar(Object.fromEntries(Object.entries(o).map(([k, v]) => [nova("saida", k)?.categoria ?? k, v])));
+  const p = preferencias.ler();
+  if (p.necessidades?.some((n) => nova("saida", n)))
+    preferencias.gravar({ ...p, necessidades: p.necessidades.map((n) => nova("saida", n)?.categoria ?? n) });
+  const cp = categoriasPersonalizadas.ler();
+  if (cp.some((c) => c.pai && antigos.has(c.pai)))
+    categoriasPersonalizadas.gravar(
+      cp.map((c) => (c.pai && nova(c.tipo, c.pai) ? { ...c, pai: nova(c.tipo, c.pai).categoria } : c)),
+    );
+}

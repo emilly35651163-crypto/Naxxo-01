@@ -330,7 +330,7 @@ export default function Configuracoes() {
           Marque o que é necessidade (o resto conta como desejo). Ex.: internet e plano de celular costumam ser necessidade.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
-          {[...gastos.map((c) => c.nome), ...CATEGORIAS.saida.filter((c) => c.nome === "Parcelas e dívidas").map((c) => c.nome)]
+          {[...gastos.map((c) => c.nome), ...CATEGORIAS.saida.filter((c) => c.nome === "Dívidas e juros").map((c) => c.nome)]
             .filter((v, i, a) => a.indexOf(v) === i)
             .map((nomeCategoria) => {
               const ativo = necessidades.includes(nomeCategoria);

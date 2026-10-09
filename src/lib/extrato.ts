@@ -12,6 +12,11 @@ export type LinhaExtrato = {
   valor: number; // sempre positivo
   tipo: Tipo;
   categoria: string;
+  subcategoria?: string;
+  /** Como veio escrito no banco (antes de limpar) */
+  original: string;
+  /** Nenhuma regra teve certeza da categoria */
+  revisar?: boolean;
   /** Cartão: "Loja - Parcela 3/10" → { numero: 3, total: 10 } (o valor é o de uma parcela) */
   parcela?: { numero: number; total: number };
 };
@@ -59,42 +64,202 @@ export function lerData(texto: string) {
   return "";
 }
 
-// Palavras que dizem a categoria (a primeira que bater vale)
-const PALAVRAS: [string, Tipo, RegExp][] = [
-  ["Fatura do cartão", "saida", /pagamento de fatura|pagto fatura|pagamento fatura|fatura cartao|pgto cartao/],
-  ["Salário", "entrada", /salario|folha|pagto sal|proventos/],
-  ["Investimentos", "entrada", /rendimento|resgate|dividendo/],
-  ["Mercado", "saida", /mercado|supermerc|atacad|assai|carrefour|extra |pao de acucar|hortifruti|sacolao|dia %|atacarejo/],
-  ["Alimentação", "saida", /ifood|restaur|lanch|padaria|pizz|burger|mcdonald|bk |cafe|food|bar |acougue|rappi/],
+// Palavras que dizem a categoria e a subcategoria (a primeira que bater vale). As mais certeiras vêm primeiro.
+// Sem nenhuma que bata, o item fica "para revisar" (o app nunca põe "Outros" sozinho).
+const PALAVRAS: [categoria: string, sub: string | undefined, tipo: Tipo, re: RegExp][] = [
+  // Não são gasto nem ganho
+  [
+    "Fatura do cartão",
+    undefined,
+    "saida",
+    /pagamento de fatura|pagto fatura|pagamento fatura|fatura cartao|pgto cartao|pag fatura|pagamento cartao/,
+  ],
+  [
+    "Guardar (metas)",
+    undefined,
+    "saida",
+    /aplicacao|aplic\b|aplic\.|investimento cdb|compra de titulo|tesouro direto|caixinha|cofrinho|porquinho|guardado/,
+  ],
+  ["Guardar (metas)", undefined, "entrada", /resgate|resg\b|resg\.|caixinha|cofrinho|porquinho/],
+  // Banco
+  ["Impostos e taxas", "IOF", "saida", /\biof\b/],
+  [
+    "Impostos e taxas",
+    "Tarifas bancárias",
+    "saida",
+    /\btar\b|tarifa|cesta de servicos|pacote de servicos|anuidade|taxa de manutencao/,
+  ],
+  ["Dívidas e juros", "Juros", "saida", /juros|encargos|\bmora\b|multa por atraso/],
+  ["Dívidas e juros", "Cheque especial", "saida", /cheque especial|limite da conta/],
+  ["Dívidas e juros", "Empréstimo", "saida", /emprestimo|consignado|financiamento pessoal|parc emprest/],
+  ["Saque", "Dinheiro em espécie", "saida", /\bsaque\b|\bsaq\b|banco24horas/],
+  ["Impostos e taxas", "Imposto de renda", "saida", /receita federal|darf|imposto de renda|\birpf\b/],
+  ["Trabalho", "MEI / impostos do trabalho", "saida", /\bdas\b|simples nacional|\bmei\b/],
+  // Entradas
+  ["Salário", "Adiantamento", "entrada", /adiantamento|vale salarial/],
+  ["Salário", "13º", "entrada", /\b13o\b|decimo terceiro|13 salario/],
+  ["Salário", "Férias", "entrada", /\bferias\b/],
+  ["Salário", "PLR / bônus", "entrada", /\bplr\b|participacao nos lucros|bonus|bonificacao/],
+  ["Salário", "Salário", "entrada", /salario|folha|pagto sal|proventos|remuneracao|vencimentos/],
+  ["Benefícios", "Vale-refeição", "entrada", /vale refeicao|\bvr\b|refeicao/],
+  ["Benefícios", "Vale-alimentação", "entrada", /vale alimentacao|\bva\b|alimentacao/],
+  ["Benefícios", "Vale-transporte", "entrada", /vale transporte|\bvt\b/],
+  [
+    "Benefícios",
+    "Auxílio do governo",
+    "entrada",
+    /bolsa familia|auxilio|\binss\b|beneficio social|seguro desemprego|\bfgts\b|\bpis\b|abono/,
+  ],
+  ["Investimentos", "Rendimento", "entrada", /rendimento|rend pago|remuneracao da conta/],
+  ["Investimentos", "Dividendos", "entrada", /dividendo|\bjcp\b|juros sobre capital/],
+  ["Reembolso e estorno", "Cashback", "entrada", /cashback|cash back/],
+  ["Reembolso e estorno", "Estorno de compra", "entrada", /estorno|devolucao|chargeback|cancelamento/],
+  ["Reembolso e estorno", "Reembolso", "entrada", /reembolso|ressarcimento/],
+  ["Trabalho por conta", "Vendas", "entrada", /\bvenda|pagseguro|pagbank|sumup|\bstone\b|cielo|getnet|infinitepay/],
+  // Casa
+  ["Moradia", "Aluguel", "saida", /aluguel|imobiliaria|quinto ?andar/],
+  ["Moradia", "Condomínio", "saida", /condominio|\bcond\b/],
+  ["Moradia", "IPTU", "saida", /\biptu\b/],
+  ["Moradia", "Móveis e decoração", "saida", /tok ?stok|\betna\b|mobly|madeira ?madeira/],
+  ["Moradia", "Manutenção e reparos", "saida", /leroy|telhanorte|material de construcao|ferragens|eletricista|encanador/],
+  [
+    "Contas da casa",
+    "Luz",
+    "saida",
+    /\benel\b|energia|\bluz\b|cemig|copel|light s|celesc|coelba|celpe|cosern|equatorial|neoenergia|\bcpfl\b|elektro|\bedp\b/,
+  ],
+  ["Contas da casa", "Água", "saida", /sabesp|\bagua\b|saneamento|copasa|cedae|compesa|embasa|sanepar|\bcasan\b|aguas de/],
+  ["Contas da casa", "Gás", "saida", /\bgas\b|comgas|ultragaz|liquigas|supergasbras|naturgy/],
+  ["Contas da casa", "Internet", "saida", /internet|fibra|net servicos|brisanet|\balgar\b/],
+  ["Contas da casa", "Celular", "saida", /\bclaro\b|\bvivo\b|\btim\b|\boi\b|telefon|recarga (de )?celular/],
+  // Comida
+  ["Mercado", "Atacarejo", "saida", /atacad|assai|atacarejo|\bmakro\b|tenda atacado/],
+  ["Mercado", "Padaria", "saida", /padaria|panificadora|\bpao\b(?! de acucar)|confeitaria/],
+  ["Mercado", "Açougue", "saida", /acougue|casa de carnes|frigorifico/],
+  ["Mercado", "Hortifrúti", "saida", /hortifruti|sacolao|quitanda|\bfeira\b|verdurao|frutaria/],
+  [
+    "Mercado",
+    "Compra avulsa",
+    "saida",
+    /mercado(?! ?livre| ?pago)|supermerc|carrefour|\bextra\b|pao de acucar|\bdia\b|\boxxo\b|hirota|st marche|savegnago|zaffari|guanabara|prezunic|muffato|angeloni/,
+  ],
+  ["Alimentação fora", "Delivery", "saida", /ifood|rappi|aiqfome|ze delivery|uber ?eats/],
+  ["Alimentação fora", "Café", "saida", /\bcafe\b|cafeteria|starbucks|coffee/],
+  ["Alimentação fora", "Bar", "saida", /\bbar\b|boteco|cervejaria|choperia|\bpub\b/],
+  [
+    "Alimentação fora",
+    "Lanche",
+    "saida",
+    /lanch|burger|mcdonald|\bbk\b|habib|subway|pizz|esfiha|pastel|sorvete|\bacai\b|doceria|\bkfc\b|popeyes|giraffas/,
+  ],
+  [
+    "Alimentação fora",
+    "Restaurante",
+    "saida",
+    /restaur|churrascaria|cantina|sushi|temaki|bistro|outback|madero|coco bambu|\bfood\b|grill/,
+  ],
+  // Transporte
+  ["Transporte", "Combustível", "saida", /posto|combust|\bshell\b|ipiranga|petrobras|raizen|gasolina|etanol/],
+  ["Transporte", "App de corrida", "saida", /\buber\b|99 ?app|99pop|99 tecnologia|indriver|cabify/],
+  ["Transporte", "Estacionamento", "saida", /estacion|estapar|zona azul|parking/],
+  ["Transporte", "Pedágio", "saida", /pedagio|sem parar|conectcar|\bveloe\b|move mais/],
   [
     "Transporte",
+    "Ônibus / metrô",
     "saida",
-    /uber|99 ?app|99pop|99 tecnologia|posto|combust|shell|ipiranga|petrobras|estacion|metro|onibus|bilhete|sptrans|recarga bom/,
+    /metro|onibus|bilhete|sptrans|recarga bom|\bcptm\b|riocard|cartao bom|\bbrt\b|rodoviaria/,
   ],
-  ["Saúde", "saida", /farma|drogaria|droga|raia|pacheco|hospital|clinica|laborat|medic|dental|odonto/],
+  ["Transporte", "IPVA / licenciamento", "saida", /\bipva\b|licenciamento|detran/],
+  ["Transporte", "Manutenção do carro", "saida", /oficina|auto center|autopecas|\bpneu|mecanica|lava ?rapido|troca de oleo/],
+  ["Transporte", "Multa", "saida", /multa de transito|infracao/],
+  // Saúde e cuidados
+  ["Saúde", "Farmácia", "saida", /farma|drogaria|droga|\braia\b|pacheco|pague menos|panvel|nissei|venancio/],
+  ["Saúde", "Plano de saúde", "saida", /unimed|\bamil\b|bradesco saude|sulamerica|hapvida|notredame|plano de saude/],
+  ["Saúde", "Dentista", "saida", /dental|odonto|dentista/],
+  ["Saúde", "Exames", "saida", /laborat|fleury|\bdasa\b|delboni|lavoisier|hermes pardini|exame/],
+  ["Saúde", "Terapia", "saida", /psicolog|terapia|terapeuta/],
+  ["Saúde", "Ótica", "saida", /otica|oculos|chilli beans/],
+  ["Saúde", "Consulta", "saida", /hospital|clinica|medic|consulta/],
+  [
+    "Cuidados pessoais",
+    "Academia",
+    "saida",
+    /academia|smart ?fit|bluefit|bodytech|selfit|crossfit|gympass|wellhub|totalpass|pilates/,
+  ],
+  ["Cuidados pessoais", "Cabelo", "saida", /cabelei|salao|barbearia|barber/],
+  ["Cuidados pessoais", "Unha", "saida", /manicure|esmalteria/],
+  ["Cuidados pessoais", "Cosméticos", "saida", /boticario|\bnatura\b|sephora|\bavon\b|eudora|beleza na web|epoca cosmeticos/],
+  ["Cuidados pessoais", "Estética", "saida", /estetica|depilacao|\bspa\b|massagem/],
+  // Assinaturas
   [
     "Assinaturas",
+    "Streaming",
     "saida",
-    /netflix|spotify|disney|hbo|max\.com|prime video|amazon prime|youtube|deezer|globoplay|apple\.com|icloud|google one|chatgpt|openai|anthropic|claude/,
+    /netflix|disney|\bhbo\b|max\.com|prime video|globoplay|paramount|crunchyroll|\bmubi\b|apple tv|telecine/,
   ],
-  ["Moradia", "saida", /aluguel|condominio|iptu|imobili/],
+  ["Assinaturas", "Música", "saida", /spotify|deezer|youtube music|apple music|\btidal\b/],
+  ["Assinaturas", "IA", "saida", /chatgpt|openai|anthropic|claude|gemini|midjourney|perplexity/],
   [
-    "Contas",
+    "Assinaturas",
+    "Apps e nuvem",
     "saida",
-    /enel|energia|luz|cemig|copel|light|sabesp|agua|saneamento|gas |comgas|claro|vivo|tim |oi |internet|telefon|net servicos/,
+    /icloud|apple\.com|google one|google storage|dropbox|microsoft|office 365|\bcanva\b|adobe|notion|youtube premium|amazon prime|google play|app store/,
   ],
-  ["Educação", "saida", /escola|faculdade|universidade|curso|udemy|alura|livraria/],
-  ["Lazer", "saida", /cinema|ingresso|show|steam|playstation|xbox|nintendo|viagem|hotel|airbnb|booking/],
+  // Educação, filhos, pets
+  ["Educação", "Mensalidade", "saida", /escola|colegio|faculdade|universidade|mensalidade/],
+  ["Educação", "Curso", "saida", /curso|udemy|alura|coursera|hotmart|eduzz|kiwify|idiomas/],
+  ["Educação", "Livros", "saida", /livraria|\blivro|estante virtual|kindle/],
+  ["Pets", "Ração", "saida", /racao/],
+  ["Pets", "Veterinário", "saida", /veterin/],
+  ["Pets", "Banho e tosa", "saida", /banho e tosa/],
+  ["Pets", "Petshop", "saida", /\bpetz\b|cobasi|petlove|pet ?shop|\bpet\b/],
+  ["Filhos", "Fraldas e higiene", "saida", /fralda|pampers|huggies/],
+  ["Filhos", "Brinquedos", "saida", /ri happy|pb kids|brinquedo/],
+  // Lazer
+  ["Lazer", "Cinema / shows", "saida", /cinema|cinemark|kinoplex|ingresso|sympla|eventim|\bshow\b/],
+  ["Lazer", "Jogos", "saida", /steam|playstation|xbox|nintendo|epic games|\briot\b|garena|blizzard/],
+  ["Lazer", "Hospedagem", "saida", /hotel|airbnb|booking|pousada|hostel/],
+  ["Lazer", "Viagem", "saida", /\blatam\b|gol linhas|azul linhas|decolar|123 ?milhas|maxmilhas|passagem aerea|viagem|\bcvc\b/],
+  // Compras
   [
     "Compras",
+    "Lojas online",
     "saida",
-    /shopee|mercado ?livre|mercadolivre|amazon|magalu|magazine|americanas|shein|aliexpress|renner|riachuelo|c&a|loja/,
+    /shopee|mercado ?livre|mercadolivre|\bmeli\b|amazon|magalu|magazine|americanas|shein|aliexpress|\btemu\b|kabum|casas bahia|ponto frio/,
   ],
+  ["Compras", "Roupas", "saida", /renner|riachuelo|\bc ?& ?a\b|\bcea\b|marisa|hering|\bzara\b|pernambucanas|lojas torra|youcom/],
+  ["Compras", "Calçados", "saida", /netshoes|arezzo|centauro|calcados|sapataria|\bnike\b|adidas|olympikus|havaianas/],
+  ["Compras", "Eletrônicos", "saida", /fast shop|apple store|samsung|xiaomi|eletron|informatica/],
+  ["Compras", "Casa e utilidades", "saida", /\bhavan\b|daiso|utilidades|camicado/],
+  ["Compras", "Presentes", "saida", /presente|floricultura/],
+  // Ajuda e seguros
+  ["Doações e ajuda", "Igreja / dízimo", "saida", /igreja|dizimo|paroquia|assembleia de deus|congregacao/],
+  ["Doações e ajuda", "Vaquinha", "saida", /vakinha|vaquinha|kickante|benfeitoria/],
+  ["Doações e ajuda", "Doação", "saida", /doacao|\bong\b|unicef|medicos sem fronteiras/],
+  ["Seguros", "Vida", "saida", /seguro de vida|prudential|mag seguros|metlife/],
+  ["Seguros", "Outros seguros", "saida", /seguro|seguradora|porto seguro|tokio marine|allianz|mapfre|youse/],
 ];
 
-export function categoriaPelaDescricao(descricao: string, tipo: Tipo) {
+/** Categoria e subcategoria pela descrição. `certo: false` = nenhuma palavra bateu (fica para revisar). */
+export function classificarPelaDescricao(
+  descricao: string,
+  tipo: Tipo,
+): { categoria: string; subcategoria?: string; certo: boolean } {
   const t = semAcento(descricao);
-  return PALAVRAS.find(([, tipoDa, re]) => tipoDa === tipo && re.test(t))?.[0] ?? "Outros";
+  const achou = PALAVRAS.find(([, , tipoDa, re]) => tipoDa === tipo && re.test(t));
+  if (achou) return { categoria: achou[0], subcategoria: achou[1], certo: true };
+  // Sem palavra: a melhor aposta (Pix recebido costuma ser de pessoas), mas fica para revisar
+  return { categoria: tipo === "entrada" && /pix|ted|transf/.test(t) ? "Recebido de pessoas" : "Outros", certo: false };
+}
+
+/** Os campos de categoria de uma linha do extrato (sem "Outros": o incerto vai para revisar) */
+function categorizar(descricao: string, tipo: Tipo) {
+  const c = classificarPelaDescricao(descricao, tipo);
+  return { categoria: c.categoria, subcategoria: c.subcategoria, revisar: c.certo ? undefined : true };
+}
+
+export function categoriaPelaDescricao(descricao: string, tipo: Tipo) {
+  return classificarPelaDescricao(descricao, tipo).categoria;
 }
 
 /** Linhas que não são movimento (saldo do dia, saldo anterior…) */
@@ -159,7 +324,8 @@ function linha(
     descricao: limparDescricao(semParcela) || "Sem descrição",
     valor,
     tipo,
-    categoria: categoriaPelaDescricao(desc, tipo),
+    ...categorizar(desc, tipo),
+    original: desc,
     ...(parcela ? { parcela } : {}),
   };
 }
@@ -297,7 +463,7 @@ export function lerExtrato(texto: string): Extrato {
     if (entradas > extrato.linhas.length / 2)
       extrato.linhas = extrato.linhas.map((l) => {
         const tipo: Tipo = l.tipo === "entrada" ? "saida" : "entrada";
-        return { ...l, tipo, categoria: categoriaPelaDescricao(l.descricao, tipo) };
+        return { ...l, tipo, ...categorizar(l.original, tipo) };
       });
   }
   const vistos = new Map<string, number>();
@@ -477,6 +643,9 @@ export function compraDoExtrato(
     cartaoId: cartao.id,
     descricao: l.descricao,
     categoria: l.categoria,
+    subcategoria: l.subcategoria,
+    descricaoBanco: l.original,
+    revisar: l.revisar || undefined,
     valorTotal: Math.round(l.valor * parcelas * 100) / 100,
     parcelas,
     parcelasPagas: pagas || undefined,
@@ -497,7 +666,7 @@ export function comoCartao(extrato: Extrato): Extrato {
   const linhas = extrato.linhas.map((l) => {
     const tipo: Tipo = inverter ? (l.tipo === "entrada" ? "saida" : "entrada") : l.tipo;
     const { descricao, parcela } = separarParcela(l.descricao);
-    return { ...l, tipo, descricao, categoria: categoriaPelaDescricao(l.descricao, tipo), ...(parcela ? { parcela } : {}) };
+    return { ...l, tipo, descricao, ...categorizar(l.original, tipo), ...(parcela ? { parcela } : {}) };
   });
   return { linhas, ehCartao: true };
 }

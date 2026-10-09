@@ -92,7 +92,7 @@ export function registrarRendaQueJaCaiu(hoje = hojeISO()) {
           tipo: "entrada",
           valor: p.valor,
           descricao: p.nome,
-          categoria: p.parte === "beneficio" ? "Benefícios" : rendaFixa(f.forma) ? "Salário" : "Freelance",
+          categoria: p.parte === "beneficio" ? "Benefícios" : rendaFixa(f.forma) ? "Salário" : "Trabalho por conta",
           data: p.data,
           pago: true,
           contaId,

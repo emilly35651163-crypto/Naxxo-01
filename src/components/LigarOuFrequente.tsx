@@ -17,7 +17,7 @@ export type Frequente = {
   nome: string;
   icone: string;
   categoria: CategoriaFixo;
-  /** Categoria dos pagamentos (ex.: "Parcelas e dívidas") */
+  /** Categoria dos pagamentos (ex.: "Dívidas e juros") */
   categoriaLancamento: string;
   varia: boolean;
   /** 0 = todo mês, no mesmo dia; senão, a cada X dias */
@@ -97,7 +97,7 @@ const TIPOS_FREQUENTE = [
     nome: "💸 Dívida / parcela",
     icone: "💸",
     categoria: "outros",
-    categoriaLancamento: "Parcelas e dívidas",
+    categoriaLancamento: "Dívidas e juros",
     varia: false,
     intervaloDias: 0,
   },

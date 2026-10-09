@@ -91,7 +91,7 @@ export function gastosDoMes(mes: string, d: Dados): Gasto[] {
       icone: p.icone,
     };
     if (item?.tipo === "fixo") gastos.push({ ...base, categoria: categoriaDoFixo(item.fixo), fixo: item.fixo });
-    if (p.origem === "parcela") gastos.push({ ...base, categoria: "Parcelas e dívidas" });
+    if (p.origem === "parcela") gastos.push({ ...base, categoria: "Dívidas e juros" });
     if (p.origem === "mercado") gastos.push({ ...base, categoria: "Mercado" });
     if (p.origem === "lançamento" && p.lancamento && p.tipo === "saida" && !p.lancamento.pago && !p.lancamento.transferenciaId) {
       gastos.push({ ...base, categoria: p.lancamento.categoria, lancamento: p.lancamento });
@@ -126,4 +126,4 @@ export function balancoDoMes(mes: string, d: Dados) {
 }
 
 /** Regra 50/30/20: o que conta como necessidade (a pessoa pode mudar em Configurações). */
-export const NECESSIDADES_PADRAO = ["Mercado", "Moradia", "Contas", "Transporte", "Saúde", "Educação", "Parcelas e dívidas"];
+export const NECESSIDADES_PADRAO = ["Mercado", "Moradia", "Contas da casa", "Transporte", "Saúde", "Educação", "Dívidas e juros"];

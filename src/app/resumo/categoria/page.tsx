@@ -26,7 +26,7 @@ import Icone, { TextoComIcones } from "@/components/Icone";
 // Onde ver (e mexer) mais sobre cada categoria
 const LINKS: Record<string, { href: string; texto: string }> = {
   Mercado: { href: "/mercado", texto: "🛒 Abrir o Mercado" },
-  "Parcelas e dívidas": { href: "/trilha", texto: "🧭 Ver na Trilha" },
+  "Dívidas e juros": { href: "/trilha", texto: "🧭 Ver na Trilha" },
   Moradia: { href: "/fixos", texto: "📌 Ver gastos fixos" },
   Contas: { href: "/fixos", texto: "📌 Ver gastos fixos" },
   Assinaturas: { href: "/contas", texto: "💳 Ver assinaturas" },
