@@ -9,6 +9,7 @@ import { brl, nomeMes } from "@/lib/formato";
 import InstalarApp from "@/components/InstalarApp";
 import RendaDoMes from "@/components/RendaDoMes";
 import MovimentacoesDoMes from "@/components/MovimentacoesDoMes";
+import ParaRevisar from "@/components/ParaRevisar";
 import Icone, { TextoComIcones } from "@/components/Icone";
 
 // Início: o essencial e mais nada. Renda, saldo, o mês (entradas, saídas, o que falta) e como ele vai fechar.
@@ -35,6 +36,8 @@ export default function Inicio() {
           <Icone e="🏦" /> <b>Cadastre suas contas</b> e o saldo de hoje para tudo funcionar ›
         </Link>
       )}
+
+      <ParaRevisar dados={dados} />
 
       <RendaDoMes mes={mes} dados={dados} />
 

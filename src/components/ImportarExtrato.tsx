@@ -458,7 +458,7 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
                         </span>
                         <select
                           value={l.categoria}
-                          onChange={(e) => mudarLinha(i, { categoria: e.target.value })}
+                          onChange={(e) => mudarLinha(i, { categoria: e.target.value, subcategoria: undefined, revisar: false })}
                           aria-label="Categoria"
                           className="min-w-0 flex-1 rounded-lg bg-superficie px-2 py-1 text-xs text-white"
                         >
