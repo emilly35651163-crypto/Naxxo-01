@@ -10,13 +10,15 @@
     "postinstall": "node -e \"require('fs').copyFileSync('node_modules/pdfjs-dist/build/pdf.worker.min.mjs','public/pdf.worker.min.mjs')\""
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.132.1",
     "@phosphor-icons/react": "^2.1.10",
     "@supabase/supabase-js": "^2.117.3",
     "next": "16.3.8",
     "pdfjs-dist": "^6.4.299",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "tesseract.js": "^5.1.1"
+    "tesseract.js": "^5.1.1",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

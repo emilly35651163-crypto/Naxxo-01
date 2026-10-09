@@ -791,3 +791,19 @@ export function extratoDoPdf(linhasPdf: string[], hoje = new Date()): Extrato {
   }
   return arrumar({ linhas, ehCartao, ...(saldo !== undefined && !ehCartao ? { saldo } : {}) });
 }
+
+/**
+ * Compras lidas de um print da fatura (pela IA ou pelo leitor do celular) → extrato de cartão,
+ * para passar pelo mesmo caminho do arquivo (conferir, não repetir o que já está no app, aprender).
+ */
+export function extratoDeCompras(
+  itens: { descricao: string; valor: number; data?: string | null; parcela?: { numero: number; total: number } }[],
+  hoje = new Date().toISOString().slice(0, 10),
+): Extrato {
+  const linhas = itens.flatMap((c) => {
+    const p = c.parcela && c.parcela.total > 1 ? ` Parcela ${c.parcela.numero}/${c.parcela.total}` : "";
+    const l = linha(c.data && c.data <= hoje ? c.data : hoje, `${c.descricao}${p}`, c.valor, undefined, true);
+    return l ? [l] : [];
+  });
+  return arrumar({ linhas, ehCartao: true });
+}

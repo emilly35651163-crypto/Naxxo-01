@@ -2,6 +2,9 @@
 
 import { aplicarRegras, aprender } from "@/lib/regras";
 import { linhasDoPdf, PdfComSenha } from "@/lib/pdf";
+import { lerComIA, type FaturaIA } from "@/lib/lerComIA";
+import { ehImagem, lerTextoDosPrints } from "@/lib/ocr";
+import { comprasDoTextoDoPrint } from "@/lib/print";
 import { reconhecerTransferencias } from "@/lib/certeiros";
 import { ligarAosPadroes } from "@/lib/acompanhar";
 import { useEffect, useState } from "react";
@@ -29,6 +32,7 @@ import { cartoesDeCredito, marcoDoSaldo, saldoDaConta } from "@/lib/contas";
 import {
   ARQUIVOS_DE_EXTRATO,
   compraDoExtrato,
+  extratoDeCompras,
   extratoDoPdf,
   jaExiste,
   lerExtrato,
@@ -110,6 +114,7 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
   const [pdfComSenha, setPdfComSenha] = useState<File | null>(null);
   const [senhaPdf, setSenhaPdf] = useState("");
   const [lendoPdf, setLendoPdf] = useState(false);
+  const [lendoTexto, setLendoTexto] = useState("");
 
   const opcoes = ehCartao ? cartoesDeCredito(contas) : contas;
   const conta = opcoes.find((c) => c.id === contaId);
@@ -174,6 +179,27 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
         return setErro("Não consegui abrir esse PDF. Tente baixar de novo (ou em OFX/CSV, se o banco tiver).");
       } finally {
         setLendoPdf(false);
+      }
+    } else if (ehImagem(arquivo)) {
+      // Print da fatura do cartão: a IA lê (logado e com a chave); senão, o leitor do celular
+      setLendoPdf(true);
+      try {
+        const ia = await lerComIA<FaturaIA>("fatura", [arquivo], setLendoTexto);
+        const compras = ia
+          ? ia.itens.map((c) => ({
+              descricao: c.descricao,
+              valor: c.valor,
+              data: c.data,
+              parcela: c.parcelaNumero && c.parcelaTotal ? { numero: c.parcelaNumero, total: c.parcelaTotal } : undefined,
+            }))
+          : (await lerTextoDosPrints([arquivo], setLendoTexto)).flatMap((texto) => comprasDoTextoDoPrint(texto));
+        extrato = aplicarRegras(extratoDeCompras(compras));
+      } catch (e) {
+        setLinhas(null);
+        return setErro(e instanceof Error ? e.message : "Não consegui ler o print. Tente de novo.");
+      } finally {
+        setLendoPdf(false);
+        setLendoTexto("");
       }
     } else extrato = aplicarRegras(lerExtrato(await lerArquivo(arquivo)));
     if (extrato.linhas.length === 0) {
@@ -450,10 +476,10 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
             arrastando ? "border-rosa bg-rosa/15" : "border-rosa/50"
           }`}
         >
-          <TextoComIcones texto={nomeArquivo ? `📄 ${nomeArquivo} (trocar)` : "📂 Abrir o arquivo do extrato"} />
+          <TextoComIcones texto={nomeArquivo ? `📄 ${nomeArquivo} (trocar)` : "📂 Abrir o extrato (arquivo, PDF ou print da fatura)"} />
           <input
             type="file"
-            accept={ARQUIVOS_DE_EXTRATO}
+            accept={`${ARQUIVOS_DE_EXTRATO},image/*`}
             className="sr-only"
             onChange={(e) => {
               void escolherArquivo(e.target.files?.[0]);
@@ -464,7 +490,7 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
 
         {lendoPdf && (
           <p className="text-sm text-suave">
-            <Icone e="⏳" /> Lendo o PDF…
+            <Icone e="⏳" /> {lendoTexto || "Lendo o arquivo…"}
           </p>
         )}
 

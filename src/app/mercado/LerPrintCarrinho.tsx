@@ -4,6 +4,7 @@ import { useState } from "react";
 import { adicionarAoCarrinho } from "@/lib/store";
 import { itensDoCarrinho, lojaDoTexto, LOJAS_APP } from "@/lib/notinha";
 import { lerTextoDosPrints } from "@/lib/ocr";
+import { lerComIA, type CarrinhoIA } from "@/lib/lerComIA";
 import { brl, lerValor, valorParaCampo } from "@/lib/formato";
 import { mostrarAviso } from "@/lib/avisos";
 import { Chip } from "@/components/Campos";
@@ -24,17 +25,20 @@ export default function LerPrintCarrinho() {
     if (!arquivos?.length) return;
     setErro("");
     try {
-      const textos = await lerTextoDosPrints([...arquivos], setLendo, (t) => /\d+,\d{2}/.test(t));
-      const texto = textos.join("\n");
-      const itens = itensDoCarrinho(texto);
+      // A IA lê muito melhor (logado e com a chave); sem ela, o leitor do celular
+      const ia = await lerComIA<CarrinhoIA>("carrinho", [...arquivos], setLendo);
+      const texto = ia
+        ? (ia.loja ?? "")
+        : (await lerTextoDosPrints([...arquivos], setLendo, (t) => /\d+,\d{2}/.test(t))).join("\n");
+      const itens = ia ? ia.itens.map((i) => ({ ...i, quantidade: Math.max(1, i.quantidade || 1) })) : itensDoCarrinho(texto);
       if (itens.length === 0) {
         setErro("Não achei produtos com preço nesse print. Tente um print só da lista do carrinho (sem o resumo do pedido).");
         return;
       }
-      setLoja(lojaDoTexto(texto) ?? "");
+      setLoja((ia ? (lojaDoTexto(ia.loja ?? "") ?? ia.loja) : lojaDoTexto(texto)) ?? "");
       setLinhas(itens.map((i) => ({ nome: i.nome, valor: valorParaCampo(i.valor), quantidade: i.quantidade, marcado: true })));
-    } catch {
-      setErro("Não consegui ler o print. Tente de novo.");
+    } catch (e) {
+      setErro(e instanceof Error && e.message.startsWith("A leitura") ? e.message : "Não consegui ler o print. Tente de novo.");
     } finally {
       setLendo("");
     }

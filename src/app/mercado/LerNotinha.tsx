@@ -4,6 +4,7 @@ import { useState } from "react";
 import { registrarCompraMercado, useCartoes, usePreferencias, type ItemDaCompra } from "@/lib/store";
 import { lerNotinha } from "@/lib/notinha";
 import { lerTextoDosPrints } from "@/lib/ocr";
+import { lerComIA, type NotinhaIA } from "@/lib/lerComIA";
 import { categoriaPeloNome, iconeDaCategoriaMercado } from "@/lib/mercado";
 import { cartoesDeCredito, ehVale } from "@/lib/contas";
 import { brl, hojeISO, lerValor, valorParaCampo } from "@/lib/formato";
@@ -36,8 +37,11 @@ export default function LerNotinha() {
     if (!arquivos?.length) return;
     setErro("");
     try {
-      const textos = await lerTextoDosPrints([...arquivos], setLendo, (t) => /\d+,\d{2}/.test(t));
-      const n = lerNotinha(textos.join("\n"));
+      // A IA lê muito melhor (logado e com a chave); sem ela, o leitor do celular
+      const ia = await lerComIA<NotinhaIA>("notinha", [...arquivos], setLendo);
+      const n = ia
+        ? { loja: ia.loja ?? undefined, data: ia.data ?? undefined, total: ia.total ?? undefined, itens: ia.itens }
+        : lerNotinha((await lerTextoDosPrints([...arquivos], setLendo, (t) => /\d+,\d{2}/.test(t))).join("\n"));
       if (n.itens.length === 0) {
         setErro(
           "Não achei produtos nessa foto. Tente de novo com a notinha esticada, bem iluminada e de perto (dá para mandar várias fotos de uma notinha comprida).",
@@ -49,8 +53,8 @@ export default function LerNotinha() {
       setData(n.data && n.data <= hojeISO() ? n.data : hojeISO());
       setTotalNotinha(n.total);
       setPagamento(padrao);
-    } catch {
-      setErro("Não consegui ler a foto. Tente de novo.");
+    } catch (e) {
+      setErro(e instanceof Error && e.message.startsWith("A leitura") ? e.message : "Não consegui ler a foto. Tente de novo.");
     } finally {
       setLendo("");
     }

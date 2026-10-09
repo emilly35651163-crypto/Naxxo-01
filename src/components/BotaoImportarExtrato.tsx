@@ -55,7 +55,7 @@ export default function BotaoImportarExtrato() {
         onClick={() => setAberto(true)}
         className="w-full rounded-full border border-rosa/50 py-2.5 text-sm font-medium text-rosa hover:bg-rosa/10"
       >
-        <Icone e="📥" /> Importar extrato do banco (OFX, CSV ou PDF)
+        <Icone e="📥" /> Importar extrato do banco (arquivo, PDF ou print)
       </button>
       {arrastando && !aberto && (
         <div className="pointer-events-none fixed inset-0 z-40 grid place-items-center bg-fundo/80 backdrop-blur-sm">
