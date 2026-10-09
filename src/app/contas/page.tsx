@@ -474,14 +474,28 @@ function Numero({
   vermelho?: boolean;
 }) {
   return (
-    <div className="cartao p-4">
+    <div className="cartao min-w-0 p-3 sm:p-4">
       <p className="text-xs text-suave">{rotulo}</p>
       <p
-        className={`mt-1 font-display text-xl font-bold tabular-nums ${vermelho ? "text-saida" : destaque ? "gradiente-texto" : ""}`}
+        className={`mt-1 font-display text-lg font-bold tabular-nums sm:text-xl ${vermelho ? "text-saida" : destaque ? "gradiente-texto" : ""}`}
       >
         {brl(valor)}
       </p>
     </div>
+  );
+}
+
+/** Valores em linhas: rótulo à esquerda, valor à direita (alinhados e sem vazar no celular) */
+function Valores({ itens }: { itens: { rotulo: string; valor: number; cor?: string }[] }) {
+  return (
+    <dl className="divide-y divide-white/5 rounded-xl bg-fundo/50 px-3">
+      {itens.map((i) => (
+        <div key={i.rotulo} className="flex items-baseline justify-between gap-3 py-2">
+          <dt className="text-xs text-suave">{i.rotulo}</dt>
+          <dd className={`font-display font-semibold tabular-nums ${i.cor ?? ""}`}>{brl(i.valor)}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 
@@ -500,9 +514,9 @@ function Recolher({ titulo, quantos, children }: { titulo: string; quantos: numb
           {quantos > 0 && <span className="ml-1 rounded-full bg-white/10 px-2 py-0.5 text-xs">{quantos}</span>}
         </span>
         {quantos > 0 ? (
-          <span className="text-rosa">{aberta ? "Esconder ▴" : "Ver ▾"}</span>
+          <span className="shrink-0 whitespace-nowrap text-rosa">{aberta ? "Esconder ▴" : "Ver ▾"}</span>
         ) : (
-          <span className="text-xs text-suave">nada ainda</span>
+          <span className="shrink-0 whitespace-nowrap text-xs text-suave">nada ainda</span>
         )}
       </button>
       {aberta && quantos > 0 && <div className="mt-1">{children}</div>}
@@ -626,16 +640,16 @@ function CartaoConta({
           </button>
         </div>
 
-        <div className="relative mt-5 flex items-end justify-between gap-4">
+        <div className="relative mt-5 flex min-w-0 items-end justify-between gap-3">
           <button onClick={() => setEditandoSaldo(true)} className="text-left" title="Conferir o saldo">
             <span className="block text-xs text-white/75">Saldo</span>
-            <span className={`block font-display text-3xl font-bold tabular-nums ${saldo < 0 ? "text-red-200" : ""}`}>
+            <span className={`block font-display text-2xl font-bold tabular-nums sm:text-3xl ${saldo < 0 ? "text-red-200" : ""}`}>
               {brl(saldo)}
             </span>
           </button>
           {credito && (
             <div className="text-right">
-              <span className="block text-[0.65rem] text-white/75">Fatura de {nomeMes(mes).toLowerCase()}</span>
+              <span className="block text-[0.65rem] text-white/75">Fatura de {nomeMes(mes).split(" ")[0].toLowerCase()}</span>
               <span className="block font-display text-lg font-semibold tabular-nums">{brl(fatura.valor)}</span>
             </div>
           )}
@@ -671,23 +685,14 @@ function CartaoConta({
                   : ""}
             </span>
           </div>
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="rounded-xl bg-fundo/50 px-2 py-2">
-              <span className="block text-[0.65rem] text-suave">Saldo hoje</span>
-              <span className={`block font-display font-semibold tabular-nums ${saldo < 0 ? "text-saida" : ""}`}>
-                {brl(saldo)}
-              </span>
-            </div>
-            <div className="rounded-xl bg-fundo/50 px-2 py-2">
-              <span className="block text-[0.65rem] text-suave">Entrou em {nomeMes(mes).split(" ")[0].toLowerCase()}</span>
-              <span className="block font-display font-semibold tabular-nums text-entrada">{brl(entrouNoMes)}</span>
-            </div>
-            <div className="rounded-xl bg-fundo/50 px-2 py-2">
-              <span className="block text-[0.65rem] text-suave">Saiu em {nomeMes(mes).split(" ")[0].toLowerCase()}</span>
-              <span className="block font-display font-semibold tabular-nums text-saida">{brl(saiuNoMes)}</span>
-            </div>
-          </div>
-          <Recolher titulo={`Movimentações de ${nomeMes(mes).toLowerCase()}`} quantos={doDebito.length}>
+          <Valores
+            itens={[
+              { rotulo: "Saldo hoje", valor: saldo, cor: saldo < 0 ? "text-saida" : "" },
+              { rotulo: `Entrou em ${nomeMes(mes).split(" ")[0].toLowerCase()}`, valor: entrouNoMes, cor: "text-entrada" },
+              { rotulo: `Saiu em ${nomeMes(mes).split(" ")[0].toLowerCase()}`, valor: saiuNoMes, cor: "text-saida" },
+            ]}
+          />
+          <Recolher titulo={`Movimentações de ${nomeMes(mes).split(" ")[0].toLowerCase()}`} quantos={doDebito.length}>
             <ul className="divide-y divide-white/5">
               {doDebito.map((l) => (
                 <ItemLancamento key={l.id} lancamento={l} daConta={conta.id} contas={contas} lancamentos={lancamentos} />
@@ -734,20 +739,13 @@ function CartaoConta({
               </div>
             ))}
 
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-xl bg-fundo/50 px-2 py-2">
-                <span className="block text-[0.65rem] text-suave">Limite total</span>
-                <span className="block font-display font-semibold tabular-nums">{brl(conta.limite)}</span>
-              </div>
-              <div className="rounded-xl bg-fundo/50 px-2 py-2">
-                <span className="block text-[0.65rem] text-suave">Usado</span>
-                <span className="block font-display font-semibold tabular-nums">{brl(usado)}</span>
-              </div>
-              <div className="rounded-xl bg-fundo/50 px-2 py-2">
-                <span className="block text-[0.65rem] text-suave">Disponível</span>
-                <span className="block font-display font-semibold tabular-nums text-entrada">{brl(disponivel)}</span>
-              </div>
-            </div>
+            <Valores
+              itens={[
+                { rotulo: "Limite total", valor: conta.limite },
+                { rotulo: "Usado", valor: usado },
+                { rotulo: "Disponível", valor: disponivel, cor: "text-entrada" },
+              ]}
+            />
 
             {parcelasAndando.length > 0 && (
               <Recolher titulo="Parcelas em andamento" quantos={parcelasAndando.length}>
@@ -785,7 +783,7 @@ function CartaoConta({
               </Recolher>
             )}
 
-            <Recolher titulo={`Compras da fatura de ${nomeMes(mes).toLowerCase()}`} quantos={doCredito.length}>
+            <Recolher titulo={`Compras da fatura de ${nomeMes(mes).split(" ")[0].toLowerCase()}`} quantos={doCredito.length}>
               <ul className="divide-y divide-white/5">
                 {doCredito.map((m) => (
                   <li key={m.chave}>

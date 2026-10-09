@@ -131,7 +131,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <header className="topo sticky top-0 z-10 -mx-4 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur print:hidden lg:-mx-10 lg:px-10 lg:py-6">
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-3 lg:hidden">
-              <Logo />
+              {/* O símbolo da NAXXO volta para o Início */}
+              <Link href="/" aria-label="Ir para o Início" className="shrink-0">
+                <Logo />
+              </Link>
               <h1 className="truncate font-display text-lg font-semibold">{pagina?.rotulo}</h1>
             </div>
             <h1 className="hidden font-display text-2xl font-semibold lg:block">{pagina?.rotulo}</h1>

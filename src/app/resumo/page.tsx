@@ -5,15 +5,15 @@ import { useSearchParams } from "next/navigation";
 import Graficos from "./graficos";
 import Relatorio from "./relatorio";
 import Projecao from "./projecao";
-import { TextoComIcones } from "@/components/Icone";
+import Icone from "@/components/Icone";
 import PadroesEncontrados from "@/components/PadroesEncontrados";
 import { useDados } from "@/lib/dados";
 
 const ABAS = [
-  { id: "graficos", nome: "📊 Gráficos" },
-  { id: "projecao", nome: "🔮 Projeção" },
-  { id: "relatorio", nome: "📋 Relatório" },
-  { id: "recorrentes", nome: "🔁 Recorrentes" },
+  { id: "graficos", icone: "📊", nome: "Gráficos" },
+  { id: "projecao", icone: "🔮", nome: "Projeção" },
+  { id: "relatorio", icone: "📋", nome: "Relatório" },
+  { id: "recorrentes", icone: "🔁", nome: "Recorrentes" },
 ] as const;
 
 type Aba = (typeof ABAS)[number]["id"];
@@ -38,16 +38,18 @@ function Abas({ inicial }: { inicial: Aba }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-1 overflow-x-auto rounded-full bg-superficie p-1 print:hidden">
+      {/* No celular: 4 colunas iguais, ícone em cima do nome (cabem sem rolar); no computador, numa linha */}
+      <div className="grid grid-cols-4 gap-1 rounded-2xl bg-superficie p-1 print:hidden sm:rounded-full">
         {ABAS.map((a) => (
           <button
             key={a.id}
             onClick={() => setAba(a.id)}
-            className={`flex-1 whitespace-nowrap rounded-full px-4 py-2 text-sm transition-colors ${
+            className={`flex flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-2 text-[0.7rem] leading-tight transition-colors sm:flex-row sm:gap-1.5 sm:rounded-full sm:px-4 sm:text-sm ${
               aba === a.id ? "botao-gradiente font-semibold" : "text-suave hover:text-white"
             }`}
           >
-            <TextoComIcones texto={a.nome} />
+            <Icone e={a.icone} />
+            <span>{a.nome}</span>
           </button>
         ))}
       </div>

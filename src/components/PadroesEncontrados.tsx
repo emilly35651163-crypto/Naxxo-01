@@ -27,11 +27,15 @@ export function usePadroes(dados: Dados) {
 
 /** "~R$ 203 por mês (de R$ 175 a R$ 240)" · "R$ 1.200 por mês" · "~R$ 730 por mês (R$ 177 por vez)" */
 function quanto(p: Padrao) {
-  const porVez = p.frequencia !== "mensal" && p.frequencia !== "anual";
   if (p.frequencia === "anual") return `${brl(p.valor)} por ano`;
   const principal = `${p.varia ? "~" : ""}${brl(p.porMes)} por mês`;
-  if (porVez) return `${principal} (${p.varia ? "~" : ""}${brl(p.valor)} por vez)`;
-  return p.varia ? `${principal} (de ${brl(p.min)} a ${brl(p.max)})` : principal;
+  return principal;
+}
+
+/** A linha pequena de baixo: "~R$ 168 por vez" ou "de R$ 182 a R$ 242" (o que muda) */
+function detalheDoValor(p: Padrao) {
+  if (p.frequencia !== "mensal" && p.frequencia !== "anual") return `${p.varia ? "~" : ""}${brl(p.valor)} por vez`;
+  return p.varia ? `varia de ${brl(p.min)} a ${brl(p.max)}` : "";
 }
 
 // Início: um aviso só quando o extrato mostrou algo que se repete e a pessoa ainda não viu
@@ -148,8 +152,9 @@ function Linha({ p, children }: { p: Padrao; children?: React.ReactNode }) {
         <Icone e={p.tipo === "entrada" ? "💰" : iconeDaCategoria("saida", p.categoria)} />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block font-medium">{p.nome}</span>
+        <span className="block truncate font-medium">{p.nome}</span>
         <span className={`block text-sm tabular-nums ${p.tipo === "entrada" ? "text-entrada" : ""}`}>{quanto(p)}</span>
+        {detalheDoValor(p) && <span className="block text-xs tabular-nums text-suave">{detalheDoValor(p)}</span>}
         <span className="block text-xs text-suave">
           {descreverPadrao(p)} · {p.vezes} vezes no extrato
         </span>
