@@ -1,5 +1,6 @@
 "use client";
 
+import CarrinhoApps from "./CarrinhoApps";
 import { useState } from "react";
 import {
   atualizarItemMercado,
@@ -32,7 +33,35 @@ import { useDados } from "@/lib/dados";
 import CamposPreco from "./CamposPreco";
 import Icone, { TextoComIcones } from "@/components/Icone";
 
+// Duas abas: o mercado (lista, em casa, gastos) e o carrinho dos apps (Shein, Mercado Livre, Amazon…)
 export default function Mercado() {
+  const [aba, setAba] = useState<"mercado" | "apps">("mercado");
+  return (
+    <div className="space-y-5">
+      <div className="flex gap-1 rounded-full bg-superficie p-1" role="tablist">
+        {(
+          [
+            ["mercado", "🛒 Mercado"],
+            ["apps", "🛍️ Apps"],
+          ] as const
+        ).map(([id, nome]) => (
+          <button
+            key={id}
+            role="tab"
+            aria-selected={aba === id}
+            onClick={() => setAba(id)}
+            className={`flex-1 rounded-full px-4 py-2 text-sm transition-colors ${aba === id ? "botao-gradiente font-semibold" : "text-suave hover:text-white"}`}
+          >
+            <TextoComIcones texto={nome} />
+          </button>
+        ))}
+      </div>
+      {aba === "mercado" ? <MercadoDaCasa /> : <CarrinhoApps />}
+    </div>
+  );
+}
+
+function MercadoDaCasa() {
   const lista = useListaCompras();
   const despensa = useItensMercado();
   const dados = useDados();

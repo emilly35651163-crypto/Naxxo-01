@@ -80,7 +80,7 @@ export default function FormLancamento({
 }: {
   lancamento?: Lancamento;
   modoInicial?: Modo;
-  inicial?: { descricao: string; valor: number; categoria?: string };
+  inicial?: { descricao: string; valor: number; categoria?: string; subcategoria?: string };
   onSalvo?: () => void;
   onFechar: () => void;
 }) {
@@ -112,7 +112,7 @@ export default function FormLancamento({
   const [categoria, setCategoria] = useState(
     lancamento?.categoria ?? inicial?.categoria ?? categoriasDe("saida", personalizadas)[0].nome,
   );
-  const [subcategoria, setSubcategoria] = useState(lancamento?.subcategoria ?? "");
+  const [subcategoria, setSubcategoria] = useState(lancamento?.subcategoria ?? inicial?.subcategoria ?? "");
   const [novaCategoria, setNovaCategoria] = useState<null | "categoria" | "sub">(null);
   const [nomeNova, setNomeNova] = useState("");
   const [data, setData] = useState(lancamento?.data ?? hojeISO());

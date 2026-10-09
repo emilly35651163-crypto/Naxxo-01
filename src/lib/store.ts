@@ -2209,3 +2209,51 @@ export function marcarSoEste(chave: string) {
 export function removerRegra(id: string) {
   regras.gravar(regras.ler().filter((x) => x.id !== id));
 }
+
+// ---------- Carrinho de apps (Shein, Mercado Livre, Amazon…) ----------
+
+/** Um item no carrinho de uma loja online. A loja é o nome (as conhecidas têm ícone; dá para escrever outra). */
+export type ItemCarrinho = {
+  id: string;
+  nome: string;
+  loja: string;
+  valor: number; // preço de uma unidade
+  quantidade: number;
+  link?: string;
+  criadoEm: string;
+};
+
+/** Frete de cada loja (o carrinho inteiro), quando a pessoa informa */
+export type FretesCarrinho = Record<string, number>;
+
+const SEM_CARRINHO: ItemCarrinho[] = [];
+const carrinho = criarDado<ItemCarrinho[]>("naxxo:carrinho-apps", SEM_CARRINHO);
+const SEM_FRETES: FretesCarrinho = {};
+const fretes = criarDado<FretesCarrinho>("naxxo:carrinho-fretes", SEM_FRETES);
+
+export function useCarrinho() {
+  return useSyncExternalStore(inscrever, carrinho.ler, () => SEM_CARRINHO);
+}
+
+export function useFretes() {
+  return useSyncExternalStore(inscrever, fretes.ler, () => SEM_FRETES);
+}
+
+export function adicionarAoCarrinho(novo: Omit<ItemCarrinho, "id" | "criadoEm">) {
+  carrinho.gravar([...carrinho.ler(), { ...novo, id: novoId(), criadoEm: hojeISO() }]);
+}
+
+export function atualizarItemCarrinho(id: string, mudancas: Partial<ItemCarrinho>) {
+  carrinho.gravar(carrinho.ler().map((i) => (i.id === id ? { ...i, ...mudancas } : i)));
+}
+
+export function removerDoCarrinho(ids: string[]) {
+  carrinho.gravar(carrinho.ler().filter((i) => !ids.includes(i.id)));
+}
+
+export function definirFrete(loja: string, valor: number | null) {
+  const novo = { ...fretes.ler() };
+  if (!valor || valor <= 0) delete novo[loja];
+  else novo[loja] = valor;
+  fretes.gravar(novo);
+}
