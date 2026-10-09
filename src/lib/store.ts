@@ -997,6 +997,10 @@ export function atualizarTransferencia(
 const PERFIL_PADRAO: Perfil = { concluido: false, nome: "", objetivos: [], objetivoOutro: "" };
 const perfil = criarDado<Perfil>("naxxo:perfil", PERFIL_PADRAO, !TESTANDO_BOAS_VINDAS);
 
+export function lerPerfil() {
+  return perfil.ler();
+}
+
 /** Devolve null enquanto a página ainda está carregando (antes de ler o navegador). */
 export function usePerfil(): Perfil | null {
   return useSyncExternalStore(inscrever, perfil.ler, () => null);

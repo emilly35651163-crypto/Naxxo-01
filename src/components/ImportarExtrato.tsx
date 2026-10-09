@@ -1,6 +1,7 @@
 "use client";
 
 import { aplicarRegras } from "@/lib/regras";
+import { reconhecerTransferencias } from "@/lib/certeiros";
 import { useEffect, useState } from "react";
 import {
   adicionarCompras,
@@ -30,7 +31,7 @@ import {
   type Existente,
   type LinhaExtrato,
 } from "@/lib/extrato";
-import { comDesfazer } from "@/lib/avisos";
+import { comDesfazer, mostrarAviso } from "@/lib/avisos";
 import Modal from "./Modal";
 import Icone, { TextoComIcones } from "@/components/Icone";
 
@@ -322,6 +323,12 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
         ]);
       });
     }
+    // Dinheiro passando entre as minhas contas não é gasto nem ganho
+    const transferencias = reconhecerTransferencias();
+    if (transferencias)
+      mostrarAviso({
+        texto: `🔁 ${transferencias} transferência${transferencias > 1 ? "s" : ""} entre suas contas (fora dos gastos)`,
+      });
     onFechar();
   }
 
