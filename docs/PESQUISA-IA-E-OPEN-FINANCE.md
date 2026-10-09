@@ -63,6 +63,29 @@ O NAXXO não pode se ligar sozinho ao Open Finance (precisaria de licença do Ba
 3. **Ligar para os usuários quando fizer sentido financeiro:** com R$ 2.500/mês, seriam ~250 pessoas pagando R$ 10/mês só para cobrir. Antes disso, o modelo por conexão (tipo Banco MCP, ~R$ 20 por conta) pode virar um **plano pago** ("conexão automática") em que a pessoa paga a própria conexão.
 4. **Antes de ligar:** login obrigatório, tela de consentimento clara, política de privacidade (LGPD) e o botão "Desconectar banco e apagar meus dados bancários".
 
+### Mais a fundo: Meu Pluggy e Banco MCP (pesquisa de 09/10/2026)
+
+**Meu Pluggy (grátis)**
+- É o app da própria Pluggy onde a pessoa conecta os bancos dela por Open Finance e gerencia os consentimentos. Para desenvolvedor, existe o conector "Meu Pluggy": o seu app (cadastrado no dashboard.pluggy.ai, com client_id e client_secret) pede autorização e lê os dados.
+- Grátis: o dashboard dá 15 dias de teste, mas o conector Meu Pluggy continua funcionando depois que o teste acaba (relato de desenvolvedores).
+- **O porém:** cada usuário do NAXXO teria que **criar conta no Meu Pluggy e conectar os bancos lá primeiro**, e só depois autorizar o NAXXO. São dois cadastros e dois consentimentos, uma barreira grande para gente leiga.
+- Não há documento dizendo se a Pluggy limita ou permite esse uso com muitos usuários de outro app (a documentação é antiga). Risco: a Pluggy pode cortar ou passar a cobrar.
+- **Bom para:** testar agora, de graça, com os seus bancos; e, talvez, oferecer como "modo avançado" para quem não se importar com o cadastro a mais.
+
+**Banco MCP (R$ 19,90/mês)**
+- Feito para **assistentes de IA** (Claude, ChatGPT, Cursor) lerem o banco da pessoa via MCP, e não para outros apps. Roda a Pluggy por trás.
+- Planos para a pessoa física: grátis (10 consultas por dia), **R$ 19,90/mês (1 banco)**, R$ 29,90 (3 bancos), R$ 49,90 (5 ou mais).
+- Operado pela **DL WEB LTDA**; o servidor é fechado (só os manuais são abertos, licença MIT). Somente leitura; limite de 2 requisições por segundo; até 5.000 transações por consulta.
+- Integra por **OAuth 2.1**. Ou seja: cada usuário do NAXXO teria que **assinar o Banco MCP** e autorizar o NAXXO a ler. O custo vai para o usuário, e o NAXXO passa a depender de uma empresa pequena e de termos que não falam de uso por outros apps.
+- **Bom para:** um "plano conexão automática" em que a própria pessoa paga a conexão. Antes disso, é preciso perguntar a eles, por escrito, se podem usar com outro app e em que condições.
+
+**Conclusão:** nenhuma das duas resolve de graça e sem atrito para todos os usuários. A ordem que eu sugiro:
+1. Testar o Meu Pluggy com os seus bancos (grátis).
+2. Continuar com arquivo/PDF/print para os usuários.
+3. Quando houver pagantes, contratar a Pluggy direto (mais seguro) ou negociar com eles um plano por conexão.
+
+Fontes: https://github.com/pluggyai/meu-pluggy · https://www.tabnews.com.br/marlindo71/d39804a3-211a-4d45-8491-e4a36e85a6e8 · https://banco.mcp.ai/docs · https://github.com/douglac/banco-mcp · https://www.pluggy.ai/docs/termos-e-condicoes-de-uso.pdf
+
 ---
 
 ## Fontes
