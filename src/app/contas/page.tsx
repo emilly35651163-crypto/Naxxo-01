@@ -34,12 +34,21 @@ import ItemLancamento from "@/components/ItemLancamento";
 import EstadoVazio from "@/components/EstadoVazio";
 import BotaoImportarExtrato from "@/components/BotaoImportarExtrato";
 import { ativoNoMes, descreverCobranca, situacaoDoFixo } from "@/lib/fixos";
-import { faturaAberta, faturasAtrasadas, limiteUsado, resumoDaFatura, type ItemFatura, type SituacaoFatura } from "@/lib/cartoes";
+import {
+  faturaAberta,
+  faturaDaData,
+  faturasAtrasadas,
+  limiteUsado,
+  resumoDaFatura,
+  type ItemFatura,
+  type SituacaoFatura,
+} from "@/lib/cartoes";
 import { cartoesDeCredito, contaNoSaldo, ehVale, iconeDaConta, saldoDaConta, temCredito } from "@/lib/contas";
 import { calcularMeta } from "@/lib/metas";
-import { brl, diasAte, formatarData, hojeISO, nomeMes } from "@/lib/formato";
+import { brl, diasAte, formatarData, hojeISO, mesesEntre, nomeMes, somarMeses } from "@/lib/formato";
 import { comDesfazer } from "@/lib/avisos";
 import Icone from "@/components/Icone";
+import { useDados } from "@/lib/dados";
 
 const ROTULO_SITUACAO: Record<SituacaoFatura, { texto: string; cor: string }> = {
   aberta: { texto: "Aberta", cor: "bg-azul/20 text-azul" },
@@ -62,6 +71,11 @@ export default function Contas() {
 
   const [editando, setEditando] = useState<Conta | "nova" | null>(null);
   const [aberta, setAberta] = useState<string | null>(null);
+  // /contas#<id>: já abre aquela conta (links de outras telas)
+  useEffect(() => {
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    if (id) void Promise.resolve().then(() => setAberta(id));
+  }, []);
   const [comprando, setComprando] = useState<Conta | null>(null);
   const [pagando, setPagando] = useState<{ cartao: Conta; restante: number; fatura: string } | null>(null);
   const [fixoAberto, setFixoAberto] = useState<GastoFixo | "nova" | "assinatura" | null>(null);
@@ -471,6 +485,31 @@ function Numero({
   );
 }
 
+/** Lista que fica fechada por padrão (a página fica organizada) e abre com um toque */
+function Recolher({ titulo, quantos, children }: { titulo: string; quantos: number; children: React.ReactNode }) {
+  const [aberta, setAberta] = useState(false);
+  return (
+    <div>
+      <button
+        onClick={() => setAberta(!aberta)}
+        disabled={quantos === 0}
+        className="flex w-full items-center justify-between gap-2 rounded-xl py-1 text-left text-sm disabled:cursor-default"
+      >
+        <span className="text-suave">
+          {titulo}
+          {quantos > 0 && <span className="ml-1 rounded-full bg-white/10 px-2 py-0.5 text-xs">{quantos}</span>}
+        </span>
+        {quantos > 0 ? (
+          <span className="text-rosa">{aberta ? "Esconder ▴" : "Ver ▾"}</span>
+        ) : (
+          <span className="text-xs text-suave">nada ainda</span>
+        )}
+      </button>
+      {aberta && quantos > 0 && <div className="mt-1">{children}</div>}
+    </div>
+  );
+}
+
 function CartaoConta({
   conta,
   saldo,
@@ -490,7 +529,6 @@ function CartaoConta({
   onComprar: () => void;
   onPagar: (fatura: string, restante: number) => void;
 }) {
-  const [aberta, setAberta] = useState(false);
   const [editandoCompra, setEditandoCompra] = useState<CompraCartao | null>(null);
   const [editandoFixo, setEditandoFixo] = useState<GastoFixo | null>(null);
   const [editandoSaldo, setEditandoSaldo] = useState(false);
@@ -498,6 +536,7 @@ function CartaoConta({
   const compras = useCompras();
   const fixos = useGastosFixos();
   const lancamentos = useLancamentos();
+  const dados = useDados();
   const credito = temCredito(conta) && fatura;
   const pagamentos = usePagamentosFatura();
   // Faturas de meses anteriores que ficaram sem pagar
@@ -522,21 +561,45 @@ function CartaoConta({
   const efeitoForaDoSaldo = foraDoSaldo.reduce((t, l) => t + (l.tipo === "entrada" ? l.valor : -l.valor), 0);
   const uso = conta.limite > 0 ? Math.min(usado / conta.limite, 1) : 0;
 
-  // Tudo o que mexeu nesta conta no mês, numa lista só: débito/Pix/transferências + o que está na fatura do cartão
-  type Movimento =
-    | { chave: string; data: string; lancamento: Lancamento; item?: undefined }
-    | { chave: string; data: string; lancamento?: undefined; item: ItemFatura & { compra?: CompraCartao; fixo?: GastoFixo } };
-  const movimentos: Movimento[] = [
-    ...lancamentos
-      .filter((l) => l.contaId === conta.id && l.data.startsWith(mes))
-      .map((l) => ({ chave: l.id, data: l.data, lancamento: l })),
-    ...(credito ? fatura.itens : []).map((item) => {
+  // Débito: o que mexeu na conta no mês (débito, Pix, transferências)
+  const doDebito = lancamentos
+    .filter((l) => l.contaId === conta.id && l.data.startsWith(mes))
+    .sort((a, b) => b.data.localeCompare(a.data));
+  const somar = (tipo: "entrada" | "saida") =>
+    doDebito.filter((l) => l.tipo === tipo && l.pago && !l.transferenciaId).reduce((s, l) => s + l.valor, 0);
+  const entrouNoMes = somar("entrada");
+  const saiuNoMes = somar("saida");
+  // Até que dia o extrato do banco já cobre
+  const ultimaDoExtrato = lancamentos
+    .filter((l) => l.contaId === conta.id && l.importado)
+    .reduce((m, l) => (l.data > m ? l.data : m), "");
+
+  // Crédito: o que está na fatura do mês, as parcelas que ainda correm e as faturas de antes
+  const doCredito = (credito ? fatura.itens : [])
+    .map((item) => {
       const compra = compras.find((c) => c.id === item.compraId);
       const fixo = fixos.find((x) => x.id === item.fixoId);
       const data = compra?.data ?? `${mes}-${String(fixo?.dia ?? 1).padStart(2, "0")}`;
       return { chave: item.chave, data, item: { ...item, compra, fixo } };
-    }),
-  ].sort((a, b) => b.data.localeCompare(a.data));
+    })
+    .sort((a, b) => b.data.localeCompare(a.data));
+  const aberta = credito ? faturaAberta(conta) : "";
+  const parcelasAndando = credito
+    ? compras
+        .filter((c) => c.cartaoId === conta.id && c.parcelas > 1)
+        .map((c) => {
+          const atual = mesesEntre(faturaDaData(c.data, conta), aberta) + 1;
+          return { compra: c, atual, faltam: c.parcelas - atual + 1 };
+        })
+        .filter((p) => p.atual >= 1 && p.faltam >= 1)
+        .sort((a, b) => a.faltam - b.faltam)
+    : [];
+  const anteriores = credito
+    ? [1, 2, 3]
+        .map((i) => somarMeses(mes, -i))
+        .map((m) => ({ mes: m, resumo: resumoDaFatura(conta, m, dados) }))
+        .filter((f) => f.resumo.valor > 0)
+    : [];
 
   return (
     <article className="space-y-4">
@@ -591,14 +654,59 @@ function CartaoConta({
         )}
       </div>
 
-      {/* Detalhes */}
-      <div className="cartao space-y-4 p-4">
+      {/* Detalhes: débito (a conta) e crédito (o cartão) separados (docs/NOVO-SISTEMA.md, seção 4) */}
+      <div className="cartao space-y-5 p-4">
+        {/* DÉBITO (conta) */}
+        <section className="space-y-3">
+          <div className="flex items-baseline justify-between gap-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-suave">
+              <Icone e={conta.tipo === "dinheiro" ? "💵" : conta.tipo === "vale" ? "🍽️" : "🏦"} />{" "}
+              {conta.tipo === "dinheiro" ? "Dinheiro" : conta.tipo === "vale" ? "Vale" : "Débito (conta)"}
+            </h3>
+            <span className="text-xs text-suave">
+              {ultimaDoExtrato
+                ? `extrato até ${formatarData(ultimaDoExtrato)}`
+                : (conta.tipo ?? "banco") === "banco"
+                  ? "sem extrato ainda"
+                  : ""}
+            </span>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="rounded-xl bg-fundo/50 px-2 py-2">
+              <span className="block text-[0.65rem] text-suave">Saldo hoje</span>
+              <span className={`block font-display font-semibold tabular-nums ${saldo < 0 ? "text-saida" : ""}`}>
+                {brl(saldo)}
+              </span>
+            </div>
+            <div className="rounded-xl bg-fundo/50 px-2 py-2">
+              <span className="block text-[0.65rem] text-suave">Entrou em {nomeMes(mes).split(" ")[0].toLowerCase()}</span>
+              <span className="block font-display font-semibold tabular-nums text-entrada">{brl(entrouNoMes)}</span>
+            </div>
+            <div className="rounded-xl bg-fundo/50 px-2 py-2">
+              <span className="block text-[0.65rem] text-suave">Saiu em {nomeMes(mes).split(" ")[0].toLowerCase()}</span>
+              <span className="block font-display font-semibold tabular-nums text-saida">{brl(saiuNoMes)}</span>
+            </div>
+          </div>
+          <Recolher titulo={`Movimentações de ${nomeMes(mes).toLowerCase()}`} quantos={doDebito.length}>
+            <ul className="divide-y divide-white/5">
+              {doDebito.map((l) => (
+                <ItemLancamento key={l.id} lancamento={l} daConta={conta.id} contas={contas} lancamentos={lancamentos} />
+              ))}
+            </ul>
+          </Recolher>
+        </section>
+
+        {/* CRÉDITO (cartão) */}
         {credito && (
-          <>
+          <section className="space-y-3 border-t border-white/10 pt-4">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-suave">
+              <Icone e="💳" /> Crédito (cartão)
+            </h3>
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className={`rounded-full px-3 py-1 font-medium ${ROTULO_SITUACAO[fatura.situacao].cor}`}>
                 {ROTULO_SITUACAO[fatura.situacao].texto}
               </span>
+              <span className="font-display text-base font-semibold tabular-nums">{brl(fatura.valor)}</span>
               {fatura.situacao === "aberta" && <span className="text-suave">fecha em {formatarData(fatura.fechamento)}</span>}
               {fatura.situacao !== "paga" && fatura.situacao !== "vazia" && (
                 <span className={diasAte(fatura.vencimento) < 0 ? "text-saida" : "text-suave"}>
@@ -626,54 +734,60 @@ function CartaoConta({
               </div>
             ))}
 
-            <div className="flex gap-2">
-              <button onClick={onComprar} className="botao-gradiente flex-1 rounded-full py-2.5 text-sm font-semibold">
-                + Incluir no cartão
-              </button>
-              {fatura.restante > 0.005 && (
-                <button
-                  onClick={() => onPagar(mes, fatura.restante)}
-                  className="flex-1 rounded-full border border-rosa/50 py-2.5 text-sm text-rosa hover:bg-rosa/10"
-                >
-                  {mes === faturaAberta(conta) ? "Adiantar fatura" : "Pagar fatura"}
-                </button>
-              )}
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-xl bg-fundo/50 px-2 py-2">
+                <span className="block text-[0.65rem] text-suave">Limite total</span>
+                <span className="block font-display font-semibold tabular-nums">{brl(conta.limite)}</span>
+              </div>
+              <div className="rounded-xl bg-fundo/50 px-2 py-2">
+                <span className="block text-[0.65rem] text-suave">Usado</span>
+                <span className="block font-display font-semibold tabular-nums">{brl(usado)}</span>
+              </div>
+              <div className="rounded-xl bg-fundo/50 px-2 py-2">
+                <span className="block text-[0.65rem] text-suave">Disponível</span>
+                <span className="block font-display font-semibold tabular-nums text-entrada">{brl(disponivel)}</span>
+              </div>
             </div>
-          </>
-        )}
 
-        {/* Movimentações do mês: conta e cartão juntos, tudo editável */}
-        <div>
-          {/* Fechada por padrão, para a página ficar organizada; abre tudo de uma vez */}
-          <button
-            onClick={() => setAberta(!aberta)}
-            disabled={movimentos.length === 0}
-            className="flex w-full items-center justify-between gap-2 rounded-xl py-1 text-left text-sm disabled:cursor-default"
-          >
-            <span className="text-suave">
-              Movimentações de {nomeMes(mes).toLowerCase()}
-              {movimentos.length > 0 && (
-                <span className="ml-1 rounded-full bg-white/10 px-2 py-0.5 text-xs">{movimentos.length}</span>
-              )}
-            </span>
-            {movimentos.length > 0 ? (
-              <span className="text-rosa">{aberta ? "Esconder ▴" : "Ver ▾"}</span>
-            ) : (
-              <span className="text-xs text-suave">nada ainda</span>
+            {parcelasAndando.length > 0 && (
+              <Recolher titulo="Parcelas em andamento" quantos={parcelasAndando.length}>
+                <ul className="divide-y divide-white/5 text-sm">
+                  {parcelasAndando.map(({ compra: c, atual, faltam }) => (
+                    <li key={c.id} className="flex items-center gap-3 py-2">
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-medium">{c.descricao}</span>
+                        <span className="text-xs text-suave">
+                          parcela {atual} de {c.parcelas} · faltam {faltam} ({brl((c.valorTotal / c.parcelas) * faltam)})
+                        </span>
+                      </span>
+                      <span className="shrink-0 font-display font-semibold tabular-nums">{brl(c.valorTotal / c.parcelas)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Recolher>
             )}
-          </button>
-          {aberta && movimentos.length > 0 && (
-            <ul className="mt-1 divide-y divide-white/5">
-              {movimentos.map((m) =>
-                m.lancamento ? (
-                  <ItemLancamento
-                    key={m.chave}
-                    lancamento={m.lancamento}
-                    daConta={conta.id}
-                    contas={contas}
-                    lancamentos={lancamentos}
-                  />
-                ) : (
+
+            {anteriores.length > 0 && (
+              <Recolher titulo="Faturas anteriores" quantos={anteriores.length}>
+                <ul className="divide-y divide-white/5 text-sm">
+                  {anteriores.map((f) => (
+                    <li key={f.mes} className="flex items-center justify-between gap-3 py-2">
+                      <span className="capitalize">{nomeMes(f.mes).toLowerCase()}</span>
+                      <span className="text-right">
+                        <span className="block font-display font-semibold tabular-nums">{brl(f.resumo.valor)}</span>
+                        <span className={`text-xs ${f.resumo.restante > 0.005 ? "text-saida" : "text-entrada"}`}>
+                          {f.resumo.restante > 0.005 ? `em aberto: ${brl(f.resumo.restante)}` : "paga"}
+                        </span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </Recolher>
+            )}
+
+            <Recolher titulo={`Compras da fatura de ${nomeMes(mes).toLowerCase()}`} quantos={doCredito.length}>
+              <ul className="divide-y divide-white/5">
+                {doCredito.map((m) => (
                   <li key={m.chave}>
                     <button
                       onClick={() => {
@@ -688,7 +802,7 @@ function CartaoConta({
                       <span className="min-w-0 flex-1">
                         <span className="block truncate font-medium group-hover:text-rosa">{m.item.descricao}</span>
                         <span className="block text-xs text-suave">
-                          <Icone e="💳" /> crédito · {m.item.detalhe}
+                          {m.item.detalhe}
                           {m.item.compra && ` · ${formatarData(m.item.compra.data)}`}
                         </span>
                       </span>
@@ -698,11 +812,25 @@ function CartaoConta({
                       </span>
                     </button>
                   </li>
-                ),
+                ))}
+              </ul>
+            </Recolher>
+
+            <div className="flex gap-2">
+              <button onClick={onComprar} className="botao-gradiente flex-1 rounded-full py-2.5 text-sm font-semibold">
+                + Incluir no cartão
+              </button>
+              {fatura.restante > 0.005 && (
+                <button
+                  onClick={() => onPagar(mes, fatura.restante)}
+                  className="flex-1 rounded-full border border-rosa/50 py-2.5 text-sm text-rosa hover:bg-rosa/10"
+                >
+                  {mes === faturaAberta(conta) ? "Adiantar fatura" : "Pagar fatura"}
+                </button>
               )}
-            </ul>
-          )}
-        </div>
+            </div>
+          </section>
+        )}
 
         {foraDoSaldo.length > 0 && avisoFechadoEm !== foraDoSaldo.length && (
           <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-amber-300/40 bg-amber-300/10 p-3 text-xs">

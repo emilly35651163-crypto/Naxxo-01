@@ -86,7 +86,7 @@ function semCalculo(l: LinhaExtrato | Linha): LinhaExtrato & Pick<Linha, "ligado
   return c as LinhaExtrato;
 }
 
-// Importar o extrato do banco (OFX ou CSV): mostra tudo antes, a pessoa desmarca o que não quer e importa.
+// Importar o extrato do banco (OFX, CSV ou PDF): mostra tudo antes, a pessoa desmarca o que não quer e importa.
 export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar: () => void; arquivoInicial?: File | null }) {
   const contas = useCartoes();
   const lancamentos = useLancamentos();

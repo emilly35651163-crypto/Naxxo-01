@@ -17,7 +17,7 @@ const TELAS = [
     icone: "🏦",
     titulo: "Tudo começa pelo extrato",
     texto:
-      "Em Contas, cadastre seu banco e importe o extrato (OFX ou CSV, que o app do banco exporta). Mande pelo menos 6 meses: é com eles que o NAXXO aprende como é o seu dinheiro.",
+      "Em Contas, cadastre seu banco e importe o extrato (OFX, CSV ou PDF, que o app do banco exporta). Mande pelo menos 6 meses: é com eles que o NAXXO aprende como é o seu dinheiro.",
   },
   {
     icone: "🔁",

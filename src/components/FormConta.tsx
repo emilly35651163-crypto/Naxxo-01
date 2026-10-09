@@ -208,7 +208,7 @@ export default function FormConta({ conta, onFechar }: { conta?: Conta; onFechar
               {conta && <> · hoje: {brl(saldoAtual ?? 0)}</>}
             </p>
             <p className="mt-1 text-xs text-suave">
-              Depois de salvar, importe o arquivo (OFX ou CSV) em Contas: o saldo fica igual ao do banco.
+              Depois de salvar, importe o arquivo (OFX, CSV ou PDF) em Contas: o saldo fica igual ao do banco.
             </p>
             <button type="button" onClick={() => setSaldoAMao(true)} className="mt-2 text-xs text-rosa">
               Meu banco não manda o saldo no arquivo
