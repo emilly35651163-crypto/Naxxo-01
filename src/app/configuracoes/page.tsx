@@ -30,6 +30,7 @@ import { CampoValor, Chip } from "@/components/Campos";
 import { definirSenha, emailLogado, nuvemAtiva, sair } from "@/lib/nuvem";
 import InstalarApp from "@/components/InstalarApp";
 import SeletorTema from "@/components/SeletorTema";
+import RegrasAprendidas from "@/components/RegrasAprendidas";
 import Icone, { ComIcone } from "@/components/Icone";
 
 const AUTOMATICAS = ["Fatura do cartão", "Guardar (metas)"];
@@ -279,6 +280,10 @@ export default function Configuracoes() {
       </Secao>
 
       {/* Orçamento por categoria */}
+      <Secao titulo="🧠 Coisas que o NAXXO aprendeu">
+        <RegrasAprendidas />
+      </Secao>
+
       <Secao titulo="🎯 Limite por categoria (orçamento)">
         <p className="text-sm text-suave">
           Defina quanto quer gastar por mês em cada categoria. O Resumo e o Início mostram a barra de quanto já foi.

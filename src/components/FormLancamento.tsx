@@ -43,6 +43,7 @@ import EscolhaRepeticao, { lerRepeticao, type Repeticao } from "./EscolhaRepetic
 import { faturaDaData } from "@/lib/cartoes";
 import { comDesfazer, mostrarAviso } from "@/lib/avisos";
 import Modal from "./Modal";
+import PerguntaAprender, { type ItemAprender } from "./PerguntaAprender";
 import { Campo, Chip } from "./Campos";
 import EscolhaConta, { lerEscolha } from "./EscolhaConta";
 import EscolhaParcelas from "./EscolhaParcelas";
@@ -187,6 +188,9 @@ export default function FormLancamento({
     });
   }
 
+  // Mudou nome/categoria de algo do extrato: antes de fechar, pergunta se o app aprende
+  const [aprendendo, setAprendendo] = useState<ItemAprender | null>(null);
+
   function salvar(e: React.FormEvent) {
     e.preventDefault();
     if (!(numero > 0)) return falhar("Digite um valor maior que zero.", "valor");
@@ -256,8 +260,13 @@ export default function FormLancamento({
         pago: futuro ? false : pago,
         contaId,
         ...ligacao,
+        revisar: undefined, // a pessoa conferiu
       });
       avisarSalvo(repete !== "nao" ? "🔁 Salvo: as próximas vezes ficam previstas" : "Alterações salvas ✓", data.slice(0, 7));
+      const mudou =
+        nome !== lancamento.descricao || categoria !== lancamento.categoria || (sub ?? "") !== (lancamento.subcategoria ?? "");
+      if (lancamento.descricaoBanco && mudou)
+        return setAprendendo({ descricaoBanco: lancamento.descricaoBanco, tipo, nome, categoria, subcategoria: sub });
       return onFechar();
     }
 
@@ -408,238 +417,242 @@ export default function FormLancamento({
       titulo={lancamento ? (transferencia ? "Editar transferência" : "Editar lançamento") : "Novo lançamento"}
       onFechar={onFechar}
     >
-      <form onSubmit={salvar} className="space-y-5">
-        <div className="grid grid-cols-3 gap-1 rounded-full bg-fundo p-1" role="radiogroup" aria-label="Tipo">
-          {(["saida", "entrada", "transferencia"] as const)
-            .filter((m) =>
-              !lancamento || lancamento.transferenciaId
-                ? m === "transferencia" || !lancamento
-                : m !== "transferencia" || podeVirarTransferencia,
-            )
-            .map((m) => (
-              <button
-                key={m}
-                type="button"
-                role="radio"
-                aria-checked={modo === m}
-                onClick={() => trocarModo(m)}
-                className={`rounded-full py-2 text-sm font-medium transition-colors ${
-                  modo === m
-                    ? m === "entrada"
-                      ? "bg-entrada text-fundo"
-                      : m === "saida"
-                        ? "bg-saida text-fundo"
-                        : "bg-azul text-fundo"
-                    : "text-suave"
-                }`}
-              >
-                <TextoComIcones texto={m === "entrada" ? "Entrada" : m === "saida" ? "Saída" : "🔁 Transferir"} />
-              </button>
-            ))}
-        </div>
+      {aprendendo ? (
+        <PerguntaAprender item={aprendendo} onFim={onFechar} />
+      ) : (
+        <form onSubmit={salvar} className="space-y-5">
+          <div className="grid grid-cols-3 gap-1 rounded-full bg-fundo p-1" role="radiogroup" aria-label="Tipo">
+            {(["saida", "entrada", "transferencia"] as const)
+              .filter((m) =>
+                !lancamento || lancamento.transferenciaId
+                  ? m === "transferencia" || !lancamento
+                  : m !== "transferencia" || podeVirarTransferencia,
+              )
+              .map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  role="radio"
+                  aria-checked={modo === m}
+                  onClick={() => trocarModo(m)}
+                  className={`rounded-full py-2 text-sm font-medium transition-colors ${
+                    modo === m
+                      ? m === "entrada"
+                        ? "bg-entrada text-fundo"
+                        : m === "saida"
+                          ? "bg-saida text-fundo"
+                          : "bg-azul text-fundo"
+                      : "text-suave"
+                  }`}
+                >
+                  <TextoComIcones texto={m === "entrada" ? "Entrada" : m === "saida" ? "Saída" : "🔁 Transferir"} />
+                </button>
+              ))}
+          </div>
 
-        <label className={`block rounded-2xl text-center ${erro?.campo === "valor" ? "ring-2 ring-saida/60" : ""}`}>
-          <span className="sr-only">Valor</span>
-          <span className="font-display text-4xl font-bold text-suave">R$ </span>
-          <input
-            autoFocus
-            inputMode="decimal"
-            placeholder="0,00"
-            value={valor}
-            aria-invalid={erro?.campo === "valor"}
-            onChange={(e) => {
-              setValor(mascaraDinheiro(e.target.value));
-              setErro(null);
-            }}
-            className="w-48 bg-transparent font-display text-4xl font-bold outline-none placeholder:text-white/40"
-          />
-        </label>
-
-        {!transferencia && (
-          <Campo rotulo="O que é?">
+          <label className={`block rounded-2xl text-center ${erro?.campo === "valor" ? "ring-2 ring-saida/60" : ""}`}>
+            <span className="sr-only">Valor</span>
+            <span className="font-display text-4xl font-bold text-suave">R$ </span>
             <input
-              value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
-              placeholder={entrada ? "Ex.: salário, freela, venda" : "Ex.: farmácia, presente, conta de luz"}
+              autoFocus
+              inputMode="decimal"
+              placeholder="0,00"
+              value={valor}
+              aria-invalid={erro?.campo === "valor"}
+              onChange={(e) => {
+                setValor(mascaraDinheiro(e.target.value));
+                setErro(null);
+              }}
+              className="w-48 bg-transparent font-display text-4xl font-bold outline-none placeholder:text-white/40"
+            />
+          </label>
+
+          {!transferencia && (
+            <Campo rotulo="O que é?">
+              <input
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+                placeholder={entrada ? "Ex.: salário, freela, venda" : "Ex.: farmácia, presente, conta de luz"}
+                className="campo"
+              />
+            </Campo>
+          )}
+
+          {!transferencia && (
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
+                {categorias.map((c) => (
+                  <Chip
+                    key={c.nome}
+                    ativo={categoria === c.nome}
+                    onClick={() => {
+                      setCategoria(c.nome);
+                      setSubcategoria("");
+                    }}
+                  >
+                    <Icone e={c.icone} /> <TextoComIcones texto={c.nome} />
+                  </Chip>
+                ))}
+                <Chip
+                  ativo={novaCategoria === "categoria"}
+                  onClick={() => setNovaCategoria(novaCategoria === "categoria" ? null : "categoria")}
+                >
+                  ＋ Criar categoria
+                </Chip>
+              </div>
+              {(subcategorias.length > 0 || novaCategoria === "sub") && (
+                <div className="flex flex-wrap gap-2 border-l-2 border-roxo/30 pl-3">
+                  {subcategorias.map((s) => (
+                    <Chip
+                      key={s.id}
+                      ativo={subcategoria === s.nome}
+                      onClick={() => setSubcategoria(subcategoria === s.nome ? "" : s.nome)}
+                    >
+                      <TextoComIcones texto={s.nome} />
+                    </Chip>
+                  ))}
+                </div>
+              )}
+              {novaCategoria === null && (
+                <button type="button" onClick={() => setNovaCategoria("sub")} className="text-xs text-suave hover:text-rosa">
+                  + subcategoria de <TextoComIcones texto={categoria} />
+                </button>
+              )}
+              {novaCategoria && (
+                <div className="flex gap-2">
+                  <input
+                    autoFocus
+                    value={nomeNova}
+                    onChange={(e) => setNomeNova(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        criarCategoria();
+                      }
+                    }}
+                    placeholder={novaCategoria === "sub" ? `Ex.: dentro de ${categoria}` : "Ex.: Pet, Beleza, Filhos"}
+                    className="campo py-2 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={criarCategoria}
+                    className="shrink-0 rounded-full border border-rosa/50 px-4 text-sm text-rosa"
+                  >
+                    Criar
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          <Campo rotulo="Quando?">
+            <input
+              type="date"
+              value={data}
+              onChange={(e) => {
+                setData(e.target.value);
+                if (e.target.value > hojeISO()) setPago(false);
+                else if (!lancamento) setPago(true);
+              }}
               className="campo"
             />
           </Campo>
-        )}
 
-        {!transferencia && (
-          <div className="space-y-2">
-            <div className="flex flex-wrap gap-2">
-              {categorias.map((c) => (
-                <Chip
-                  key={c.nome}
-                  ativo={categoria === c.nome}
-                  onClick={() => {
-                    setCategoria(c.nome);
-                    setSubcategoria("");
-                  }}
-                >
-                  <Icone e={c.icone} /> <TextoComIcones texto={c.nome} />
-                </Chip>
-              ))}
-              <Chip
-                ativo={novaCategoria === "categoria"}
-                onClick={() => setNovaCategoria(novaCategoria === "categoria" ? null : "categoria")}
-              >
-                ＋ Criar categoria
-              </Chip>
-            </div>
-            {(subcategorias.length > 0 || novaCategoria === "sub") && (
-              <div className="flex flex-wrap gap-2 border-l-2 border-roxo/30 pl-3">
-                {subcategorias.map((s) => (
-                  <Chip
-                    key={s.id}
-                    ativo={subcategoria === s.nome}
-                    onClick={() => setSubcategoria(subcategoria === s.nome ? "" : s.nome)}
-                  >
-                    <TextoComIcones texto={s.nome} />
-                  </Chip>
-                ))}
+          <div className={erro?.campo === "conta" ? "rounded-2xl ring-2 ring-saida/60 ring-offset-4 ring-offset-superficie" : ""}>
+            {transferencia ? (
+              <div className="space-y-4">
+                <EscolhaConta valor={de} onChange={setDe} rotulo="Sai de qual conta?" />
+                <EscolhaConta valor={para} onChange={setPara} rotulo="Vai para qual conta?" />
+                <Campo rotulo="Observação (opcional)">
+                  <input
+                    value={descricao}
+                    onChange={(e) => setDescricao(e.target.value)}
+                    placeholder="Ex.: parte do salário"
+                    className="campo"
+                  />
+                </Campo>
               </div>
-            )}
-            {novaCategoria === null && (
-              <button type="button" onClick={() => setNovaCategoria("sub")} className="text-xs text-suave hover:text-rosa">
-                + subcategoria de <TextoComIcones texto={categoria} />
-              </button>
-            )}
-            {novaCategoria && (
-              <div className="flex gap-2">
-                <input
-                  autoFocus
-                  value={nomeNova}
-                  onChange={(e) => setNomeNova(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      criarCategoria();
-                    }
-                  }}
-                  placeholder={novaCategoria === "sub" ? `Ex.: dentro de ${categoria}` : "Ex.: Pet, Beleza, Filhos"}
-                  className="campo py-2 text-sm"
-                />
-                <button
-                  type="button"
-                  onClick={criarCategoria}
-                  className="shrink-0 rounded-full border border-rosa/50 px-4 text-sm text-rosa"
-                >
-                  Criar
-                </button>
-              </div>
+            ) : (
+              <EscolhaConta
+                valor={conta}
+                onChange={(v) => {
+                  setConta(v);
+                  setErro(null);
+                }}
+                modo={entrada ? "debito" : "ambos"}
+                rotulo={entrada ? "Entrou em qual conta?" : "De onde sai?"}
+              />
             )}
           </div>
-        )}
 
-        <Campo rotulo="Quando?">
-          <input
-            type="date"
-            value={data}
-            onChange={(e) => {
-              setData(e.target.value);
-              if (e.target.value > hojeISO()) setPago(false);
-              else if (!lancamento) setPago(true);
-            }}
-            className="campo"
-          />
-        </Campo>
+          {noCredito && repete === "nao" && <EscolhaParcelas valor={parcelas} onChange={setParcelas} valorTotal={numero} />}
 
-        <div className={erro?.campo === "conta" ? "rounded-2xl ring-2 ring-saida/60 ring-offset-4 ring-offset-superficie" : ""}>
-          {transferencia ? (
-            <div className="space-y-4">
-              <EscolhaConta valor={de} onChange={setDe} rotulo="Sai de qual conta?" />
-              <EscolhaConta valor={para} onChange={setPara} rotulo="Vai para qual conta?" />
-              <Campo rotulo="Observação (opcional)">
-                <input
-                  value={descricao}
-                  onChange={(e) => setDescricao(e.target.value)}
-                  placeholder="Ex.: parte do salário"
-                  className="campo"
-                />
-              </Campo>
-            </div>
-          ) : (
-            <EscolhaConta
-              valor={conta}
-              onChange={(v) => {
-                setConta(v);
-                setErro(null);
-              }}
-              modo={entrada ? "debito" : "ambos"}
-              rotulo={entrada ? "Entrou em qual conta?" : "De onde sai?"}
+          {mostrarRepeticao && (
+            <EscolhaRepeticao
+              titulo={entrada ? "Vai entrar de novo?" : lancamento ? "Vai se repetir nos próximos meses?" : "Vai se repetir?"}
+              repete={repete}
+              onRepete={setRepete}
+              aCadaDias={aCadaDias}
+              onACadaDias={setACadaDias}
+              vezesTotal={vezesTotal}
+              onVezesTotal={setVezesTotal}
+              varia={varia}
+              onVaria={setVaria}
+              valor={numero}
+              entrada={entrada}
+              erroDias={erro?.campo === "dias"}
             />
           )}
-        </div>
 
-        {noCredito && repete === "nao" && <EscolhaParcelas valor={parcelas} onChange={setParcelas} valorTotal={numero} />}
+          {/* Hoje ou antes: já foi pago/recebido ou ainda não? (um boleto que vence hoje ainda está "a pagar") */}
+          {!futuro && !transferencia && !noCredito && !ehPagamento && (
+            <div className="grid grid-cols-2 gap-1 rounded-full bg-fundo p-1 text-sm" role="radiogroup" aria-label="Situação">
+              {[true, false].map((v) => (
+                <button
+                  key={String(v)}
+                  type="button"
+                  role="radio"
+                  aria-checked={pago === v}
+                  onClick={() => setPago(v)}
+                  className={`rounded-full py-2 transition-colors ${pago === v ? "bg-white font-semibold text-fundo" : "text-suave"}`}
+                >
+                  <TextoComIcones
+                    texto={v ? (entrada ? "✓ Já recebi" : "✓ Já paguei") : entrada ? "Ainda vou receber" : "Ainda vou pagar"}
+                  />
+                </button>
+              ))}
+            </div>
+          )}
 
-        {mostrarRepeticao && (
-          <EscolhaRepeticao
-            titulo={entrada ? "Vai entrar de novo?" : lancamento ? "Vai se repetir nos próximos meses?" : "Vai se repetir?"}
-            repete={repete}
-            onRepete={setRepete}
-            aCadaDias={aCadaDias}
-            onACadaDias={setACadaDias}
-            vezesTotal={vezesTotal}
-            onVezesTotal={setVezesTotal}
-            varia={varia}
-            onVaria={setVaria}
-            valor={numero}
-            entrada={entrada}
-            erroDias={erro?.campo === "dias"}
-          />
-        )}
+          {destino && (
+            <p className="rounded-2xl bg-roxo/10 px-4 py-3 text-xs text-suave">
+              <TextoComIcones texto={destino} />
+            </p>
+          )}
+          {erro && (
+            <p role="alert" className="text-sm text-saida">
+              <TextoComIcones texto={erro.texto} />
+            </p>
+          )}
 
-        {/* Hoje ou antes: já foi pago/recebido ou ainda não? (um boleto que vence hoje ainda está "a pagar") */}
-        {!futuro && !transferencia && !noCredito && !ehPagamento && (
-          <div className="grid grid-cols-2 gap-1 rounded-full bg-fundo p-1 text-sm" role="radiogroup" aria-label="Situação">
-            {[true, false].map((v) => (
-              <button
-                key={String(v)}
-                type="button"
-                role="radio"
-                aria-checked={pago === v}
-                onClick={() => setPago(v)}
-                className={`rounded-full py-2 transition-colors ${pago === v ? "bg-white font-semibold text-fundo" : "text-suave"}`}
-              >
-                <TextoComIcones
-                  texto={v ? (entrada ? "✓ Já recebi" : "✓ Já paguei") : entrada ? "Ainda vou receber" : "Ainda vou pagar"}
-                />
-              </button>
-            ))}
-          </div>
-        )}
-
-        {destino && (
-          <p className="rounded-2xl bg-roxo/10 px-4 py-3 text-xs text-suave">
-            <TextoComIcones texto={destino} />
-          </p>
-        )}
-        {erro && (
-          <p role="alert" className="text-sm text-saida">
-            <TextoComIcones texto={erro.texto} />
-          </p>
-        )}
-
-        <button type="submit" className="botao-gradiente w-full rounded-full py-3 font-semibold">
-          <TextoComIcones texto={lancamento ? "Salvar alterações" : "Salvar"} />
-        </button>
-
-        {lancamento && (
-          <button
-            type="button"
-            onClick={() => {
-              comDesfazer(`“${lancamento.descricao}” excluído`, () => removerLancamento(lancamento.id));
-              onFechar();
-            }}
-            className="w-full py-1 text-sm text-suave hover:text-saida"
-          >
-            <TextoComIcones texto={transferencia ? "Excluir transferência (as duas pontas)" : "Excluir lançamento"} />
+          <button type="submit" className="botao-gradiente w-full rounded-full py-3 font-semibold">
+            <TextoComIcones texto={lancamento ? "Salvar alterações" : "Salvar"} />
           </button>
-        )}
-      </form>
+
+          {lancamento && (
+            <button
+              type="button"
+              onClick={() => {
+                comDesfazer(`“${lancamento.descricao}” excluído`, () => removerLancamento(lancamento.id));
+                onFechar();
+              }}
+              className="w-full py-1 text-sm text-suave hover:text-saida"
+            >
+              <TextoComIcones texto={transferencia ? "Excluir transferência (as duas pontas)" : "Excluir lançamento"} />
+            </button>
+          )}
+        </form>
+      )}
     </Modal>
   );
 }

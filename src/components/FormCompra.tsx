@@ -21,6 +21,7 @@ import {
 import { hojeISO, lerValor, valorParaCampo } from "@/lib/formato";
 import { dataPelasParcelasPagas } from "@/lib/cartoes";
 import Modal from "./Modal";
+import PerguntaAprender, { type ItemAprender } from "./PerguntaAprender";
 import { Campo, CampoValor, Chip } from "./Campos";
 import CamposCredito, { lerRascunhoCredito, type RascunhoCredito } from "./CamposCredito";
 import EscolhaConta, { lerEscolha } from "./EscolhaConta";
@@ -180,6 +181,8 @@ export default function FormCompra({
 
   const numero = lerValor(valor);
 
+  const [aprendendo, setAprendendo] = useState<ItemAprender | null>(null);
+
   function salvar(e: React.FormEvent) {
     e.preventDefault();
     if (tipo === "assinatura") {
@@ -223,7 +226,7 @@ export default function FormCompra({
       data,
       metaId: metaId ?? undefined,
     };
-    if (compra) atualizarCompra(compra.id, dados);
+    if (compra) atualizarCompra(compra.id, { ...dados, revisar: undefined });
     else adicionarCompra(dados);
     const cartao = cartoes.find((c) => c.id === credito.cartaoId);
     if (compra && repete !== "nao" && parcelas === 1 && cartao) {
@@ -232,193 +235,200 @@ export default function FormCompra({
       criarRepeticao({ nome: dados.descricao, categoria, valor: numero, data, cartao, repetir });
       mostrarAviso({ texto: "🔁 As próximas vezes ficam previstas no cartão" });
     }
+    // Mudou nome/categoria de uma compra do extrato: pergunta se o app aprende
+    if (compra?.descricaoBanco && (dados.descricao !== compra.descricao || categoria !== compra.categoria))
+      return setAprendendo({ descricaoBanco: compra.descricaoBanco, tipo: "saida", nome: dados.descricao, categoria });
     onFechar();
   }
 
   return (
     <Modal titulo={compra ? "Editar compra" : "Incluir no cartão"} onFechar={onFechar}>
-      <form onSubmit={salvar} className="space-y-4">
-        {!compra && (
-          <EscolhaCompraOuAssinatura
-            valor={tipo}
-            onChange={(novo) => {
-              setTipo(novo);
-              setErro("");
-            }}
-          />
-        )}
-
-        {tipo === "assinatura" ? (
-          <CamposAssinatura cartoes={cartoes} rascunho={assinatura} onChange={setAssinatura} comValor />
-        ) : (
-          <>
-            {!compra && metasDisponiveis.length > 0 && (
-              <div className="space-y-1.5 rounded-2xl border border-white/10 bg-fundo/50 p-3">
-                <span className="text-xs text-suave">Trazer de uma meta de quitar (Trilha)</span>
-                <div className="flex flex-wrap gap-2">
-                  {metasDisponiveis.map((m) => (
-                    <Chip key={m.id} ativo={metaId === m.id} onClick={() => trazerDaMeta(m)}>
-                      <Icone e={m.icone} /> <TextoComIcones texto={m.nome} />
-                    </Chip>
-                  ))}
-                </div>
-                {metaId && (
-                  <p className="text-xs text-suave">
-                    <Icone e="💡" /> A meta continua na Trilha e passa a avançar sozinha quando você paga a fatura.
-                  </p>
-                )}
-              </div>
-            )}
-
-            <Campo rotulo="O que foi?">
-              <input
-                value={descricao}
-                onChange={(e) => setDescricao(e.target.value)}
-                placeholder="Ex.: Tênis, iFood, celular"
-                className="campo"
-              />
-            </Campo>
-
-            <div className="space-y-1.5">
-              <span className="text-xs text-suave">Como pagou?</span>
-              <div className="grid grid-cols-2 gap-1 rounded-full bg-fundo p-1">
-                {[false, true].map((c) => (
-                  <button
-                    key={String(c)}
-                    type="button"
-                    onClick={() => trocarForma(c)}
-                    disabled={c && cartoes.length === 0}
-                    className={`rounded-full py-1.5 text-sm font-medium transition-colors disabled:opacity-40 ${
-                      !noDebito === c ? "bg-white text-fundo" : "text-suave hover:text-white"
-                    }`}
-                  >
-                    <TextoComIcones texto={c ? "💳 Crédito" : "🏦 Débito / Pix"} />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {noDebito ? (
-              <>
-                <Campo rotulo="Valor total da compra">
-                  <CampoValor valor={valor} onChange={setValor} />
-                </Campo>
-                <EscolhaConta valor={forma} onChange={setForma} rotulo="De qual banco?" />
-                <p className="rounded-2xl bg-roxo/10 px-4 py-3 text-xs text-suave">
-                  <TextoComIcones
-                    texto={
-                      compra
-                        ? "🏦 Vai sair da fatura e virar uma saída da conta."
-                        : data < hojeISO()
-                          ? "🏦 No débito, com data antes de hoje: fica registrado, mas não muda o saldo de hoje (já tinha saído)."
-                          : "🏦 Sai do saldo da conta."
-                    }
-                  />
-                </p>
-              </>
-            ) : (
-              <CamposCredito
-                key={metaId ?? ""}
-                cartoes={cartoes}
-                rascunho={credito}
-                onChange={(novo) => {
-                  mudarCredito(novo);
-                  setForma(`credito:${novo.cartaoId}`);
-                }}
-                valor={valor}
-                onValor={setValor}
-                data={data}
-              />
-            )}
-
-            <CampoDataCompra
-              data={data}
-              automatica={!dataManual && lerRascunhoCredito(credito).pagas > 0}
-              onChange={(nova) => {
-                setData(nova);
-                setDataManual(true);
+      {aprendendo ? (
+        <PerguntaAprender item={aprendendo} onFim={onFechar} />
+      ) : (
+        <form onSubmit={salvar} className="space-y-4">
+          {!compra && (
+            <EscolhaCompraOuAssinatura
+              valor={tipo}
+              onChange={(novo) => {
+                setTipo(novo);
+                setErro("");
               }}
             />
+          )}
 
-            <div className="space-y-1.5">
-              <span className="text-xs text-suave">Categoria</span>
-              <div className="flex flex-wrap gap-2">
-                {categorias.map((c) => (
-                  <Chip key={c.nome} ativo={categoria === c.nome} onClick={() => setCategoria(c.nome)}>
-                    <Icone e={c.icone} /> <TextoComIcones texto={c.nome} />
-                  </Chip>
-                ))}
-                <Chip ativo={criando} onClick={() => setCriando(!criando)}>
-                  ＋ Criar categoria
-                </Chip>
-              </div>
-              {criando && (
-                <div className="flex gap-2">
-                  <input
-                    autoFocus
-                    value={nomeNova}
-                    onChange={(e) => setNomeNova(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        criarCategoria();
-                      }
-                    }}
-                    placeholder="Ex.: Pet, Beleza, Presentes"
-                    className="campo py-2 text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={criarCategoria}
-                    className="shrink-0 rounded-full border border-rosa/50 px-4 text-sm text-rosa"
-                  >
-                    Criar
-                  </button>
+          {tipo === "assinatura" ? (
+            <CamposAssinatura cartoes={cartoes} rascunho={assinatura} onChange={setAssinatura} comValor />
+          ) : (
+            <>
+              {!compra && metasDisponiveis.length > 0 && (
+                <div className="space-y-1.5 rounded-2xl border border-white/10 bg-fundo/50 p-3">
+                  <span className="text-xs text-suave">Trazer de uma meta de quitar (Trilha)</span>
+                  <div className="flex flex-wrap gap-2">
+                    {metasDisponiveis.map((m) => (
+                      <Chip key={m.id} ativo={metaId === m.id} onClick={() => trazerDaMeta(m)}>
+                        <Icone e={m.icone} /> <TextoComIcones texto={m.nome} />
+                      </Chip>
+                    ))}
+                  </div>
+                  {metaId && (
+                    <p className="text-xs text-suave">
+                      <Icone e="💡" /> A meta continua na Trilha e passa a avançar sozinha quando você paga a fatura.
+                    </p>
+                  )}
                 </div>
               )}
-            </div>
-          </>
-        )}
 
-        {compra && tipo === "compra" && !noDebito && lerRascunhoCredito(credito).parcelas === 1 && (
-          <EscolhaRepeticao
-            titulo="Vai se repetir nos próximos meses?"
-            repete={repete}
-            onRepete={setRepete}
-            aCadaDias={aCadaDias}
-            onACadaDias={setACadaDias}
-            vezesTotal={vezesTotal}
-            onVezesTotal={setVezesTotal}
-            varia={varia}
-            onVaria={setVaria}
-            valor={numero}
-          />
-        )}
+              <Campo rotulo="O que foi?">
+                <input
+                  value={descricao}
+                  onChange={(e) => setDescricao(e.target.value)}
+                  placeholder="Ex.: Tênis, iFood, celular"
+                  className="campo"
+                />
+              </Campo>
 
-        {erro && (
-          <p className="text-sm text-saida">
-            <TextoComIcones texto={erro} />
-          </p>
-        )}
-        <button type="submit" className="botao-gradiente w-full rounded-full py-3 font-semibold">
-          <TextoComIcones
-            texto={compra ? "Salvar alterações" : tipo === "assinatura" ? "Adicionar assinatura" : "Incluir no cartão"}
-          />
-        </button>
+              <div className="space-y-1.5">
+                <span className="text-xs text-suave">Como pagou?</span>
+                <div className="grid grid-cols-2 gap-1 rounded-full bg-fundo p-1">
+                  {[false, true].map((c) => (
+                    <button
+                      key={String(c)}
+                      type="button"
+                      onClick={() => trocarForma(c)}
+                      disabled={c && cartoes.length === 0}
+                      className={`rounded-full py-1.5 text-sm font-medium transition-colors disabled:opacity-40 ${
+                        !noDebito === c ? "bg-white text-fundo" : "text-suave hover:text-white"
+                      }`}
+                    >
+                      <TextoComIcones texto={c ? "💳 Crédito" : "🏦 Débito / Pix"} />
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-        {compra && (
-          <button
-            type="button"
-            onClick={() => {
-              comDesfazer(`Compra “${compra.descricao}” excluída`, () => removerCompra(compra.id));
-              onFechar();
-            }}
-            className="w-full py-1 text-sm text-suave hover:text-saida"
-          >
-            Excluir compra
+              {noDebito ? (
+                <>
+                  <Campo rotulo="Valor total da compra">
+                    <CampoValor valor={valor} onChange={setValor} />
+                  </Campo>
+                  <EscolhaConta valor={forma} onChange={setForma} rotulo="De qual banco?" />
+                  <p className="rounded-2xl bg-roxo/10 px-4 py-3 text-xs text-suave">
+                    <TextoComIcones
+                      texto={
+                        compra
+                          ? "🏦 Vai sair da fatura e virar uma saída da conta."
+                          : data < hojeISO()
+                            ? "🏦 No débito, com data antes de hoje: fica registrado, mas não muda o saldo de hoje (já tinha saído)."
+                            : "🏦 Sai do saldo da conta."
+                      }
+                    />
+                  </p>
+                </>
+              ) : (
+                <CamposCredito
+                  key={metaId ?? ""}
+                  cartoes={cartoes}
+                  rascunho={credito}
+                  onChange={(novo) => {
+                    mudarCredito(novo);
+                    setForma(`credito:${novo.cartaoId}`);
+                  }}
+                  valor={valor}
+                  onValor={setValor}
+                  data={data}
+                />
+              )}
+
+              <CampoDataCompra
+                data={data}
+                automatica={!dataManual && lerRascunhoCredito(credito).pagas > 0}
+                onChange={(nova) => {
+                  setData(nova);
+                  setDataManual(true);
+                }}
+              />
+
+              <div className="space-y-1.5">
+                <span className="text-xs text-suave">Categoria</span>
+                <div className="flex flex-wrap gap-2">
+                  {categorias.map((c) => (
+                    <Chip key={c.nome} ativo={categoria === c.nome} onClick={() => setCategoria(c.nome)}>
+                      <Icone e={c.icone} /> <TextoComIcones texto={c.nome} />
+                    </Chip>
+                  ))}
+                  <Chip ativo={criando} onClick={() => setCriando(!criando)}>
+                    ＋ Criar categoria
+                  </Chip>
+                </div>
+                {criando && (
+                  <div className="flex gap-2">
+                    <input
+                      autoFocus
+                      value={nomeNova}
+                      onChange={(e) => setNomeNova(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          criarCategoria();
+                        }
+                      }}
+                      placeholder="Ex.: Pet, Beleza, Presentes"
+                      className="campo py-2 text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={criarCategoria}
+                      className="shrink-0 rounded-full border border-rosa/50 px-4 text-sm text-rosa"
+                    >
+                      Criar
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {compra && tipo === "compra" && !noDebito && lerRascunhoCredito(credito).parcelas === 1 && (
+            <EscolhaRepeticao
+              titulo="Vai se repetir nos próximos meses?"
+              repete={repete}
+              onRepete={setRepete}
+              aCadaDias={aCadaDias}
+              onACadaDias={setACadaDias}
+              vezesTotal={vezesTotal}
+              onVezesTotal={setVezesTotal}
+              varia={varia}
+              onVaria={setVaria}
+              valor={numero}
+            />
+          )}
+
+          {erro && (
+            <p className="text-sm text-saida">
+              <TextoComIcones texto={erro} />
+            </p>
+          )}
+          <button type="submit" className="botao-gradiente w-full rounded-full py-3 font-semibold">
+            <TextoComIcones
+              texto={compra ? "Salvar alterações" : tipo === "assinatura" ? "Adicionar assinatura" : "Incluir no cartão"}
+            />
           </button>
-        )}
-      </form>
+
+          {compra && (
+            <button
+              type="button"
+              onClick={() => {
+                comDesfazer(`Compra “${compra.descricao}” excluída`, () => removerCompra(compra.id));
+                onFechar();
+              }}
+              className="w-full py-1 text-sm text-suave hover:text-saida"
+            >
+              Excluir compra
+            </button>
+          )}
+        </form>
+      )}
     </Modal>
   );
 }

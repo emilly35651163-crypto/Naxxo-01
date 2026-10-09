@@ -1385,6 +1385,10 @@ export function adicionarCompra(nova: Omit<CompraCartao, "id">) {
   compras.gravar([{ ...nova, id: novoId() }, ...compras.ler()]);
 }
 
+export function lerCompras() {
+  return compras.ler();
+}
+
 export function atualizarCompra(id: string, mudancas: Partial<CompraCartao>) {
   compras.gravar(compras.ler().map((c) => (c.id === id ? { ...c, ...mudancas } : c)));
 }
@@ -2146,4 +2150,50 @@ export function converterCategoriasAntigas() {
     categoriasPersonalizadas.gravar(
       cp.map((c) => (c.pai && nova(c.tipo, c.pai) ? { ...c, pai: nova(c.tipo, c.pai).categoria } : c)),
     );
+}
+
+// ---------- Regras (o que o app aprendeu com a pessoa) ----------
+
+/** Regra: itens com esta chave ("saida|ifood restaurante") entram com o nome/categoria que a pessoa escolheu. */
+export type Regra = {
+  id: string;
+  chave: string;
+  nome?: string;
+  categoria?: string;
+  subcategoria?: string;
+  criadaEm: string;
+  /** Quantas vezes a pessoa escolheu "só este" nesta chave */
+  soEste?: number;
+  /** Loja com coisas diferentes (2× "só este"): a regra não vale sozinha */
+  variada?: boolean;
+};
+
+const SEM_REGRAS: Regra[] = [];
+const regras = criarDado<Regra[]>("naxxo:regras", SEM_REGRAS);
+
+export function useRegras() {
+  return useSyncExternalStore(inscrever, regras.ler, () => SEM_REGRAS);
+}
+
+export function lerRegras() {
+  return regras.ler();
+}
+
+/** Cria ou troca a regra da chave (escolher de novo tira o "loja variada") */
+export function gravarRegra(r: Pick<Regra, "chave" | "nome" | "categoria" | "subcategoria">) {
+  const outras = regras.ler().filter((x) => x.chave !== r.chave);
+  regras.gravar([...outras, { ...r, id: novoId(), criadaEm: hojeISO() }]);
+}
+
+export function marcarSoEste(chave: string) {
+  const atual = regras.ler().find((x) => x.chave === chave);
+  const soEste = (atual?.soEste ?? 0) + 1;
+  const nova: Regra = atual
+    ? { ...atual, soEste, variada: soEste >= 2 || atual.variada }
+    : { id: novoId(), chave, criadaEm: hojeISO(), soEste, variada: soEste >= 2 };
+  regras.gravar([...regras.ler().filter((x) => x.chave !== chave), nova]);
+}
+
+export function removerRegra(id: string) {
+  regras.gravar(regras.ler().filter((x) => x.id !== id));
 }

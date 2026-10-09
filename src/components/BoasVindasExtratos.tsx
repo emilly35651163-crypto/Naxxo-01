@@ -1,5 +1,6 @@
 "use client";
 
+import { aplicarRegras } from "@/lib/regras";
 import { useState } from "react";
 import { adicionarCartao, agoraLocal, CORES_CARTAO, semAcento, SUGESTOES_CARTAO, type Cartao } from "@/lib/store";
 import { brl, formatarData, hojeISO, lerValor, valorParaCampo } from "@/lib/formato";
@@ -267,7 +268,7 @@ export default function BoasVindasExtratos({
     const texto = await lerArquivo(arquivo);
     const avisar = (texto: string) => setAvisos((a) => ({ ...a, [b.id]: texto }));
     if (/^%PDF/.test(texto)) return avisar(`“${arquivo.name}” é PDF. Baixe de novo em OFX ou CSV.`);
-    const lidoDoArquivo = lerExtrato(texto);
+    const lidoDoArquivo = aplicarRegras(lerExtrato(texto));
     if (lidoDoArquivo.linhas.length === 0) return avisar(`Não encontrei movimentações em “${arquivo.name}”.`);
     // O arquivo diz que é do cartão, ou a pessoa colocou no espaço do cartão
     const destino = lidoDoArquivo.ehCartao || onde === "cartao" ? "cartao" : "conta";

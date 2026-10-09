@@ -1,5 +1,6 @@
 "use client";
 
+import { aplicarRegras } from "@/lib/regras";
 import { useEffect, useState } from "react";
 import {
   adicionarCompras,
@@ -136,7 +137,7 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
       setLinhas(null);
       return setErro("Esse é o PDF do extrato. Baixe de novo escolhendo OFX ou CSV (o PDF não dá para ler).");
     }
-    const extrato = lerExtrato(texto);
+    const extrato = aplicarRegras(lerExtrato(texto));
     if (extrato.linhas.length === 0) {
       setLinhas(null);
       return setErro("Não encontrei movimentações nesse arquivo. Ele precisa ser o extrato em OFX ou CSV.");
