@@ -137,6 +137,7 @@ export type GastoFixo = {
   inicio?: string; // "2026-10-05"
   ate?: string; // último mês em que cobra ("2026-12"): cancelado depois disso, o histórico fica
   pausas?: string[]; // meses em que não cobra (pausado)
+  padrao?: string; // descoberto no extrato: a chave do padrão (o valor se atualiza sozinho e os próximos se ligam a ele)
 };
 
 // ---------- Cartões ----------
@@ -264,6 +265,7 @@ export type FonteRenda = {
   frequencia?: "mensal" | "semanal" | "quinzenal";
   inicio?: string;
   criadoEm?: string; // "2026-10-07": quando foi cadastrada (meses antes disso não contam)
+  padrao?: string; // descoberta no extrato: a chave do padrão (valor que muda: média dos últimos meses)
 };
 
 // ---------- Listas fixas ----------
@@ -1215,6 +1217,10 @@ export function removerFonte(id: string) {
 const SEM_FIXOS: GastoFixo[] = [];
 const fixos = criarDado<GastoFixo[]>("naxxo:fixos", SEM_FIXOS);
 
+export function lerGastosFixos() {
+  return fixos.ler();
+}
+
 export function useGastosFixos() {
   return useSyncExternalStore(inscrever, fixos.ler, () => SEM_FIXOS);
 }
@@ -2031,6 +2037,7 @@ export type Preferencias = {
   lembradoEm?: string; // último dia em que os lembretes foram mostrados
   checklistFechado?: boolean; // escondeu os "Primeiros passos" do Início
   semCartao?: boolean; // disse que não tem cartão de crédito
+  padroesIgnorados?: string[]; // padrões do extrato que a pessoa disse "não é fixo" (ou "ainda tenho", com |parou)
 };
 
 const PREFERENCIAS_PADRAO: Preferencias = { tema: "escuro", lembretes: false };

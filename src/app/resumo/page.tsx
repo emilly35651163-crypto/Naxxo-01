@@ -6,11 +6,14 @@ import Graficos from "./graficos";
 import Relatorio from "./relatorio";
 import Projecao from "./projecao";
 import { TextoComIcones } from "@/components/Icone";
+import PadroesEncontrados from "@/components/PadroesEncontrados";
+import { useDados } from "@/lib/dados";
 
 const ABAS = [
   { id: "graficos", nome: "📊 Gráficos" },
   { id: "projecao", nome: "🔮 Projeção" },
   { id: "relatorio", nome: "📋 Relatório" },
+  { id: "recorrentes", nome: "🔁 Recorrentes" },
 ] as const;
 
 type Aba = (typeof ABAS)[number]["id"];
@@ -52,6 +55,11 @@ function Abas({ inicial }: { inicial: Aba }) {
       {aba === "graficos" && <Graficos />}
       {aba === "projecao" && <Projecao />}
       {aba === "relatorio" && <Relatorio />}
+      {aba === "recorrentes" && <Recorrentes />}
     </div>
   );
+}
+
+function Recorrentes() {
+  return <PadroesEncontrados dados={useDados()} />;
 }

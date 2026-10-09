@@ -7,6 +7,7 @@ import { useCartoes, useFontes, usePerfil, usePreferencias } from "@/lib/store";
 import { registrarRendaQueJaCaiu } from "@/lib/rendaAutomatica";
 import { converterCategoriasAntigas } from "@/lib/store";
 import { reconhecerTransferencias } from "@/lib/certeiros";
+import { ligarAosPadroes } from "@/lib/acompanhar";
 import { useLembretes } from "@/lib/lembretes";
 import { useEstadoNuvem } from "@/lib/nuvem";
 import { temaPorId } from "@/lib/temas";
@@ -86,6 +87,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     if (pronto) {
       converterCategoriasAntigas();
       reconhecerTransferencias();
+      ligarAosPadroes();
       registrarRendaQueJaCaiu();
     }
   }, [pronto, fontes, contas]);

@@ -2,6 +2,7 @@
 
 import { aplicarRegras } from "@/lib/regras";
 import { reconhecerTransferencias } from "@/lib/certeiros";
+import { ligarAosPadroes } from "@/lib/acompanhar";
 import { useEffect, useState } from "react";
 import {
   adicionarCompras,
@@ -325,6 +326,7 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
     }
     // Dinheiro passando entre as minhas contas não é gasto nem ganho
     const transferencias = reconhecerTransferencias();
+    ligarAosPadroes(); // o que é de um fixo/renda acompanhado se liga a ele (e os valores que mudam se atualizam)
     if (transferencias)
       mostrarAviso({
         texto: `🔁 ${transferencias} transferência${transferencias > 1 ? "s" : ""} entre suas contas (fora dos gastos)`,

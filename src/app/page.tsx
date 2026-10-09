@@ -10,6 +10,7 @@ import InstalarApp from "@/components/InstalarApp";
 import RendaDoMes from "@/components/RendaDoMes";
 import MovimentacoesDoMes from "@/components/MovimentacoesDoMes";
 import ParaRevisar from "@/components/ParaRevisar";
+import { AvisoPadroes } from "@/components/PadroesEncontrados";
 import Icone, { TextoComIcones } from "@/components/Icone";
 
 // Início: o essencial e mais nada. Renda, saldo, o mês (entradas, saídas, o que falta) e como ele vai fechar.
@@ -38,6 +39,7 @@ export default function Inicio() {
       )}
 
       <ParaRevisar dados={dados} />
+      <AvisoPadroes dados={dados} />
 
       <RendaDoMes mes={mes} dados={dados} />
 
