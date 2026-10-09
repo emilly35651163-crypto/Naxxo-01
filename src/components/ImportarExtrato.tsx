@@ -6,6 +6,8 @@ import { ligarAosPadroes } from "@/lib/acompanhar";
 import { useEffect, useState } from "react";
 import {
   adicionarCompras,
+  agoraLocal,
+  atualizarCartao,
   adicionarGastoFixo,
   adicionarLancamentos,
   lerLancamentos,
@@ -95,6 +97,10 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
   const [arrastando, setArrastando] = useState(false);
   // O que veio antes de o saldo ser informado: soma no saldo ou já estava nele? (null = o app decide)
   const [modoSaldo, setModoSaldo] = useState<"somar" | "ja" | null>(null);
+  // O saldo que veio no próprio arquivo (OFX sempre traz; alguns CSV, no "saldo do dia"): ele manda, não é digitado
+  const [saldoArquivo, setSaldoArquivo] = useState<{ valor: number; data: string } | null>(null);
+  // Quantos meses o arquivo cobre (o ideal são 6 ou mais, para o app achar os padrões)
+  const [mesesNoArquivo, setMesesNoArquivo] = useState(0);
 
   const opcoes = ehCartao ? cartoesDeCredito(contas) : contas;
   const conta = opcoes.find((c) => c.id === contaId);
@@ -148,6 +154,15 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
     const id = lista.some((c) => c.id === contaId) ? contaId : (lista[0]?.id ?? "");
     setEhCartao(extrato.ehCartao);
     setContaId(id);
+    const datas = extrato.linhas.map((l) => l.data).sort();
+    const [primeira, ultima] = [datas[0], datas[datas.length - 1]];
+    setSaldoArquivo(!extrato.ehCartao && extrato.saldo !== undefined ? { valor: extrato.saldo, data: ultima } : null);
+    setMesesNoArquivo(
+      Math.max(
+        1,
+        Math.round((new Date(`${ultima}T12:00:00`).getTime() - new Date(`${primeira}T12:00:00`).getTime()) / (30.4 * 864e5)),
+      ),
+    );
     setLinhas(preparar(extrato.linhas, extrato.ehCartao, id));
   }
 
@@ -195,7 +210,7 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
   const diaDoSaldo = !ehCartao && conta ? marcoDoSaldo(conta).slice(0, 10) : "";
   const antesDoSaldo = !ehCartao && conta ? [...marcadas, ...frequentes, ...ligadas].filter((l) => l.data <= diaDoSaldo) : [];
   // Sem escolha: conta zerada (ou sem saldo) → soma; com saldo → já estava nele
-  const somarNoSaldo = modoSaldo ? modoSaldo === "somar" : !conta?.saldo;
+  const somarNoSaldo = saldoArquivo ? false : modoSaldo ? modoSaldo === "somar" : !conta?.saldo;
   const saldoHoje = conta && !ehCartao ? saldoDaConta(conta, lancamentos) : 0;
   const efeitoNoSaldo = [...marcadas, ...frequentes, ...ligadas]
     .filter((l) => somarNoSaldo || l.data > diaDoSaldo)
@@ -228,8 +243,14 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
       });
     } else {
       // O que aconteceu até o dia em que o saldo foi informado já está nele: não muda o saldo
-      const diaDoMarco = somarNoSaldo ? "" : marcoDoSaldo(conta).slice(0, 10);
+      const diaDoMarco = saldoArquivo ? saldoArquivo.data : somarNoSaldo ? "" : marcoDoSaldo(conta).slice(0, 10);
       comDesfazer(`${texto || "Pronto"} ✓`, () => {
+        // O saldo vem do arquivo: vale no fim do último dia do extrato (se é hoje, a partir de agora)
+        if (saldoArquivo)
+          atualizarCartao(conta.id, {
+            saldo: saldoArquivo.valor,
+            saldoAtualizadoEm: saldoArquivo.data >= hoje ? agoraLocal() : `${saldoArquivo.data}T23:59:59`,
+          });
         corrigir.forEach((l) =>
           atualizarLancamento(l.conflito!.id, {
             data: l.data,
@@ -653,7 +674,22 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
               )}
             </p>
 
-            {!ehCartao && conta && antesDoSaldo.length > 0 && (
+            {mesesNoArquivo > 0 && mesesNoArquivo < 6 && (
+              <p className="rounded-2xl border border-amber-300/30 bg-amber-300/5 p-3 text-xs">
+                <Icone e="📅" /> Este extrato tem só {mesesNoArquivo} {mesesNoArquivo === 1 ? "mês" : "meses"}. Para o NAXXO achar
+                seus padrões (salário, contas fixas, assinaturas, gasolina), baixe pelo menos <b>6 meses</b>. Dá para continuar
+                assim: os padrões ficam “em aprendizado”.
+              </p>
+            )}
+
+            {!ehCartao && conta && saldoArquivo && (
+              <p className="rounded-2xl border border-white/10 bg-fundo/60 p-3 text-xs">
+                <Icone e="💰" /> O saldo vem do arquivo: <b>{brl(saldoArquivo.valor)}</b> em {formatarData(saldoArquivo.data)}.
+                Depois de importar, o saldo de <TextoComIcones texto={conta.nome} /> fica certinho como no banco.
+              </p>
+            )}
+
+            {!ehCartao && conta && !saldoArquivo && antesDoSaldo.length > 0 && (
               <div className="space-y-2 rounded-2xl border border-white/10 bg-fundo/60 p-3 text-xs">
                 <p className="font-medium">
                   <Icone e="💰" /> {antesDoSaldo.length} movimentaç{antesDoSaldo.length > 1 ? "ões são" : "ão é"} de antes de você

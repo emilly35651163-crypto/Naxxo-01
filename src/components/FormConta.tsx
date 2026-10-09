@@ -49,6 +49,8 @@ export default function FormConta({ conta, onFechar }: { conta?: Conta; onFechar
   // O saldo de HOJE (o informado + o que entrou e saiu depois), não o que foi digitado no cadastro
   const [saldoAtual] = useState(() => (conta ? Math.round(saldoDaConta(conta, lancamentos) * 100) / 100 : null));
   const [saldo, setSaldo] = useState(saldoAtual != null ? valorParaCampo(saldoAtual) : "");
+  // Banco: o saldo vem do extrato; só informa à mão se o arquivo do banco não trouxer
+  const [saldoAMao, setSaldoAMao] = useState(false);
   const [credito, setCredito] = useState(conta ? temCredito(conta) : false);
   const [limite, setLimite] = useState(conta?.limite ? valorParaCampo(conta.limite) : "");
   const [fechamento, setFechamento] = useState(conta?.diaFechamento ? String(conta.diaFechamento) : "");
@@ -198,13 +200,31 @@ export default function FormConta({ conta, onFechar }: { conta?: Conta; onFechar
           </div>
         )}
 
-        <Campo rotulo="Quanto tem nessa conta agora?">
-          <CampoValor valor={saldo} onChange={setSaldo} negativo={tipo === "banco"} />
-        </Campo>
-        <p className="-mt-2 text-xs text-suave">
-          Daqui para frente o saldo muda sozinho com cada entrada e saída desta conta.
-          {tipo === "banco" && " No cheque especial? Toque em “− negativo”."}
-        </p>
+        {tipo === "banco" && !saldoAMao ? (
+          // Banco: o saldo vem do arquivo do extrato (não é digitado). Só se o banco não mandar, dá para informar.
+          <div className="rounded-2xl bg-fundo/50 px-4 py-3 text-sm">
+            <p>
+              <Icone e="💰" /> O saldo vem do <b>extrato do banco</b>
+              {conta && <> · hoje: {brl(saldoAtual ?? 0)}</>}
+            </p>
+            <p className="mt-1 text-xs text-suave">
+              Depois de salvar, importe o arquivo (OFX ou CSV) em Contas: o saldo fica igual ao do banco.
+            </p>
+            <button type="button" onClick={() => setSaldoAMao(true)} className="mt-2 text-xs text-rosa">
+              Meu banco não manda o saldo no arquivo
+            </button>
+          </div>
+        ) : (
+          <>
+            <Campo rotulo="Quanto tem nessa conta agora?">
+              <CampoValor valor={saldo} onChange={setSaldo} negativo={tipo === "banco"} />
+            </Campo>
+            <p className="-mt-2 text-xs text-suave">
+              Daqui para frente o saldo muda sozinho com cada entrada e saída desta conta.
+              {tipo === "banco" && " No cheque especial? Toque em “− negativo”."}
+            </p>
+          </>
+        )}
 
         {tipo === "banco" && (
           <label className="flex cursor-pointer items-center gap-3 rounded-2xl bg-fundo/50 px-4 py-3 text-sm">
