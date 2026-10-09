@@ -44,6 +44,7 @@ export type Lancamento = {
   importado?: boolean; // criado pela importação do extrato (dá para tirar tudo de uma vez)
   descricaoBanco?: string; // como veio escrito no extrato (para conferir e para o app aprender o nome que a pessoa dá)
   revisar?: boolean; // o app não teve certeza da categoria: aparece em "Para revisar"
+  semBanco?: boolean; // lançado à mão e não veio no extrato: a pessoa disse "manter" (não pergunta mais)
   vtJuntado?: boolean; // salário em que o vale-transporte (antes separado) já foi somado
 };
 

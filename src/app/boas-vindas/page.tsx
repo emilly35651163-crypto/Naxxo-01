@@ -102,7 +102,7 @@ export default function BoasVindas() {
               className="campo mt-6 text-center text-lg"
             />
             <p className="mt-2 text-xs text-suave">
-              Com o sobrenome, eu reconheço quando você manda dinheiro para você mesma (não é gasto).
+              Com o sobrenome, eu reconheço quando você manda dinheiro para outra conta sua (isso não é gasto).
             </p>
           </div>
         ) : (

@@ -11,6 +11,7 @@ import {
   type Lancamento,
 } from "@/lib/store";
 import { brl, formatarData } from "@/lib/formato";
+import { situacaoNoBanco, ultimasDoExtrato } from "./NaoEncontrados";
 import { comDesfazer, mostrarAviso } from "@/lib/avisos";
 import FormLancamento from "./FormLancamento";
 import Icone from "@/components/Icone";
@@ -40,6 +41,8 @@ export default function ItemLancamento({
   const neutra = transferencia && !daConta;
   // Data no futuro (ex.: compra do mercado programada): ainda não saiu da conta, é previsto
   const previsto = !jaAconteceu(l);
+  // Lançado à mão numa conta com extrato: espera o banco confirmar (docs/NOVO-SISTEMA.md, seção 7)
+  const noBanco = situacaoNoBanco(l, contas, ultimasDoExtrato(lancamentos));
 
   return (
     <li className="flex items-center gap-3 py-3">
@@ -59,6 +62,16 @@ export default function ItemLancamento({
                 {previsto && (
                   <span className="text-amber-300">
                     <Icone e="📌" /> previsto ·{" "}
+                  </span>
+                )}
+                {noBanco && (
+                  <span className="text-amber-300" title="Lançado à mão: quando o extrato chegar, eu confiro">
+                    <Icone e="⏰" /> aguardando o banco ·{" "}
+                  </span>
+                )}
+                {l.extratoId && !l.importado && (
+                  <span className="text-entrada">
+                    <Icone e="✅" /> confirmado pelo banco ·{" "}
                   </span>
                 )}
                 {l.categoria}

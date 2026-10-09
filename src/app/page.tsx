@@ -10,6 +10,7 @@ import RendaDoMes from "@/components/RendaDoMes";
 import MovimentacoesDoMes from "@/components/MovimentacoesDoMes";
 import ParaRevisar from "@/components/ParaRevisar";
 import { AvisoPadroes } from "@/components/PadroesEncontrados";
+import NaoEncontrados from "@/components/NaoEncontrados";
 import Icone, { TextoComIcones } from "@/components/Icone";
 
 // Início: o essencial e mais nada (docs/NOVO-SISTEMA.md, seção 9): o que revisar, a renda, o mês e como ele vai fechar.
@@ -38,6 +39,7 @@ export default function Inicio() {
 
       <ParaRevisar dados={dados} />
       <AvisoPadroes dados={dados} />
+      <NaoEncontrados dados={dados} />
 
       <RendaDoMes mes={mes} dados={dados} />
 

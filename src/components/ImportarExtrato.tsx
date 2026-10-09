@@ -1,6 +1,6 @@
 "use client";
 
-import { aplicarRegras } from "@/lib/regras";
+import { aplicarRegras, aprender } from "@/lib/regras";
 import { reconhecerTransferencias } from "@/lib/certeiros";
 import { ligarAosPadroes } from "@/lib/acompanhar";
 import { useEffect, useState } from "react";
@@ -64,6 +64,8 @@ type Linha = LinhaExtrato & {
   /** Vira um gasto frequente (dívida, gasolina…) */
   frequente?: Frequente;
   painel?: "ligar" | "frequente";
+  /** Lançado à mão e igual a esta linha: o banco confirma (ganha a marca do extrato) */
+  confirma?: string;
 };
 
 const resolvida = (l: Linha) => !!l.ligado || !!l.frequente;
@@ -78,6 +80,7 @@ function semCalculo(l: LinhaExtrato | Linha): LinhaExtrato & Pick<Linha, "ligado
   delete c.sugestao;
   delete c.recusou;
   delete c.painel;
+  delete c.confirma;
   return c as LinhaExtrato;
 }
 
@@ -118,8 +121,16 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
         if (repetida(l))
           return { ...l, marcada: false, aviso: "outra parcela da mesma compra (ela entra uma vez só, pela mais recente)" };
         const existente = jaExiste(l, id, lancamentos, compras, cartao, usadosNoApp);
-        if (existente?.exato) return { ...l, marcada: false, aviso: `já está no app: “${existente.descricao}”` };
-        if (existente) return { ...l, marcada: false, conflito: existente };
+        // Lançado à mão (sem marca do extrato)? O banco confirma; se algo difere, o banco manda (valor, data), o nome fica
+        const amao = existente && !(cartao ? compras : lancamentos).find((x) => x.id === existente.id)?.extratoId;
+        if (existente?.exato)
+          return {
+            ...l,
+            marcada: false,
+            aviso: `já está no app: “${existente.descricao}”${amao ? " (confirmado pelo banco)" : ""}`,
+            ...(amao ? { confirma: existente.id } : {}),
+          };
+        if (existente) return { ...l, marcada: false, conflito: existente, ...(amao ? { escolha: "extrato" as const } : {}) };
         const sugestao = cartao ? undefined : previstoParecido(l, previstos, usados);
         if (sugestao) {
           usados.add(sugestao.chave);
@@ -217,17 +228,44 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
     .filter((l) => !l.ligado || l.ligado.tipo === "previsto")
     .reduce((t, l) => t + (l.tipo === "entrada" ? l.valor : -l.valor), 0);
 
+  // Lançado à mão e igual a uma linha do extrato: o banco confirma (e a pessoa não precisa fazer nada)
+  const confirmados = linhas?.filter((l) => l.confirma) ?? [];
+
+  /**
+   * O que a pessoa lançou à mão e o banco confirmou: o nome e a categoria dela viram regra
+   * (da próxima vez que vier igual no extrato, já chega assim).
+   */
+  function aprenderDoQueEraAMao() {
+    for (const l of [...confirmados, ...corrigir, ...manter]) {
+      const id = l.confirma ?? l.conflito?.id;
+      const meu = (ehCartao ? compras : lancamentos).find((x) => x.id === id);
+      if (!meu || meu.extratoId || !l.original) continue;
+      if (meu.descricao.trim().toLowerCase() === l.descricao.trim().toLowerCase() && meu.categoria === l.categoria) continue;
+      aprender(
+        {
+          descricaoBanco: l.original,
+          tipo: l.tipo,
+          nome: meu.descricao,
+          categoria: meu.categoria,
+          subcategoria: meu.subcategoria,
+        },
+        "proximos",
+      );
+    }
+  }
+
   function importar() {
     if (!conta) return setErro(ehCartao ? "Escolha o cartão." : "Escolha a conta.");
     if (semResposta > 0)
       return setErro(`Falta responder ${semResposta} ${semResposta > 1 ? "itens" : "item"} (os quadros amarelos ⚖️ e 💡).`);
-    if (marcadas.length + corrigir.length + manter.length + ligadas.length + frequentes.length === 0)
+    if (marcadas.length + corrigir.length + manter.length + ligadas.length + frequentes.length + confirmados.length === 0)
       return setErro("Marque pelo menos uma movimentação.");
     const hoje = hojeISO();
     const texto = [
       marcadas.length && `${marcadas.length} importados`,
       corrigir.length && `${corrigir.length} corrigidos`,
       ligadas.length && `${ligadas.length} ligados`,
+      confirmados.length && `${confirmados.length} confirmados pelo banco`,
       frequentes.length && `${frequentes.length} gastos frequentes criados`,
     ]
       .filter(Boolean)
@@ -236,9 +274,17 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
       comDesfazer(`${texto || "Pronto"} ✓`, () => {
         // Corrige com os dados do extrato; o que ficou como no app só ganha a marca (para não perguntar de novo)
         corrigir.forEach((l) =>
-          atualizarCompra(l.conflito!.id, { data: l.data, valorTotal: l.valor, cartaoId: conta.id, extratoId: l.id }),
+          atualizarCompra(l.conflito!.id, {
+            data: l.data,
+            valorTotal: l.valor,
+            cartaoId: conta.id,
+            extratoId: l.id,
+            descricaoBanco: l.original,
+          }),
         );
-        manter.forEach((l) => atualizarCompra(l.conflito!.id, { extratoId: l.id }));
+        manter.forEach((l) => atualizarCompra(l.conflito!.id, { extratoId: l.id, descricaoBanco: l.original }));
+        confirmados.forEach((l) => atualizarCompra(l.confirma!, { extratoId: l.id, descricaoBanco: l.original }));
+        aprenderDoQueEraAMao();
         adicionarCompras(marcadas.map((l) => compraDoExtrato(l, conta)));
       });
     } else {
@@ -258,9 +304,12 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
             contaId: conta.id,
             pago: l.data <= hoje,
             extratoId: l.id,
+            descricaoBanco: l.original,
           }),
         );
-        manter.forEach((l) => atualizarLancamento(l.conflito!.id, { extratoId: l.id }));
+        manter.forEach((l) => atualizarLancamento(l.conflito!.id, { extratoId: l.id, descricaoBanco: l.original }));
+        confirmados.forEach((l) => atualizarLancamento(l.confirma!, { extratoId: l.id, descricaoBanco: l.original }));
+        aprenderDoQueEraAMao();
         const jaNoSaldo = (data: string) => data <= diaDoMarco || undefined;
 
         // Ligadas: o lançamento ganha a marca do extrato; o previsto é confirmado (pago/recebido) com os dados do extrato
