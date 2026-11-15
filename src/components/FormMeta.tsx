@@ -84,7 +84,7 @@ export default function FormMeta({
   }
 
   return (
-    <Modal titulo={meta ? "Editar meta" : "Nova meta"} onFechar={onFechar}>
+    <Modal titulo={meta ? "Editar trilha" : "Nova trilha"} onFechar={onFechar}>
       <form onSubmit={salvar} className="space-y-4">
         {!meta && (
           <div className="grid grid-cols-2 gap-1 rounded-full bg-fundo p-1">
@@ -97,7 +97,7 @@ export default function FormMeta({
                   tipo === t ? "botao-gradiente" : "text-suave"
                 }`}
               >
-                <TextoComIcones texto={t === "juntar" ? "🎯 Juntar para algo" : "💸 Quitar algo"} />
+                <TextoComIcones texto={t === "juntar" ? "🎯 Guardar para comprar" : "💳 Estou pagando"} />
               </button>
             ))}
           </div>

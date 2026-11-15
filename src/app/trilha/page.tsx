@@ -27,7 +27,6 @@ import { CampoValor, Chip } from "@/components/Campos";
 import EscolhaConta, { lerEscolha } from "@/components/EscolhaConta";
 import EstadoVazio from "@/components/EstadoVazio";
 import Desejos from "./Desejos";
-import CabeNoMes from "./CabeNoMes";
 import Icone, { TextoComIcones } from "@/components/Icone";
 
 export default function Trilha() {
@@ -49,9 +48,11 @@ export default function Trilha() {
     const pagas = parcelasPagasDaCompra(compra, cartao, { compras, fixos, pagamentos });
     return { ...m, parcelasPagas: pagas, guardado: m.parcela * pagas };
   });
-  // Concluídas e arquivadas vão para o histórico de conquistas
-  // Dívidas ficam em Contas: aqui só o que a pessoa quer juntar
-  const metas = todas.filter((m) => !m.arquivada && m.tipo !== "quitar");
+  // A Trilha é o que a pessoa está PAGANDO (dívidas, parcelados) ou GUARDANDO para comprar.
+  // Concluídas e arquivadas vão para o histórico de conquistas.
+  const metas = todas.filter((m) => !m.arquivada);
+  const pagando = metas.filter((m) => m.tipo === "quitar");
+  const juntando = metas.filter((m) => m.tipo !== "quitar");
   const conquistas = todas.filter((m) => m.arquivada);
 
   // O plano do mês: a sobra (o que entra menos o que sai) e a sugestão de quanto guardar
@@ -97,41 +98,55 @@ export default function Trilha() {
           onClick={() => setEditando("nova")}
           className="rounded-full border border-rosa/50 px-4 py-1.5 text-sm text-rosa hover:bg-rosa/10"
         >
-          + Nova meta
+          + Nova trilha
         </button>
       </div>
 
       {metas.length > 0 ? (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {metas.map((m) => (
-            <CartaoMeta
-              key={m.id}
-              meta={m}
-              mes={mes}
-              valorDoMes={valorDoMes(m)}
-              automatico={automatico(m)}
-              sugerido={plano.valores.get(m.id)?.sugerido ?? 0}
-              previsto={previstos.find((p) => p.meta?.id === m.id)}
-              orientacao={orientacaoDaMeta(m)}
-              nomeCartao={noCartao.get(m.id)}
-              onConfirmar={setConfirmando}
-              onGuardar={() => setGuardando(m)}
-              onEditar={() => setEditando(metasSalvas.find((s) => s.id === m.id) ?? m)}
-            />
-          ))}
-        </div>
+        (
+          [
+            ["💳 Pagando", pagando],
+            ["🎯 Guardando para comprar", juntando],
+          ] as const
+        ).map(
+          ([titulo, lista]) =>
+            lista.length > 0 && (
+              <section key={titulo} className="space-y-3">
+                <h3 className="text-sm font-semibold text-suave">
+                  <TextoComIcones texto={titulo} />
+                </h3>
+                <div className="grid gap-4 lg:grid-cols-2">
+                  {lista.map((m) => (
+                    <CartaoMeta
+                      key={m.id}
+                      meta={m}
+                      mes={mes}
+                      valorDoMes={valorDoMes(m)}
+                      automatico={automatico(m)}
+                      sugerido={plano.valores.get(m.id)?.sugerido ?? 0}
+                      previsto={previstos.find((p) => p.meta?.id === m.id)}
+                      orientacao={orientacaoDaMeta(m)}
+                      nomeCartao={noCartao.get(m.id)}
+                      onConfirmar={setConfirmando}
+                      onGuardar={() => setGuardando(m)}
+                      onEditar={() => setEditando(metasSalvas.find((s) => s.id === m.id) ?? m)}
+                    />
+                  ))}
+                </div>
+              </section>
+            ),
+        )
       ) : (
         <div className="cartao">
           <EstadoVazio
             icone="🗺️"
             titulo="Sua trilha começa aqui"
-            texto="Juntar para algo (notebook, viagem), montar a reserva de emergência ou quitar algo que você paga todo mês."
+            texto="O que você está pagando (empréstimo, celular parcelado) ou guardando para comprar (notebook, viagem, reserva de emergência)."
           />
         </div>
       )}
 
       <Desejos />
-      <CabeNoMes />
 
       {/* Histórico de conquistas */}
       {conquistas.length > 0 && (

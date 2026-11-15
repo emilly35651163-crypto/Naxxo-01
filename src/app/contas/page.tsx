@@ -11,13 +11,11 @@ import {
   useGastosFixos,
   useLancamentos,
   useMes,
-  useMetas,
   usePagamentosFatura,
   type CompraCartao,
   type Conta,
   type GastoFixo,
   type Lancamento,
-  type Meta,
   contarExtratoNoSaldo,
   tirarDoExtrato,
   zerarCartao,
@@ -27,7 +25,6 @@ import FormSaldo from "@/components/FormSaldo";
 import FormConta from "@/components/FormConta";
 import FormCompra from "@/components/FormCompra";
 import FormPagarFatura from "@/components/FormPagarFatura";
-import FormMeta from "@/components/FormMeta";
 import FormPagarFixo from "@/components/FormPagarFixo";
 import FormLancamento from "@/components/FormLancamento";
 import ItemLancamento from "@/components/ItemLancamento";
@@ -44,7 +41,6 @@ import {
   type SituacaoFatura,
 } from "@/lib/cartoes";
 import { cartoesDeCredito, contaNoSaldo, ehVale, iconeDaConta, saldoDaConta, temCredito } from "@/lib/contas";
-import { calcularMeta } from "@/lib/metas";
 import { brl, diasAte, formatarData, hojeISO, mesesEntre, nomeMes, somarMeses } from "@/lib/formato";
 import { comDesfazer } from "@/lib/avisos";
 import Icone from "@/components/Icone";
@@ -64,7 +60,6 @@ export default function Contas() {
   const fixos = useGastosFixos();
   const pagamentos = usePagamentosFatura();
   const lancamentos = useLancamentos();
-  const metas = useMetas();
   const mes = useMes();
   const dados = { compras, fixos, pagamentos };
   const cartoes = cartoesDeCredito(contas);
@@ -80,7 +75,6 @@ export default function Contas() {
   const [pagando, setPagando] = useState<{ cartao: Conta; restante: number; fatura: string } | null>(null);
   const [fixoAberto, setFixoAberto] = useState<GastoFixo | "nova" | "assinatura" | null>(null);
   const [pagandoFixo, setPagandoFixo] = useState<{ fixo: GastoFixo; vencimento: string } | null>(null);
-  const [divida, setDivida] = useState<Meta | "nova" | null>(null);
   const [contaDosAntigos, setContaDosAntigos] = useState("");
   const [vendoSemConta, setVendoSemConta] = useState(false);
   const [transferindo, setTransferindo] = useState(false);
@@ -106,12 +100,9 @@ export default function Contas() {
   const totalDisponivel = resumos.reduce((t, r) => t + Math.max(r.cartao.limite - r.usado, 0), 0);
   const totalUsado = resumos.reduce((t, r) => t + r.usado, 0);
 
-  // Fora do cartão, tudo junto: contas fixas (aluguel, luz, transporte…) e dívidas (empréstimo, financiamento…)
+  // Fora do cartão: contas fixas (aluguel, luz, transporte…). Dívidas e parcelados ficam na Trilha.
   const contasFixas = fixos.filter((f) => f.pagamento !== "cartao" && ativoNoMes(f, mes)).sort((a, b) => a.dia - b.dia);
   const pagamentosDeFixos = [...lancamentos, ...compras.map((c) => ({ ...c, valor: c.valorTotal }))];
-  const dividas = metas.filter(
-    (m) => m.tipo === "quitar" && !compras.some((c) => c.metaId === m.id) && !calcularMeta(m).concluida,
-  );
   const assinaturas = fixos
     .filter((f) => f.pagamento === "cartao" && cartoes.some((c) => c.id === f.cartaoId))
     .sort((a, b) => a.dia - b.dia);
@@ -352,10 +343,10 @@ export default function Contas() {
         </section>
       )}
 
-      {/* Fora do cartão: contas fixas e dívidas, juntas */}
+      {/* Fora do cartão: contas fixas (dívidas e parcelados ficam na Trilha) */}
       <section>
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="titulo-secao mb-0">Contas e dívidas fora do cartão</h2>
+          <h2 className="titulo-secao mb-0">Contas fixas fora do cartão</h2>
           <div className="flex gap-2">
             <button
               onClick={() => setFixoAberto("nova")}
@@ -363,15 +354,9 @@ export default function Contas() {
             >
               + Conta fixa
             </button>
-            <button
-              onClick={() => setDivida("nova")}
-              className="rounded-full border border-rosa/50 px-3 py-1.5 text-sm text-rosa"
-            >
-              + Dívida
-            </button>
           </div>
         </div>
-        {contasFixas.length + dividas.length > 0 ? (
+        {contasFixas.length > 0 ? (
           <ul className="cartao divide-y divide-white/5 px-4">
             {contasFixas.map((f) => {
               const s = situacaoDoFixo(f, mes, pagamentosDeFixos);
@@ -404,31 +389,9 @@ export default function Contas() {
                 </li>
               );
             })}
-            {dividas.map((m) => {
-              const c = calcularMeta(m);
-              return (
-                <li key={m.id}>
-                  <button onClick={() => setDivida(m)} className="flex w-full items-center gap-3 py-3 text-left">
-                    <span className="text-lg" aria-hidden>
-                      <Icone e={m.icone} />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate font-medium">{m.nome}</span>
-                      <span className="block text-xs text-suave">
-                        {m.parcelasPagas ?? 0}/{m.parcelas} pagas · {brl(m.parcela ?? 0)}/mês
-                      </span>
-                    </span>
-                    <span className="shrink-0 text-right">
-                      <span className="block font-display font-semibold tabular-nums">{brl(c.falta)}</span>
-                      <span className="block text-xs text-suave">falta</span>
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
           </ul>
         ) : (
-          <p className="cartao p-4 text-sm text-suave">Aluguel, luz, internet, transporte, empréstimo…</p>
+          <p className="cartao p-4 text-sm text-suave">Aluguel, luz, internet, transporte…</p>
         )}
       </section>
 
@@ -448,7 +411,6 @@ export default function Contas() {
           onFechar={() => setPagandoFixo(null)}
         />
       )}
-      {divida && <FormMeta meta={divida === "nova" ? undefined : divida} tipoInicial="quitar" onFechar={() => setDivida(null)} />}
       {comprando && <FormCompra cartoes={cartoes} cartaoInicial={comprando} onFechar={() => setComprando(null)} />}
       {pagando && (
         <FormPagarFatura

@@ -14,17 +14,20 @@ import FormLancamento from "@/components/FormLancamento";
 import Icone, { TextoComIcones } from "@/components/Icone";
 
 const IDEIAS = [
-  { nome: "Perfume", icone: "🌸" },
-  { nome: "Restaurante", icone: "🍝" },
-  { nome: "Roupa", icone: "👗" },
-  { nome: "Sapato", icone: "👟" },
-  { nome: "Show", icone: "🎤" },
-  { nome: "Presente", icone: "🎁" },
+  { nome: "Perfume", icone: "🌸", mensal: false },
+  { nome: "Restaurante", icone: "🍝", mensal: false },
+  { nome: "Roupa", icone: "👗", mensal: false },
+  { nome: "Show", icone: "🎤", mensal: false },
+  { nome: "Academia", icone: "🏋️", mensal: true },
+  { nome: "Streaming", icone: "📺", mensal: true },
+  { nome: "Curso", icone: "🎓", mensal: true },
 ];
 
 const COR = { agora: "text-entrada", credito: "text-azul", esperar: "text-amber-300", "nao-cabe": "text-saida" } as const;
 
-// Desejos: coisinhas do dia a dia. Para cada uma, o app diz se é a hora, se dá no crédito ou até quando esperar.
+// Desejos (junto com o antigo "Cabe no meu mês?"): coisas pequenas, de uma vez (perfume, restaurante) ou de todo mês
+// (academia, streaming). Para cada uma, o app diz se é a hora, se dá no crédito, quando cabe ou até quando esperar.
+// O que é grande (pagando ou guardando para comprar) fica nas trilhas, em cima.
 export default function Desejos() {
   const desejos = useDesejos();
   const dados = useDados();
@@ -32,6 +35,8 @@ export default function Desejos() {
   const [nome, setNome] = useState("");
   const [icone, setIcone] = useState("✨");
   const [valor, setValor] = useState("");
+  const [mensal, setMensal] = useState(false);
+  const [vezes, setVezes] = useState("");
   const [comprando, setComprando] = useState<Desejo | null>(null);
   const [editando, setEditando] = useState<{ id: string; nome: string; valor: string; mensal: boolean; vezes: string } | null>(
     null,
@@ -162,10 +167,17 @@ export default function Desejos() {
   function salvar(e: React.FormEvent) {
     e.preventDefault();
     if (!nome.trim() || !(lerValor(valor) > 0)) return;
-    adicionarDesejo({ nome: nome.trim(), icone, valor: lerValor(valor) });
+    adicionarDesejo({
+      nome: nome.trim(),
+      icone,
+      valor: lerValor(valor),
+      mensal: mensal ? { vezes: Number(vezes) || undefined } : undefined,
+    });
     setNome("");
     setValor("");
     setIcone("✨");
+    setMensal(false);
+    setVezes("");
     setCriando(false);
   }
 
@@ -188,6 +200,7 @@ export default function Desejos() {
                 onClick={() => {
                   setNome(i.nome);
                   setIcone(i.icone);
+                  setMensal(i.mensal);
                 }}
                 className={`rounded-full border px-3 py-1 text-sm ${nome === i.nome ? "border-rosa bg-rosa/15" : "border-white/10"}`}
               >
@@ -204,9 +217,56 @@ export default function Desejos() {
               className="campo min-w-0 flex-1"
             />
             <div className="w-36 shrink-0">
-              <CampoValor valor={valor} onChange={setValor} rotulo="Quanto custa" />
+              <CampoValor valor={valor} onChange={setValor} rotulo={mensal ? "Quanto por mês" : "Quanto custa"} />
             </div>
           </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="grid grid-cols-2 gap-1 rounded-full bg-fundo p-1">
+              {([false, true] as const).map((m) => (
+                <button
+                  key={String(m)}
+                  type="button"
+                  onClick={() => setMensal(m)}
+                  className={`rounded-full px-3 py-1 text-sm ${mensal === m ? "botao-gradiente font-semibold" : "text-suave"}`}
+                >
+                  {m ? "Todo mês" : "Uma vez"}
+                </button>
+              ))}
+            </div>
+            {mensal && (
+              <input
+                inputMode="numeric"
+                value={vezes}
+                onChange={(e) => setVezes(e.target.value.replace(/\D/g, "").slice(0, 3))}
+                placeholder="meses (sem fim)"
+                aria-label="Por quantos meses"
+                className="campo w-36 px-2 py-1.5 text-center text-sm"
+              />
+            )}
+          </div>
+          {/* Já responde se cabe, antes de adicionar */}
+          {lerValor(valor) > 0 &&
+            (() => {
+              const previa: Desejo = {
+                id: "",
+                criadoEm: "",
+                nome,
+                icone,
+                valor: lerValor(valor),
+                mensal: mensal ? { vezes: Number(vezes) || undefined } : undefined,
+              };
+              const v = mensal ? avaliarMensal(previa) : avaliarDesejo(previa.valor, dados);
+              return (
+                <div className="rounded-2xl bg-fundo/60 p-3">
+                  <p className={`text-sm font-semibold ${COR[v.tipo]}`}>
+                    <TextoComIcones texto={v.titulo} />
+                  </p>
+                  <p className="text-xs text-suave">
+                    <TextoComIcones texto={v.texto} />
+                  </p>
+                </div>
+              );
+            })()}
           <button type="submit" className="botao-gradiente w-full rounded-full py-2.5 font-semibold">
             Adicionar desejo
           </button>
@@ -403,7 +463,9 @@ export default function Desejos() {
         </ul>
       ) : (
         !criando && (
-          <p className="cartao p-4 text-sm text-suave">Um perfume, um restaurante, uma roupa… o app diz quando é uma boa hora.</p>
+          <p className="cartao p-4 text-sm text-suave">
+            Coisas pequenas: um perfume, um restaurante, a academia… o app diz se cabe no seu mês e quando é uma boa hora.
+          </p>
         )
       )}
 
