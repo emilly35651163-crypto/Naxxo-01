@@ -48,6 +48,11 @@
   --botao: linear-gradient(135deg, #b5179e, #6d28d9 55%, #1d4ed8);
   --brilho-1: rgb(139 92 246 / 0.26);
   --brilho-2: rgb(255 78 216 / 0.2);
+  /* O nome "NAXXO" (Logo.tsx): no claro, o degradê começa escuro e fica mais forte para aparecer no fundo branco */
+  --nome-1: #151a2d;
+  --nome-2: #d6249f;
+  --nome-3: #7c3aed;
+  --nome-4: #2563eb;
 }
 
 /* Sobre um fundo colorido (cartão da conta), o texto é sempre branco, nos dois temas */

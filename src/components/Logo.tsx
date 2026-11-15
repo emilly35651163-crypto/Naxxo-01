@@ -10,10 +10,11 @@ export function NomeNaxxo({ className = "" }: { className?: string }) {
     <svg viewBox="-2 3 226 34" className={className} role="img" aria-label="NAXXO">
       <defs>
         <linearGradient id={id} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="222" y2="0">
-          <stop offset="0.12" stopColor="#ffffff" />
-          <stop offset="0.35" stopColor="#ff8ae6" />
-          <stop offset="0.65" stopColor="#a78bfa" />
-          <stop offset="1" stopColor="#7cb4ff" />
+          {/* Cores do escuro; o tema claro troca pelas variáveis --nome-* (globals.css), senão o "N" branco some */}
+          <stop offset="0.12" style={{ stopColor: "var(--nome-1, #ffffff)" }} />
+          <stop offset="0.35" style={{ stopColor: "var(--nome-2, #ff8ae6)" }} />
+          <stop offset="0.65" style={{ stopColor: "var(--nome-3, #a78bfa)" }} />
+          <stop offset="1" style={{ stopColor: "var(--nome-4, #7cb4ff)" }} />
         </linearGradient>
       </defs>
       <g fill="none" stroke={`url(#${id})`} strokeWidth="2.2" strokeLinejoin="round">

@@ -88,6 +88,58 @@ Fontes: https://github.com/pluggyai/meu-pluggy · https://www.tabnews.com.br/mar
 
 ---
 
+## 3. Outras formas de pegar os dados do banco sem pagar agregador (ideias de 15/11/2026)
+
+Nenhuma delas substitui o extrato: o histórico (mínimo de 6 meses) continua vindo do arquivo. Elas servem para manter tudo **atualizado sozinho** dali em diante.
+
+### 3.1 Android: ler as notificações do banco ⭐ (a mais promissora)
+**Como funciona**
+1. A pessoa instala o app do NAXXO no Android e liga em Configurações → **Acesso a notificações**. O próprio Android mostra o aviso do que ela está autorizando.
+2. Toda notificação que **chega** é entregue ao NAXXO (app de origem, título e texto). Ex.: *Nubank · Compra aprovada · R$ 45,90 em MERCADO BOM PRECO*.
+3. O NAXXO ignora o que não é de banco (WhatsApp, Instagram…), separa valor, loja, tipo (compra, Pix enviado ou recebido, transferência) e data, passa pelo banco de palavras (`src/lib/palavras.ts`) e cria o lançamento.
+4. Quando chega o extrato, ele se junta com esses lançamentos sem duplicar (como já acontece com o lançamento à mão).
+
+**Notificações antigas:** quase nada. O app só lê o que chega **depois** de ligar a permissão, mais as que ainda estão na gaveta do celular. O "histórico de notificações" do Android é desligado por padrão e nenhum app de fora consegue ler.
+
+**O que precisa**
+- Um **app Android de verdade**. Hoje o NAXXO é um site, e site não lê notificação. Dá para "embrulhar" o site num app (ex.: Capacitor) sem reescrever tudo, com um pedaço nativo que escuta as notificações (`NotificationListenerService`).
+- **Play Store:** conta de desenvolvedor por US$ 25, uma vez só. A Google analisa com mais rigor os apps que leem notificações: precisa ser a função principal e estar explicada na política de privacidade.
+- A pessoa precisa deixar ligadas as notificações do banco (compras, Pix enviado e recebido).
+
+**Limites**
+- Não funciona no iPhone.
+- Xiaomi, Samsung e outros às vezes desligam o app em segundo plano para economizar bateria: a pessoa precisa liberar.
+- Algumas notificações vêm sem valor ou sem o nome da loja: o extrato completa depois.
+- Cada banco escreve a notificação de um jeito: precisa de um "leitor" por banco (Nubank, Inter, Itaú, C6, PicPay, Mercado Pago…).
+
+**Primeiro passo sugerido:** um app de teste só para o celular da Emilly (instalado direto, sem Play Store), para ver como chegam as notificações dos bancos dela e quanto o NAXXO consegue entender.
+
+### 3.2 iPhone
+- A Apple **não deixa** nenhum app ler notificações de outro app. Não existe permissão para isso. A única exceção é para relógios e pulseiras por Bluetooth, o que não serve aqui.
+- **O que dá:** o app **Atalhos** tem a automação **"Transação"**, que dispara quando a pessoa paga com um cartão da **Carteira (Apple Pay)** e entrega valor, loja e cartão. O atalho pode mandar a compra para o NAXXO, e a pessoa instala o atalho com um clique num link.
+- **Limite:** só pega o que foi pago por aproximação com o iPhone ou o relógio. Pix, boleto, débito automático e cartão físico ficam de fora.
+
+### 3.3 Extensão do Chrome no site do banco (computador)
+- **Só no site do banco pelo computador.** No app do banco no celular é impossível: o sistema isola cada app.
+- **Como seria:** a extensão só funciona nos sites dos bancos da lista e **nunca toca no login nem na senha**. Na página do extrato aparece o botão **"Mandar para o NAXXO"**, que pega o arquivo que o próprio banco já oferece (OFX ou PDF), sempre por iniciativa da pessoa.
+- **Poréns:**
+  - Muita gente só usa o banco pelo celular, e alguns bancos (ex.: Nubank) têm site limitado.
+  - É uma versão por banco, que quebra quando o banco muda o site.
+  - Extensão em site de banco é golpe comum no Brasil: antivírus, bancos e a loja do Chrome desconfiam.
+  - Os termos de uso dos bancos costumam proibir automação.
+- **Se fizer:** começar com 1 ou 2 bancos, só para teste.
+
+### Comparando
+| Forma | Celular | Pega o passado? | Automático? | Custo |
+|---|---|---|---|---|
+| Extrato (arquivo/PDF/print) | todos | sim | não | grátis |
+| Notificações (Android) | só Android | não | sim | US$ 25 (Play Store) |
+| Atalho Apple Pay (iPhone) | só iPhone | não | só compras com Apple Pay | grátis |
+| Extensão do Chrome | computador | sim (o que o banco deixar baixar) | meio (1 clique) | grátis |
+| Open Finance (Pluggy) | todos | até 12 meses | sim | a partir de R$ 2.500/mês |
+
+---
+
 ## Fontes
 - Preços da Pluggy: https://www.pluggy.ai/precos
 - Pluggy, Série A e números de 2026: https://fintech.global/2026/08/31/pluggy-secures-3-5m-to-scale-brazils-open-finance/
