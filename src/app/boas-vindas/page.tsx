@@ -9,8 +9,8 @@ import { lerPerfil, salvarPerfil } from "@/lib/store";
 import { usuarioLogado } from "@/lib/nuvem";
 import Icone from "@/components/Icone";
 
-// Boas-vindas = tutorial (docs/NOVO-SISTEMA.md, seção 8): 4 telas mostrando como o NAXXO funciona.
-// Não pergunta nada: o nome é o usuário do login (dá para mudar em Configurações). Não cria nenhum dado:
+// Boas-vindas = tutorial (docs/NOVO-SISTEMA.md, seção 8): 5 telas mostrando como o NAXXO funciona.
+// Só pergunta o nome (já vem com o usuário do login). Não cria nenhum dado:
 // renda, contas fixas e gastos vêm do extrato do banco.
 
 const TELAS = [
@@ -50,23 +50,23 @@ const nomeDoUsuario = (u: string) =>
 
 export default function BoasVindas() {
   const router = useRouter();
-  const [tela, setTela] = useState(0);
-  const total = TELAS.length;
+  const [tela, setTela] = useState(0); // 0 = nome; 1..4 = as telas do tutorial
+  const [nome, setNome] = useState(() => lerPerfil().nome || nomeDoUsuario(usuarioLogado() ?? ""));
+  const total = TELAS.length + 1;
 
   function concluir() {
-    const perfil = lerPerfil();
-    const usuario = usuarioLogado();
-    salvarPerfil({ ...perfil, nome: perfil.nome?.trim() || (usuario ? nomeDoUsuario(usuario) : ""), concluido: true });
+    salvarPerfil({ ...lerPerfil(), nome: nome.trim(), concluido: true });
     router.replace("/contas");
   }
 
   function avancar(e?: React.FormEvent) {
     e?.preventDefault();
+    if (tela === 0 && !nome.trim()) return;
     if (tela < total - 1) setTela(tela + 1);
     else concluir();
   }
 
-  const t = TELAS[tela];
+  const t = tela > 0 ? TELAS[tela - 1] : null;
   return (
     <form
       onSubmit={avancar}
@@ -88,29 +88,48 @@ export default function BoasVindas() {
             <span key={i} className={`h-1.5 flex-1 rounded-full ${i <= tela ? "bg-rosa" : "bg-white/10"}`} />
           ))}
         </div>
-        <button type="button" onClick={concluir} className="text-sm text-suave hover:text-rosa">
-          Pular
-        </button>
+        {tela > 0 && (
+          <button type="button" onClick={concluir} className="text-sm text-suave hover:text-rosa">
+            Pular
+          </button>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col justify-center">
-        <div className="text-center">
-          {tela === 0 && (
-            <>
-              <Image src={simbolo} alt="" className="mx-auto h-16 w-auto drop-shadow-[0_0_30px_rgb(255_78_216/0.5)]" priority />
-              <NomeNaxxo className="mx-auto mb-10 mt-4 h-4 w-auto" />
-            </>
-          )}
-          <span className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-rosa/15 text-4xl">
-            <Icone e={t.icone} />
-          </span>
-          <h1 className="mt-6 font-display text-2xl font-bold">{t.titulo}</h1>
-          <p className="mx-auto mt-3 max-w-md text-suave">{t.texto}</p>
-        </div>
+        {tela === 0 ? (
+          <div className="text-center">
+            <Image src={simbolo} alt="" className="mx-auto h-20 w-auto drop-shadow-[0_0_30px_rgb(255_78_216/0.5)]" priority />
+            <NomeNaxxo className="mx-auto mt-5 h-5 w-auto" />
+            <h1 className="mt-8 font-display text-2xl font-bold">Como posso te chamar?</h1>
+            <input
+              autoFocus
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              placeholder="Seu nome"
+              aria-label="Seu nome"
+              autoComplete="name"
+              className="campo mt-6 text-center text-lg"
+            />
+          </div>
+        ) : (
+          t && (
+            <div className="text-center">
+              <span className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-rosa/15 text-4xl">
+                <Icone e={t.icone} />
+              </span>
+              <h1 className="mt-6 font-display text-2xl font-bold">{t.titulo}</h1>
+              <p className="mx-auto mt-3 max-w-md text-suave">{t.texto}</p>
+            </div>
+          )
+        )}
       </div>
 
-      <button type="submit" className="botao-gradiente mt-8 w-full rounded-full py-3.5 font-semibold">
-        {tela < total - 1 ? "Próximo" : "Ir para Contas e importar o extrato"}
+      <button
+        type="submit"
+        disabled={tela === 0 && !nome.trim()}
+        className="botao-gradiente mt-8 w-full rounded-full py-3.5 font-semibold disabled:opacity-50"
+      >
+        {tela === 0 ? "Começar" : tela < total - 1 ? "Próximo" : "Ir para Contas e importar o extrato"}
       </button>
     </form>
   );
