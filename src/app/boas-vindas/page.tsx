@@ -9,35 +9,14 @@ import { lerPerfil, salvarPerfil } from "@/lib/store";
 import { usuarioLogado } from "@/lib/nuvem";
 import Icone from "@/components/Icone";
 
-// Boas-vindas = tutorial (docs/NOVO-SISTEMA.md, seção 8): 5 telas mostrando como o NAXXO funciona.
-// Só pergunta o nome (já vem com o usuário do login). Não cria nenhum dado:
-// renda, contas fixas e gastos vêm do extrato do banco.
+// Boas-vindas: 2 telas. O nome (já vem com o usuário do login) e uma tela curta de como o NAXXO funciona.
+// Não cria nenhum dado: renda, contas fixas e gastos vêm do extrato do banco.
 
-const TELAS = [
-  {
-    icone: "🏦",
-    titulo: "Tudo começa pelo extrato",
-    texto:
-      "Em Contas, cadastre seu banco e importe o extrato (OFX, CSV ou PDF, que o app do banco exporta). Quanto mais meses de extrato, melhor: é com eles que o NAXXO aprende como é o seu dinheiro.",
-  },
-  {
-    icone: "🔁",
-    titulo: "Eu acho o que se repete",
-    texto:
-      "Salário (mesmo quando muda todo mês), aluguel, luz, assinaturas, gasolina… Eu encontro sozinho no extrato. Você só confirma o que é fixo e eu faço a previsão do mês.",
-  },
-  {
-    icone: "🧠",
-    titulo: "Mude uma vez, vale para sempre",
-    texto:
-      "Não gostou de um nome ou de uma categoria? Mude, e eu aprendo: os próximos iguais já chegam do seu jeito. O que eu não tiver certeza vai para “Para revisar”, e um toque resolve.",
-  },
-  {
-    icone: "➕",
-    titulo: "Pagou em dinheiro? Use o +",
-    texto:
-      "O botão Novo lançamento serve para o que o banco não mostra (dinheiro vivo) ou para registrar antes do extrato chegar. Quando o extrato vier, eu junto os dois, sem repetir.",
-  },
+const DICAS = [
+  { icone: "🏦", texto: "Em Contas, importe o extrato do seu banco (OFX, CSV ou PDF). Quanto mais meses, melhor." },
+  { icone: "🔁", texto: "Eu acho sozinho o que se repete: salário, contas fixas, assinaturas." },
+  { icone: "🧠", texto: "Mudou um nome ou categoria? Eu aprendo e os próximos já chegam assim." },
+  { icone: "➕", texto: "Pagou em dinheiro? Use o botão +." },
 ] as const;
 
 /** "fulana.silva" → "Fulana Silva" */
@@ -50,9 +29,9 @@ const nomeDoUsuario = (u: string) =>
 
 export default function BoasVindas() {
   const router = useRouter();
-  const [tela, setTela] = useState(0); // 0 = nome; 1..4 = as telas do tutorial
+  const [tela, setTela] = useState(0); // 0 = nome; 1 = como funciona
   const [nome, setNome] = useState(() => lerPerfil().nome || nomeDoUsuario(usuarioLogado() ?? ""));
-  const total = TELAS.length + 1;
+  const total = 2;
 
   function concluir() {
     salvarPerfil({ ...lerPerfil(), nome: nome.trim(), concluido: true });
@@ -66,7 +45,6 @@ export default function BoasVindas() {
     else concluir();
   }
 
-  const t = tela > 0 ? TELAS[tela - 1] : null;
   return (
     <form
       onSubmit={avancar}
@@ -112,15 +90,19 @@ export default function BoasVindas() {
             />
           </div>
         ) : (
-          t && (
-            <div className="text-center">
-              <span className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-rosa/15 text-4xl">
-                <Icone e={t.icone} />
-              </span>
-              <h1 className="mt-6 font-display text-2xl font-bold">{t.titulo}</h1>
-              <p className="mx-auto mt-3 max-w-md text-suave">{t.texto}</p>
-            </div>
-          )
+          <div>
+            <h1 className="text-center font-display text-2xl font-bold">Como funciona</h1>
+            <ul className="mx-auto mt-6 max-w-md space-y-3">
+              {DICAS.map((d) => (
+                <li key={d.icone} className="cartao flex items-center gap-3 p-4">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rosa/15 text-xl">
+                    <Icone e={d.icone} />
+                  </span>
+                  <span className="text-sm">{d.texto}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </div>
 
@@ -129,7 +111,7 @@ export default function BoasVindas() {
         disabled={tela === 0 && !nome.trim()}
         className="botao-gradiente mt-8 w-full rounded-full py-3.5 font-semibold disabled:opacity-50"
       >
-        {tela === 0 ? "Começar" : tela < total - 1 ? "Próximo" : "Ir para Contas e importar o extrato"}
+        {tela === 0 ? "Começar" : "Importar meu extrato"}
       </button>
     </form>
   );

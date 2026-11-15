@@ -363,7 +363,7 @@ export default function Configuracoes() {
             onClick={() => setConfirmar("questionario")}
             className="rounded-full border border-white/15 px-4 py-2 text-sm text-suave hover:text-white"
           >
-            ↺ Refazer o questionário inicial
+            ↺ Ver as boas-vindas de novo
           </button>
           <button
             onClick={() => setConfirmar("apagar")}
@@ -374,18 +374,18 @@ export default function Configuracoes() {
         </div>
         {confirmar === "questionario" && (
           <Confirmacao
-            texto="Refazer o questionário apaga suas metas e fontes de renda (os lançamentos e contas continuam). Dá para desfazer logo depois."
-            botao="Refazer"
+            texto="Volta para as boas-vindas e apaga suas metas e fontes de renda. Os lançamentos e as contas continuam. Para começar do zero, use “Apagar todos os dados”."
+            botao="Ver de novo"
             onCancelar={() => setConfirmar(null)}
             onConfirmar={() => {
-              comDesfazer("Questionário reiniciado", () => recomecarBoasVindas());
+              comDesfazer("Boas-vindas reiniciadas", () => recomecarBoasVindas());
               setConfirmar(null);
             }}
           />
         )}
         {confirmar === "apagar" && (
           <Confirmacao
-            texto="Isso apaga TUDO: contas, lançamentos, metas, mercado (e começa pelo questionário de novo). Dá para desfazer só nos próximos segundos."
+            texto="Isso apaga TUDO: contas, lançamentos, metas, mercado (e começa pelas boas-vindas de novo). Dá para desfazer só nos próximos segundos."
             botao="Apagar tudo"
             onCancelar={() => setConfirmar(null)}
             onConfirmar={() => {
