@@ -218,6 +218,60 @@ export async function entrarComSenha(email: string, senha: string) {
   return "Não consegui entrar agora. Tente de novo.";
 }
 
+// ---------- Nome de usuário (api/conta: o servidor guarda o usuário e entra por ele) ----------
+
+async function pedirConta(corpo: object, token?: string): Promise<{ erro?: string; livre?: boolean } & Record<string, unknown>> {
+  try {
+    const r = await fetch("/api/conta", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify(corpo),
+    });
+    return await r.json();
+  } catch {
+    return { erro: "Sem internet? Não consegui falar com o servidor." };
+  }
+}
+
+/** O servidor entrou e devolveu a sessão: passa a valer neste aparelho */
+async function usarSessao(r: Record<string, unknown>) {
+  if (!supabase || typeof r.access_token !== "string" || typeof r.refresh_token !== "string") return "Não consegui entrar agora.";
+  const { error } = await supabase.auth.setSession({ access_token: r.access_token, refresh_token: r.refresh_token });
+  return error ? "Não consegui entrar agora. Tente de novo." : null;
+}
+
+/** O usuário ainda não existe? Devolve uma mensagem de erro, ou null se está livre. */
+export async function conferirUsuario(usuario: string) {
+  const r = await pedirConta({ acao: "livre", usuario });
+  if (r.erro) return r.erro;
+  return r.livre ? null : "Esse usuário já existe. Escolha outro.";
+}
+
+/** Cria conta só com usuário e senha (sem e-mail) e já entra. Devolve uma mensagem de erro, ou null. */
+export async function criarContaComUsuario(usuario: string, senha: string) {
+  if (!supabase) return "Login indisponível.";
+  const r = await pedirConta({ acao: "criar", usuario, senha });
+  return r.erro ?? (await usarSessao(r));
+}
+
+/** Entra com usuário e senha (se a pessoa digitar um e-mail, entra pelo e-mail). Devolve uma mensagem de erro, ou null. */
+export async function entrarComUsuario(usuario: string, senha: string) {
+  if (!supabase) return "Login indisponível.";
+  if (usuario.includes("@")) return entrarComSenha(usuario, senha);
+  const r = await pedirConta({ acao: "entrar", usuario, senha });
+  return r.erro ?? (await usarSessao(r));
+}
+
+/** Conta com e-mail, logo depois do código: cria a senha e guarda o usuário nela. Devolve uma mensagem de erro, ou null. */
+export async function completarConta(usuario: string, senha: string) {
+  if (!supabase) return "Login indisponível.";
+  const problema = await definirSenha(senha);
+  if (problema) return problema;
+  const { data } = await supabase.auth.getSession();
+  const r = await pedirConta({ acao: "registrar", usuario }, data.session?.access_token);
+  return r.erro ?? null;
+}
+
 /** Cria ou muda a senha da conta (estando logada). Devolve uma mensagem de erro, ou null. */
 export async function definirSenha(senha: string) {
   if (!supabase) return "Login indisponível.";
