@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { MERCADO_ATIVO } from "@/lib/recursos";
 
 const ICONE = "size-5 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round]";
 
@@ -119,7 +120,9 @@ export function itemAtivo(caminho: string) {
 }
 
 /** As páginas que aparecem no menu da esquerda (computador). Renda fica no Início; os fixos, em Contas. */
-export const ITENS_LATERAL = ITENS_MENU.filter((i) => !["/fixos", "/renda"].includes(i.href));
+export const ITENS_LATERAL = ITENS_MENU.filter(
+  (i) => !["/fixos", "/renda"].includes(i.href) && (MERCADO_ATIVO || i.href !== "/mercado"),
+);
 
 // Menu de baixo (celular): 4 itens, sempre com o nome. Configurações e Mercado ficam no topo.
 export default function NavInferior() {

@@ -48,6 +48,7 @@ function lembrar<R>(fn: (mes: string, d: Dados) => R) {
   };
 }
 import { datasDeReposicao } from "./mercado";
+import { MERCADO_ATIVO } from "./recursos";
 
 export type Dados = {
   lancamentos: Lancamento[];
@@ -158,6 +159,9 @@ function calcularPrevistosBase(mes: string, d: Dados): Previsto[] {
         });
     }
   }
+
+  // Mercado desligado (lib/recursos.ts): não prevê compras nem reposição
+  if (!MERCADO_ATIVO) return lista;
 
   // Mercado: a compra planejada (a lista, no dia marcado) …
   const listaDeCompras = d.listaCompras ?? [];

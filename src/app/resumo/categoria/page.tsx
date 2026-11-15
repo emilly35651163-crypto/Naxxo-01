@@ -22,10 +22,11 @@ import FormLancamento from "@/components/FormLancamento";
 import FormCompra from "@/components/FormCompra";
 import FormGastoFixo from "@/components/FormGastoFixo";
 import Icone, { TextoComIcones } from "@/components/Icone";
+import { MERCADO_ATIVO } from "@/lib/recursos";
 
 // Onde ver (e mexer) mais sobre cada categoria
 const LINKS: Record<string, { href: string; texto: string }> = {
-  Mercado: { href: "/mercado", texto: "🛒 Abrir o Mercado" },
+  ...(MERCADO_ATIVO ? { Mercado: { href: "/mercado", texto: "🛒 Abrir o Mercado" } } : {}),
   "Dívidas e juros": { href: "/trilha", texto: "🧭 Ver na Trilha" },
   Moradia: { href: "/fixos", texto: "📌 Ver gastos fixos" },
   Contas: { href: "/fixos", texto: "📌 Ver gastos fixos" },

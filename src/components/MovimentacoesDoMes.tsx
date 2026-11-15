@@ -10,6 +10,7 @@ import type { Dados } from "@/lib/previstos";
 import ItemLancamento from "./ItemLancamento";
 import ConfirmarPrevisto from "./ConfirmarPrevisto";
 import Icone from "@/components/Icone";
+import { MERCADO_ATIVO } from "@/lib/recursos";
 
 // "Este mês" no Início: fechado, só o essencial (quanto entrou/saiu, o que falta e as próximas contas).
 // Aberto: tudo o que está previsto (com "pago") e tudo o que já aconteceu nas contas (editável).
@@ -141,7 +142,7 @@ export default function MovimentacoesDoMes({ mes, dados }: { mes: string; dados:
                           <p className={`text-sm font-semibold tabular-nums ${entrada ? "text-entrada" : "text-saida"}`}>
                             {entrada ? "+" : "−"} {brl(p.valor)}
                           </p>
-                          {p.origem === "mercado" ? (
+                          {p.origem === "mercado" && MERCADO_ATIVO ? (
                             <Link href="/mercado" className="text-xs font-medium text-rosa">
                               ver mercado
                             </Link>

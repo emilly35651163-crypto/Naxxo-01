@@ -19,6 +19,7 @@ import FormLancamento from "./FormLancamento";
 import Avisos from "./Avisos";
 import AtualizarApp from "./AtualizarApp";
 import Icone from "./Icone";
+import { MERCADO_ATIVO } from "@/lib/recursos";
 
 /** O tema escolhido em Configurações ("auto" segue o celular/computador). */
 function useTema() {
@@ -155,14 +156,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               >
                 <Icone e="⚙️" />
               </Link>
-              <Link
-                href="/mercado"
-                aria-label="Mercado"
-                aria-current={caminho === "/mercado" ? "page" : undefined}
-                className={`grid size-10 place-items-center rounded-full border text-lg ${caminho === "/mercado" ? "border-rosa bg-rosa/15" : "border-roxo/30 bg-superficie"}`}
-              >
-                <Icone e="🛒" />
-              </Link>
+              {MERCADO_ATIVO && (
+                <Link
+                  href="/mercado"
+                  aria-label="Mercado"
+                  aria-current={caminho === "/mercado" ? "page" : undefined}
+                  className={`grid size-10 place-items-center rounded-full border text-lg ${caminho === "/mercado" ? "border-rosa bg-rosa/15" : "border-roxo/30 bg-superficie"}`}
+                >
+                  <Icone e="🛒" />
+                </Link>
+              )}
               <button
                 onClick={() => setNovoAberto(true)}
                 aria-label="Novo lançamento"

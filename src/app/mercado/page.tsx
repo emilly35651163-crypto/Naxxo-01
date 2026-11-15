@@ -2,7 +2,9 @@
 
 import CarrinhoApps from "./CarrinhoApps";
 import LerNotinha from "./LerNotinha";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { MERCADO_ATIVO } from "@/lib/recursos";
 import {
   atualizarItemMercado,
   type UnidadeDuracao,
@@ -34,8 +36,17 @@ import { useDados } from "@/lib/dados";
 import CamposPreco from "./CamposPreco";
 import Icone, { TextoComIcones } from "@/components/Icone";
 
+// Mercado desligado (lib/recursos.ts): quem abrir /mercado volta para o Início
+export default function PaginaMercado() {
+  const router = useRouter();
+  useEffect(() => {
+    if (!MERCADO_ATIVO) router.replace("/");
+  }, [router]);
+  return MERCADO_ATIVO ? <Mercado /> : null;
+}
+
 // Duas abas: o mercado (lista, em casa, gastos) e o carrinho dos apps (Shein, Mercado Livre, Amazon…)
-export default function Mercado() {
+function Mercado() {
   const [aba, setAba] = useState<"mercado" | "apps">("mercado");
   return (
     <div className="space-y-5">

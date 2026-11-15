@@ -23,6 +23,7 @@ import FormGastoFixo from "@/components/FormGastoFixo";
 import FormPagarFixo from "@/components/FormPagarFixo";
 import EstadoVazio from "@/components/EstadoVazio";
 import Icone, { TextoComIcones } from "@/components/Icone";
+import { MERCADO_ATIVO } from "@/lib/recursos";
 
 export default function Fixos() {
   const todos = useGastosFixos();
@@ -105,24 +106,26 @@ export default function Fixos() {
       </div>
 
       {/* Mercado / alimentação: vem da aba Mercado */}
-      <Link href="/mercado" className="cartao flex items-center gap-3 p-4 hover:border-rosa/50">
-        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-superficie-2 text-lg">
-          <Icone e="🛒" />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block font-semibold">Mercado / alimentação</span>
-          <span className="block text-xs text-suave">
-            {mercadoGasto > 0 ? `${brl(mercadoGasto)} já gasto · ` : ""}
-            {mercadoPrevisto > 0
-              ? `${brl(mercadoPrevisto)} previsto${mercado.some((g) => g.previsto && g.lancamento) ? " (compra programada)" : ""}`
-              : "nada previsto ainda (aba Mercado)"}
+      {MERCADO_ATIVO && (
+        <Link href="/mercado" className="cartao flex items-center gap-3 p-4 hover:border-rosa/50">
+          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-superficie-2 text-lg">
+            <Icone e="🛒" />
           </span>
-        </span>
-        <span className="shrink-0 text-right">
-          <span className="block font-display font-semibold tabular-nums">≈ {brl(mercadoDoMes)}</span>
-          <span className="block text-xs text-rosa">ver mercado ›</span>
-        </span>
-      </Link>
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold">Mercado / alimentação</span>
+            <span className="block text-xs text-suave">
+              {mercadoGasto > 0 ? `${brl(mercadoGasto)} já gasto · ` : ""}
+              {mercadoPrevisto > 0
+                ? `${brl(mercadoPrevisto)} previsto${mercado.some((g) => g.previsto && g.lancamento) ? " (compra programada)" : ""}`
+                : "nada previsto ainda (aba Mercado)"}
+            </span>
+          </span>
+          <span className="shrink-0 text-right">
+            <span className="block font-display font-semibold tabular-nums">≈ {brl(mercadoDoMes)}</span>
+            <span className="block text-xs text-rosa">ver mercado ›</span>
+          </span>
+        </Link>
+      )}
 
       {fixos.length > 0 ? (
         <div className="grid gap-4 lg:grid-cols-2">
