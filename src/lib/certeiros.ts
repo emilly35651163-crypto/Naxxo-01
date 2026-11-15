@@ -1,46 +1,107 @@
 // Reconhecimentos certeiros (docs/NOVO-SISTEMA.md, etapa 3): o que dá para saber sem dúvida, depois de importar.
-// Transferência entre minhas contas e Pix para mim mesma não são gasto nem ganho.
+// Transferência entre minhas contas, Pix para mim mesma e Pix no crédito não são gasto nem ganho.
 
-import { atualizarLancamento, lerLancamentos, lerPerfil, virarTransferencia, type Lancamento } from "./store";
+import { atualizarLancamento, lerLancamentos, lerPerfil, salvarPerfil, virarTransferencia, type Lancamento } from "./store";
+import { classificarPelaDescricao } from "./extrato";
 
 const semAcento = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+/** Só letras, separadas por um espaço (para comparar nomes palavra por palavra) */
+const soLetras = (t: string) =>
+  ` ${semAcento(t)
+    .replace(/[^a-z]+/g, " ")
+    .trim()} `;
 const diasEntre = (a: string, b: string) =>
   Math.abs(new Date(`${a}T12:00:00`).getTime() - new Date(`${b}T12:00:00`).getTime()) / 864e5;
+const textoDe = (l: Lancamento) => `${l.descricao} ${l.descricaoBanco ?? ""}`;
 
 /** Parece transferência (Pix, TED, DOC, "transferência")? */
-const pareceTransferencia = (l: Lancamento) =>
-  /\bpix\b|\bted\b|\bdoc\b|transf/.test(semAcento(`${l.descricao} ${l.descricaoBanco ?? ""}`));
+const pareceTransferencia = (l: Lancamento) => /\bpix\b|\bted\b|\bdoc\b|transf/.test(semAcento(textoDe(l)));
 
 /** Diz no próprio texto que é entre contas da mesma pessoa */
 const MESMA_TITULARIDADE = /mesma titularidade|entre contas|conta propria|contas proprias|transferencia propria/;
 
 /**
- * O nome da pessoa aparece na descrição? Sozinho (sem a outra ponta), só vale com nome e sobrenome; com a outra ponta
- * (mesmo valor e dia em outra conta dela), o primeiro nome já basta.
+ * Pix no crédito: o banco põe dinheiro do cartão de crédito na conta para pagar um Pix.
+ * Nubank: "Valor adicionado na conta por cartão de crédito"; BB: "Pagamento Pix Cartão Créd".
+ * Não é ganho: o gasto é o Pix que sai em seguida (e a conta vem na fatura).
  */
-function ehParaMim(l: Lancamento, partesDoNome: string[], minimo = 2) {
-  const texto = semAcento(`${l.descricao} ${l.descricaoBanco ?? ""}`);
-  if (MESMA_TITULARIDADE.test(texto)) return true;
-  if (partesDoNome.length < minimo) return false;
-  const palavras = new Set(texto.split(/[^a-z]+/));
-  return (minimo === 1 ? partesDoNome.slice(0, 1) : partesDoNome).every((p) => palavras.has(p));
+const PIX_NO_CREDITO = /valor adicionado (na conta )?(por|para) (cartao|pix)|pix no credito|pagamento pix cartao cred/;
+
+/**
+ * O nome que o banco escreveu, a partir do primeiro nome dela:
+ * "Transferência enviada pelo Pix - EMILLY CAVALCANTE C DE OLIVEIRA - •••.397…" → "emilly cavalcante c de oliveira"
+ * "01/09 07:33 51339732840 Emilly Cavalca - Pix - Recebido" → "emilly cavalca". Precisa de pelo menos 2 palavras.
+ */
+function nomeNoTexto(texto: string, primeiro: string) {
+  const trecho = semAcento(texto)
+    .split(/\s+-\s+/)
+    .find((p) => soLetras(p).includes(` ${primeiro} `));
+  if (!trecho) return null;
+  const nome = soLetras(trecho.slice(trecho.indexOf(primeiro))).trim();
+  return nome.split(" ").length >= 2 ? nome : null;
 }
 
 /**
- * Liga as duas pontas de dinheiro passando entre as contas da pessoa (sai de uma, entra na outra, mesmo valor, até 2 dias)
- * e marca o Pix para ela mesma (com o nome completo dela) como transferência. Só olha o que veio do extrato.
+ * É para (ou de) ela mesma?
+ * - o texto diz "mesma titularidade";
+ * - aparece um dos nomes dela já aprendidos ("emilly cavalca", inteiro, palavra por palavra);
+ * - aparece o nome completo do perfil (nome e sobrenome);
+ * - com `soPrimeiro` (quando a outra ponta, mesmo valor e dia, está em outra conta dela), o primeiro nome basta.
+ */
+function ehParaMim(l: Lancamento, partesDoNome: string[], meusNomes: string[], soPrimeiro = false) {
+  const texto = soLetras(textoDe(l));
+  if (MESMA_TITULARIDADE.test(texto)) return true;
+  if (meusNomes.some((n) => texto.includes(` ${n} `))) return true;
+  if (partesDoNome.length === 0) return false;
+  if (soPrimeiro) return texto.includes(` ${partesDoNome[0]} `);
+  return partesDoNome.length >= 2 && partesDoNome.every((p) => texto.includes(` ${p} `));
+}
+
+/**
+ * O que veio do extrato e ficou "para revisar": se o banco de palavras (que vai melhorando) agora tem certeza,
+ * já arruma a categoria. O que a pessoa escolheu nunca muda (só mexe no que ainda está para revisar).
+ */
+function reclassificarPendentes() {
+  let arrumou = 0;
+  for (const l of lerLancamentos()) {
+    if (!l.importado || !l.revisar || l.transferenciaId || !l.descricaoBanco) continue;
+    const c = classificarPelaDescricao(l.descricaoBanco, l.tipo);
+    if (!c.certo) continue;
+    atualizarLancamento(l.id, { categoria: c.categoria, subcategoria: c.subcategoria, revisar: undefined });
+    arrumou++;
+  }
+  return arrumou;
+}
+
+/**
+ * Liga as duas pontas de dinheiro passando entre as contas da pessoa (sai de uma, entra na outra, mesmo valor, até 2 dias),
+ * marca o Pix para ela mesma como transferência e o Pix no crédito como dinheiro que veio do cartão.
+ * Aprende como cada banco escreve o nome dela. Só olha o que veio do extrato.
  * Pode rodar sempre: o que já é transferência não muda. Devolve quantas achou.
  */
 export function reconhecerTransferencias() {
-  const nome = semAcento(lerPerfil().nome ?? "")
+  const perfil = lerPerfil();
+  const nome = semAcento(perfil.nome ?? "")
     .split(/\s+/)
     .filter((p) => p.length >= 3);
+  const primeiro = nome[0];
+  const meusNomes = new Set(perfil.meusNomes ?? []);
+  const aprender = (texto?: string) => {
+    const n = primeiro && texto ? nomeNoTexto(texto, primeiro) : null;
+    if (n) meusNomes.add(n);
+  };
   let achou = 0;
   const livres = () => lerLancamentos().filter((l) => !l.transferenciaId && l.contaId && l.categoria !== "Fatura do cartão");
+
+  // O que já foi ligado entre as contas dela ensina como os bancos escrevem o nome dela
+  for (const l of lerLancamentos())
+    if (l.transferenciaId && !l.transferenciaId.startsWith("propria-") && !l.transferenciaId.startsWith("credito-"))
+      aprender(l.descricaoBanco);
 
   for (const s of livres().filter((l) => l.importado && l.tipo === "saida" && pareceTransferencia(l))) {
     const atual = lerLancamentos().find((l) => l.id === s.id);
     if (!atual || atual.transferenciaId) continue;
+    const nomes = [...meusNomes];
     const e = livres().find(
       (l) =>
         l.tipo === "entrada" &&
@@ -48,16 +109,19 @@ export function reconhecerTransferencias() {
         Math.abs(l.valor - s.valor) < 0.01 &&
         diasEntre(l.data, s.data) <= 2 &&
         // Mesmo valor e dia não bastam (Pix para a Maria e Pix do João podem coincidir): precisa ser para ela mesma
-        (ehParaMim(s, nome, 1) || ehParaMim(l, nome, 1)),
+        (ehParaMim(s, nome, nomes, true) || ehParaMim(l, nome, nomes, true)),
     );
     if (e) {
+      aprender(s.descricaoBanco);
+      aprender(e.descricaoBanco);
       virarTransferencia(s.id, s.contaId!, e.contaId!, s.valor, s.data, "Transferência entre contas");
       achou++;
     }
   }
 
-  // Pix/TED para mim mesma, sem a outra ponta no app (a outra conta não está cadastrada): uma ponta só
-  for (const l of livres().filter((x) => x.importado && pareceTransferencia(x) && ehParaMim(x, nome))) {
+  // Pix/TED para mim mesma, sem a outra ponta no app (a outra conta não está cadastrada, ex.: PicPay): uma ponta só
+  const nomes = [...meusNomes];
+  for (const l of livres().filter((x) => x.importado && pareceTransferencia(x) && ehParaMim(x, nome, nomes))) {
     atualizarLancamento(l.id, {
       categoria: "Transferência",
       subcategoria: undefined,
@@ -67,5 +131,23 @@ export function reconhecerTransferencias() {
     });
     achou++;
   }
+
+  // Pix no crédito: o dinheiro que entrou veio do cartão (não é ganho)
+  for (const l of livres().filter((x) => x.importado && x.tipo === "entrada" && PIX_NO_CREDITO.test(semAcento(textoDe(x))))) {
+    atualizarLancamento(l.id, {
+      categoria: "Transferência",
+      subcategoria: undefined,
+      transferenciaId: `credito-${l.id}`,
+      descricao: "Pix no crédito (veio do cartão)",
+      revisar: undefined,
+    });
+    achou++;
+  }
+
+  achou += reclassificarPendentes();
+
+  const aprendidos = [...meusNomes].sort();
+  if (aprendidos.join("|") !== [...(perfil.meusNomes ?? [])].sort().join("|"))
+    salvarPerfil({ ...lerPerfil(), meusNomes: aprendidos });
   return achou;
 }

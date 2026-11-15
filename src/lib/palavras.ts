@@ -20,13 +20,14 @@ const GRUPOS: Grupo[] = [
   {
     categoria: "Fatura do cartão",
     termos:
-      "pagamento de fatura, pagto fatura, pagamento fatura, fatura cartao, pgto cartao, pag fatura, pagamento cartao, pgto fatura",
+      "pagamento de fatura, pagto fatura, pagamento fatura, fatura cartao, pgto cartao, pagto cartao, pag fatura, pagamento cartao, pgto fatura, pagamento de cartao",
   },
   {
     categoria: "Guardar (metas)",
-    termos: "aplicacao, =aplic, investimento cdb, compra de titulo, tesouro direto, caixinha, cofrinho, porquinho, guardado",
+    termos:
+      "aplicacao, =aplic, investimento cdb, compra de titulo, tesouro direto, caixinha, cofrinho, porquinho, guardado, rende facil, aplicacao rdb",
   },
-  { categoria: "Guardar (metas)", tipo: "entrada", termos: "resgate, =resg, caixinha, cofrinho, porquinho" },
+  { categoria: "Guardar (metas)", tipo: "entrada", termos: "resgate, =resg, caixinha, cofrinho, porquinho, rende facil" },
 
   // ---------- Banco ----------
   { categoria: "Impostos e taxas", sub: "IOF", termos: "iof" },
@@ -91,10 +92,16 @@ const GRUPOS: Grupo[] = [
   },
   { categoria: "Reembolso e estorno", sub: "Reembolso", tipo: "entrada", termos: "reembolso, ressarcimento" },
   {
+    categoria: "Benefícios",
+    sub: "Bolsa de estudos",
+    tipo: "entrada",
+    termos: "bolsa, cnpq, capes, fapesp, universidade, faculdade, iniciacao cientifica",
+  },
+  {
     categoria: "Trabalho por conta",
     sub: "Vendas",
     tipo: "entrada",
-    termos: "venda, pagseguro, pagbank, sumup, =stone, cielo, getnet, infinitepay, mercado pago, mercadopago",
+    termos: "venda, pagseguro, pagbank, sumup, =stone, cielo, getnet, infinitepay, ~mercado pago, ~mercadopago",
   },
 
   // ---------- Casa ----------
@@ -156,7 +163,7 @@ const GRUPOS: Grupo[] = [
     categoria: "Mercado",
     sub: "Compra avulsa",
     termos:
-      "*mercado, *supermerc, mercadinho, mercearia, minimercado, minimerc, carrefour, =extra, pao de acucar, minuto pao de acucar, dia, dia brasil, oxxo, hirota, st marche, savegnago, zaffari, guanabara, prezunic, muffato, angeloni, bompreco, =nacional, mercantil rodrigues, sonda, condor, festval, comper, =epa, supernosso, verdemar, mundial, sendas, grupo mateus, gbarbosa, hiperbompreco, shibata, tauste, covabra, dalben, enxuto, joanin, =coop, daki, =big, hortifruti natural da terra, natural da terra, cometa supermercados",
+      "*mercado, *supermerc, mercadinho, mercearia, minimercado, minimerc, carrefour, =extra, pao de acucar, minuto pao de acucar, dia, dia brasil, oxxo, hirota, st marche, savegnago, zaffari, guanabara, prezunic, muffato, angeloni, bompreco, =nacional, mercantil rodrigues, sonda, condor, festval, comper, =epa, supernosso, verdemar, supermercados mundial, sendas, grupo mateus, conveniencia, lojas de conveniencia, gbarbosa, hiperbompreco, shibata, tauste, covabra, dalben, enxuto, joanin, =coop, daki, =big, hortifruti natural da terra, natural da terra, cometa supermercados",
   },
   {
     categoria: "Alimentação fora",
@@ -173,13 +180,13 @@ const GRUPOS: Grupo[] = [
     categoria: "Alimentação fora",
     sub: "Lanche",
     termos:
-      "*lanch, *burger, mcdonald, mc donald, arcos dourados, bk, burger king, zamp, habib, subway, *pizz, esfiha, pastel, sorvete, acai, doceria, kfc, popeyes, giraffas, bobs, spoleto, china in box, domino, cacau show, kopenhagen, brasil cacau, chiquinho sorvetes, oakberry, ragazzo, casa do pao de queijo, bacio di latte, lugano, dunkin, cinnabon, =viena",
+      "*lanch, *burger, mcdonald, mc donald, arcos dourados, bk, burger king, zamp, habib, subway, *pizz, esfiha, pastel, sorvete, acai, doceria, kfc, popeyes, giraffas, bobs, spoleto, china in box, domino, cacau show, kopenhagen, brasil cacau, chiquinho sorvetes, oakberry, ragazzo, casa do pao de queijo, bacio di latte, lugano, milkshake, milk shake, dunkin, cinnabon, =viena",
   },
   {
     categoria: "Alimentação fora",
     sub: "Restaurante",
     termos:
-      "restaur, churrascaria, cantina, sushi, temaki, bistro, outback, madero, coco bambu, =food, grill, fogo de chao, paris 6, applebees, abbraccio, olive garden, jappa, gendai, divino fogao, montana grill, pizza hut, frango assado",
+      "~restaur, churrascaria, cantina, sushi, temaki, bistro, outback, madero, coco bambu, =food, grill, fogo de chao, paris 6, applebees, abbraccio, olive garden, jappa, gendai, divino fogao, montana grill, pizza hut, frango assado",
   },
   { categoria: "Alimentação fora", sub: "Marmita", termos: "marmita, marmitex, quentinha, self service" },
 
@@ -210,9 +217,9 @@ const GRUPOS: Grupo[] = [
     categoria: "Transporte",
     sub: "Ônibus / metrô",
     termos:
-      "metro, onibus, bilhete unico, bilhete, sptrans, recarga bom, cptm, riocard, cartao bom, brt, rodoviaria, metrorio, supervia, via quatro, viamobilidade, metrofor, cbtu, bhbus, urbs, =jae, buser, clickbus, cometa, itapemirim, aguia branca, autopass, top metro, vem pernambuco, cartao transporte",
+      "~metro, onibus, bilhete unico, bilhete, sptrans, recarga bom, cptm, riocard, cartao bom, brt, rodoviaria, metrorio, supervia, via quatro, viamobilidade, metrofor, cbtu, bhbus, urbs, =jae, buser, clickbus, cometa, itapemirim, aguia branca, autopass, top metro, vem pernambuco, cartao transporte",
   },
-  { categoria: "Transporte", sub: "IPVA / licenciamento", termos: "ipva, licenciamento, detran" },
+  { categoria: "Transporte", sub: "IPVA / licenciamento", termos: "ipva, licenciamento, detran, gringo, zul digital" },
   {
     categoria: "Transporte",
     sub: "Manutenção do carro",
@@ -282,7 +289,7 @@ const GRUPOS: Grupo[] = [
     categoria: "Assinaturas",
     sub: "Apps e nuvem",
     termos:
-      "icloud, apple com, google one, google storage, dropbox, microsoft, office 365, =canva, adobe, notion, youtube premium, amazon prime, google play, app store, uber one, ifood clube, linkedin, duolingo, tinder, bumble, github, meli mais",
+      "icloud, apple com, google one, google storage, dropbox, microsoft, office 365, =canva, adobe, notion, youtube premium, amazon prime, google play, app store, uber one, ifood clube, linkedin, duolingo, tinder, bumble, github, meli mais, google, google brasil pagamentos",
   },
   {
     categoria: "Assinaturas",
@@ -317,7 +324,7 @@ const GRUPOS: Grupo[] = [
     categoria: "Lazer",
     sub: "Cinema / shows",
     termos:
-      "cinema, cinemark, kinoplex, ingresso, sympla, eventim, =show, ticketmaster, tickets for fun, =uci, cinepolis, playarte, cinesystem, teatro",
+      "cinema, cinemark, kinoplex, ingresso, sympla, eventim, =show, ticketmaster, tickets for fun, =uci, cinepolis, playarte, cinesystem, teatro, zig tecnologia, =zig",
   },
   {
     categoria: "Lazer",
@@ -338,13 +345,13 @@ const GRUPOS: Grupo[] = [
     categoria: "Compras",
     sub: "Lojas online",
     termos:
-      "shopee, mercado livre, mercadolivre, =meli, amazon, magalu, magazine, americanas, shein, aliexpress, =temu, kabum, casas bahia, ponto frio, submarino, dafiti, zattini, elo7, enjoei",
+      "shopee, mercado livre, mercadolivre, =meli, amazon, magalu, magazine, americanas, shein, aliexpress, =temu, kabum, casas bahia, ponto frio, submarino, dafiti, zattini, elo7, enjoei, pix marketplace",
   },
   {
     categoria: "Compras",
     sub: "Roupas",
     termos:
-      "renner, riachuelo, c a, cea, lojas marisa, hering, =zara, pernambucanas, lojas torra, =torra, youcom, colcci, =farm, animale, malwee, lupo, puket, track field, lojas avenida, besni, polo wear, =leader",
+      "renner, riachuelo, c a, cea, lojas marisa, hering, =zara, pernambucanas, lojas torra, =torra, youcom, colcci, =farm, animale, malwee, lupo, puket, track field, lojas avenida, besni, polo wear, =leader, ~moda, moda mundial",
   },
   {
     categoria: "Compras",
@@ -355,7 +362,8 @@ const GRUPOS: Grupo[] = [
   {
     categoria: "Compras",
     sub: "Eletrônicos",
-    termos: "fast shop, apple store, samsung, xiaomi, eletron, informatica, positivo, =dell, motorola, multilaser, girafa",
+    termos:
+      "fast shop, apple store, samsung, xiaomi, eletron, informatica, positivo, =dell, motorola, multilaser, girafa, celulares, assistencia tecnica",
   },
   { categoria: "Compras", sub: "Casa e utilidades", termos: "=havan, daiso, utilidades, camicado, mm utilidades" },
   { categoria: "Compras", sub: "Presentes", termos: "presente, floricultura, flores online, giuliana flores" },
@@ -422,8 +430,14 @@ function montar(): Termo[] {
 const TERMOS = montar();
 
 /** A palavra mais específica que bate com a descrição (ou nada) */
+/**
+ * Só o que importa para achar a categoria: o nome de quem recebeu ou pagou. Tira o documento e o banco dessa pessoa
+ * ("Pix - JOSE DA SILVA - •••.416.738-•• - PAGSEGURO INTERNET IP…" → "Pix - JOSE DA SILVA"), senão "INTERNET" vira conta de internet.
+ */
+const DADOS_BANCARIOS = /\s+-\s+(\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}|[•*]{3}\.?\d{3}\.?\d{3}-?[•*]{2}).*$|\s+ag[eê]ncia:.*$/i;
+
 export function procurarNoBanco(descricao: string, tipo: Tipo): { categoria: string; subcategoria?: string } | undefined {
-  let t = normalizar(descricao);
+  let t = normalizar(descricao.replace(DADOS_BANCARIOS, ""));
   if (tipo === "saida") t = t.replace(INTERMEDIARIOS, " ").replace(/ +/g, " ").trim();
   let melhor: Termo | undefined;
   for (const termo of TERMOS) {

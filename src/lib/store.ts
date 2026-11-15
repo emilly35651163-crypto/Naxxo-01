@@ -201,6 +201,9 @@ export type Perfil = {
   nome: string;
   objetivos: Objetivo[];
   objetivoOutro: string;
+  /** Como os bancos escrevem o nome dela ("emilly cavalcante candido de oliveira", "emilly cavalca"…), aprendido das
+   * transferências entre as contas dela. Serve para reconhecer Pix para ela mesma quando a outra conta não está no app. */
+  meusNomes?: string[];
 };
 
 export type Meta = {
@@ -339,7 +342,11 @@ export const CATEGORIAS: Record<Tipo, CategoriaFixa[]> = {
   entrada: [
     { nome: "Salário", icone: "💼", subs: ["Salário", "Adiantamento", "13º", "Férias", "PLR / bônus", "Hora extra"] },
     { nome: "Trabalho por conta", icone: "💻", subs: ["Freelance", "Serviços", "Comissão", "Vendas", "MEI"] },
-    { nome: "Benefícios", icone: "🎟️", subs: ["Vale-refeição", "Vale-alimentação", "Vale-transporte", "Auxílio do governo"] },
+    {
+      nome: "Benefícios",
+      icone: "🎟️",
+      subs: ["Vale-refeição", "Vale-alimentação", "Vale-transporte", "Auxílio do governo", "Bolsa de estudos"],
+    },
     { nome: "Investimentos", icone: "📈", subs: ["Rendimento", "Dividendos", "Resgate"] },
     { nome: "Reembolso e estorno", icone: "↩️", subs: ["Estorno de compra", "Reembolso", "Cashback"] },
     { nome: "Recebido de pessoas", icone: "🤝", subs: ["Família", "Amigos", "Divisão de conta"] },
