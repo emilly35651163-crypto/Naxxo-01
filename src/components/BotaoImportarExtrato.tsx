@@ -7,7 +7,7 @@ import Icone from "@/components/Icone";
 // Botão "Importar extrato" + arrastar o arquivo (dos Downloads) para qualquer lugar da tela.
 export default function BotaoImportarExtrato() {
   const [aberto, setAberto] = useState(false);
-  const [arquivo, setArquivo] = useState<File | null>(null);
+  const [arquivos, setArquivos] = useState<File[] | null>(null);
   const [arrastando, setArrastando] = useState(false);
 
   useEffect(() => {
@@ -32,11 +32,11 @@ export default function BotaoImportarExtrato() {
       if (!e.relatedTarget) setArrastando(false);
     };
     const soltou = (e: DragEvent) => {
-      const f = e.dataTransfer?.files[0];
+      const soltos = Array.from(e.dataTransfer?.files ?? []);
       setArrastando(false);
-      if (!f) return;
+      if (!soltos.length) return;
       e.preventDefault();
-      setArquivo(f);
+      setArquivos(soltos);
       setAberto(true);
     };
     window.addEventListener("dragover", sobre);
@@ -66,10 +66,10 @@ export default function BotaoImportarExtrato() {
       )}
       {aberto && (
         <ImportarExtrato
-          arquivoInicial={arquivo}
+          arquivosIniciais={arquivos}
           onFechar={() => {
             setAberto(false);
-            setArquivo(null);
+            setArquivos(null);
           }}
         />
       )}

@@ -38,6 +38,7 @@ import {
   lerExtrato,
   parcelaRepetida,
   type Existente,
+  type Extrato,
   type LinhaExtrato,
 } from "@/lib/extrato";
 import { comDesfazer, mostrarAviso } from "@/lib/avisos";
@@ -91,7 +92,13 @@ function semCalculo(l: LinhaExtrato | Linha): LinhaExtrato & Pick<Linha, "ligado
 }
 
 // Importar o extrato do banco (OFX, CSV ou PDF): mostra tudo antes, a pessoa desmarca o que não quer e importa.
-export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar: () => void; arquivoInicial?: File | null }) {
+export default function ImportarExtrato({
+  onFechar,
+  arquivosIniciais,
+}: {
+  onFechar: () => void;
+  arquivosIniciais?: File[] | null;
+}) {
   const contas = useCartoes();
   const lancamentos = useLancamentos();
   const compras = useCompras();
@@ -112,6 +119,7 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
   const [mesesNoArquivo, setMesesNoArquivo] = useState(0);
   // PDF com senha (muitos bancos usam parte do CPF): guarda o arquivo até a pessoa digitar
   const [pdfComSenha, setPdfComSenha] = useState<File | null>(null);
+  const [arquivosPendentes, setArquivosPendentes] = useState<File[]>([]);
   const [senhaPdf, setSenhaPdf] = useState("");
   const [lendoPdf, setLendoPdf] = useState(false);
   const [lendoTexto, setLendoTexto] = useState("");
@@ -158,63 +166,111 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
       .sort((a, b) => b.data.localeCompare(a.data));
   }
 
-  async function escolherArquivo(arquivo: File | undefined, senha?: string) {
-    if (!arquivo) return;
-    setErro("");
-    setNomeArquivo(arquivo.name);
-    setPdfComSenha(null);
-    let extrato;
+  /** Lê um arquivo (OFX, CSV, PDF ou print da fatura). Joga PdfComSenha, ou um Error com a mensagem para a pessoa. */
+  async function lerUm(arquivo: File, senha?: string): Promise<Extrato> {
     const cabeca = new TextDecoder().decode(new Uint8Array(await arquivo.slice(0, 5).arrayBuffer()));
     if (cabeca.startsWith("%PDF") || /\.pdf$/i.test(arquivo.name)) {
       // PDF: o texto é tirado aqui mesmo, no aparelho
-      setLendoPdf(true);
       try {
-        extrato = aplicarRegras(extratoDoPdf(await linhasDoPdf(arquivo, senha)));
+        return aplicarRegras(extratoDoPdf(await linhasDoPdf(arquivo, senha)));
       } catch (e) {
-        setLinhas(null);
-        if (e instanceof PdfComSenha) {
-          setPdfComSenha(arquivo);
-          return setErro(senha ? "Senha errada. Tente de novo." : "");
-        }
-        return setErro("Não consegui abrir esse PDF. Tente baixar de novo (ou em OFX/CSV, se o banco tiver).");
-      } finally {
-        setLendoPdf(false);
+        if (e instanceof PdfComSenha) throw e;
+        throw new Error("não consegui abrir esse PDF. Tente baixar de novo (ou em OFX/CSV, se o banco tiver).");
       }
-    } else if (ehImagem(arquivo)) {
+    }
+    if (ehImagem(arquivo)) {
       // Print da fatura do cartão: a IA lê (logado e com a chave); senão, o leitor do celular
-      setLendoPdf(true);
-      try {
-        const ia = await lerComIA<FaturaIA>("fatura", [arquivo], setLendoTexto);
-        const compras = ia
-          ? ia.itens.map((c) => ({
-              descricao: c.descricao,
-              valor: c.valor,
-              data: c.data,
-              parcela: c.parcelaNumero && c.parcelaTotal ? { numero: c.parcelaNumero, total: c.parcelaTotal } : undefined,
-            }))
-          : (await lerTextoDosPrints([arquivo], setLendoTexto)).flatMap((texto) => comprasDoTextoDoPrint(texto));
-        extrato = aplicarRegras(extratoDeCompras(compras));
-      } catch (e) {
-        setLinhas(null);
-        return setErro(e instanceof Error ? e.message : "Não consegui ler o print. Tente de novo.");
-      } finally {
-        setLendoPdf(false);
-        setLendoTexto("");
+      const ia = await lerComIA<FaturaIA>("fatura", [arquivo], setLendoTexto);
+      const compras = ia
+        ? ia.itens.map((c) => ({
+            descricao: c.descricao,
+            valor: c.valor,
+            data: c.data,
+            parcela: c.parcelaNumero && c.parcelaTotal ? { numero: c.parcelaNumero, total: c.parcelaTotal } : undefined,
+          }))
+        : (await lerTextoDosPrints([arquivo], setLendoTexto)).flatMap((texto) => comprasDoTextoDoPrint(texto));
+      return aplicarRegras(extratoDeCompras(compras));
+    }
+    return aplicarRegras(lerExtrato(await lerArquivo(arquivo)));
+  }
+
+  /**
+   * Vários arquivos de uma vez (ex.: um por mês, da mesma conta): lê todos e junta numa lista só.
+   * O que aparece em mais de um arquivo (meses que se sobrepõem) entra uma vez só.
+   */
+  async function escolherArquivos(arquivos: File[], senha?: string) {
+    if (arquivos.length === 0) return;
+    setErro("");
+    setNomeArquivo(arquivos.length === 1 ? arquivos[0].name : `${arquivos.length} arquivos`);
+    setPdfComSenha(null);
+    const lidos: Extrato[] = [];
+    const problemas: string[] = [];
+    setLendoPdf(true);
+    try {
+      for (const [i, arquivo] of arquivos.entries()) {
+        if (arquivos.length > 1) setLendoTexto(`Lendo ${i + 1} de ${arquivos.length}: ${arquivo.name}…`);
+        try {
+          const extrato = await lerUm(arquivo, senha);
+          if (extrato.linhas.length) lidos.push(extrato);
+          else problemas.push(`${arquivo.name}: não achei movimentações`);
+        } catch (e) {
+          if (e instanceof PdfComSenha) {
+            // Pede a senha e lê tudo de novo com ela (os PDFs do mesmo banco costumam ter a mesma senha)
+            setLinhas(null);
+            setPdfComSenha(arquivo);
+            setArquivosPendentes(arquivos);
+            return setErro(senha ? "Senha errada. Tente de novo." : "");
+          }
+          problemas.push(`${arquivo.name}: ${e instanceof Error ? e.message : "não consegui ler"}`);
+        }
       }
-    } else extrato = aplicarRegras(lerExtrato(await lerArquivo(arquivo)));
-    if (extrato.linhas.length === 0) {
+    } finally {
+      setLendoPdf(false);
+      setLendoTexto("");
+    }
+
+    if (lidos.length === 0) {
       setLinhas(null);
       return setErro(
-        "Não encontrei movimentações nesse arquivo. Ele precisa ser o extrato do banco em OFX, CSV ou PDF (PDF escaneado, como foto, não dá para ler).",
+        problemas.length === 1 && arquivos.length === 1
+          ? `Não encontrei movimentações nesse arquivo (${problemas[0].split(": ").slice(1).join(": ")}). Ele precisa ser o extrato do banco em OFX, CSV ou PDF (PDF escaneado, como foto, não dá para ler).`
+          : `Não consegui ler nenhum dos arquivos. ${problemas.join(" · ")}`,
       );
     }
+    if (lidos.some((e) => e.ehCartao) && lidos.some((e) => !e.ehCartao)) {
+      setLinhas(null);
+      return setErro(
+        "Veio extrato de conta junto com fatura de cartão. Importe separado: primeiro os da conta, depois os do cartão.",
+      );
+    }
+
+    // Junta tudo: o que já veio num arquivo anterior (mesmo id, ou mesma data, valor e descrição) não entra de novo
+    const vistos = new Set<string>();
+    const chaveDaLinha = (l: LinhaExtrato) => `${l.data}|${l.tipo}|${l.valor}|${l.original}`;
+    const juntas: LinhaExtrato[] = [];
+    for (const e of lidos) {
+      const deste = new Set<string>();
+      for (const l of e.linhas) {
+        if (vistos.has(l.id) || vistos.has(chaveDaLinha(l))) continue;
+        juntas.push(l);
+        deste.add(l.id).add(chaveDaLinha(l));
+      }
+      deste.forEach((k) => vistos.add(k));
+    }
+    // O saldo vale o do arquivo mais recente que trouxer saldo
+    const fimDe = (e: Extrato) => e.linhas.reduce((m, l) => (l.data > m ? l.data : m), "");
+    const comSaldo = lidos.filter((e) => e.saldo !== undefined).sort((a, b) => fimDe(b).localeCompare(fimDe(a)))[0];
+    const extrato: Extrato = { linhas: juntas, ehCartao: lidos[0].ehCartao, saldo: comSaldo?.saldo };
+    if (problemas.length) setErro(`Não consegui ler: ${problemas.join(" · ")}. O resto está aqui embaixo.`);
+
     const lista = extrato.ehCartao ? cartoesDeCredito(contas) : contas;
     const id = lista.some((c) => c.id === contaId) ? contaId : (lista[0]?.id ?? "");
     setEhCartao(extrato.ehCartao);
     setContaId(id);
     const datas = extrato.linhas.map((l) => l.data).sort();
     const [primeira, ultima] = [datas[0], datas[datas.length - 1]];
-    setSaldoArquivo(!extrato.ehCartao && extrato.saldo !== undefined ? { valor: extrato.saldo, data: ultima } : null);
+    const ultimaComSaldo = comSaldo ? fimDe(comSaldo) : ultima;
+    setSaldoArquivo(!extrato.ehCartao && extrato.saldo !== undefined ? { valor: extrato.saldo, data: ultimaComSaldo } : null);
     setMesesNoArquivo(
       Math.max(
         1,
@@ -227,9 +283,9 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
   // Arquivo arrastado direto para a tela de Lançamentos
   useEffect(() => {
     // (depois de montar: os estados mudam quando o arquivo termina de ser lido)
-    if (arquivoInicial) void Promise.resolve(arquivoInicial).then(escolherArquivo);
+    if (arquivosIniciais?.length) void Promise.resolve(arquivosIniciais).then((a) => escolherArquivos(a));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [arquivoInicial]);
+  }, [arquivosIniciais]);
 
   function trocarConta(id: string) {
     setContaId(id);
@@ -457,7 +513,8 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
         <div className="rounded-2xl bg-roxo/10 px-4 py-3 text-sm text-suave">
           No app ou site do banco, procure <b className="text-white">Exportar extrato</b> e escolha o formato{" "}
           <b className="text-white">OFX</b>, <b className="text-white">CSV</b> ou <b className="text-white">PDF</b>. Depois
-          escolha o arquivo aqui: eu mostro tudo antes de importar. O ideal são 6 meses ou mais.
+          escolha os arquivos aqui (pode ser vários de uma vez, um por mês): eu junto tudo e mostro antes de importar. Quanto mais
+          meses, melhor.
         </div>
 
         <label
@@ -470,19 +527,22 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
             e.preventDefault();
             e.stopPropagation();
             setArrastando(false);
-            void escolherArquivo(e.dataTransfer.files[0]);
+            void escolherArquivos(Array.from(e.dataTransfer.files));
           }}
           className={`block cursor-pointer rounded-2xl border border-dashed px-4 py-5 text-center text-sm text-rosa hover:bg-rosa/5 ${
             arrastando ? "border-rosa bg-rosa/15" : "border-rosa/50"
           }`}
         >
-          <TextoComIcones texto={nomeArquivo ? `📄 ${nomeArquivo} (trocar)` : "📂 Abrir o extrato (arquivo, PDF ou print da fatura)"} />
+          <TextoComIcones
+            texto={nomeArquivo ? `📄 ${nomeArquivo} (trocar)` : "📂 Abrir o extrato (pode escolher vários arquivos)"}
+          />
           <input
             type="file"
+            multiple
             accept={`${ARQUIVOS_DE_EXTRATO},image/*`}
             className="sr-only"
             onChange={(e) => {
-              void escolherArquivo(e.target.files?.[0]);
+              void escolherArquivos(Array.from(e.target.files ?? []));
               e.target.value = "";
             }}
           />
@@ -498,7 +558,7 @@ export default function ImportarExtrato({ onFechar, arquivoInicial }: { onFechar
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (senhaPdf) void escolherArquivo(pdfComSenha, senhaPdf);
+              if (senhaPdf) void escolherArquivos(arquivosPendentes.length ? arquivosPendentes : [pdfComSenha], senhaPdf);
             }}
             className="space-y-2 rounded-2xl border border-amber-300/40 bg-amber-300/5 p-3 text-sm"
           >
