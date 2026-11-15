@@ -27,7 +27,7 @@ import { NECESSIDADES_PADRAO } from "@/lib/analise";
 import { pedirPermissaoDeNotificacao } from "@/lib/lembretes";
 import { comDesfazer, mostrarAviso } from "@/lib/avisos";
 import { CampoValor, Chip } from "@/components/Campos";
-import { definirSenha, emailLogado, nuvemAtiva, sair } from "@/lib/nuvem";
+import { definirSenha, emailLogado, nuvemAtiva, sair, usuarioLogado } from "@/lib/nuvem";
 import InstalarApp from "@/components/InstalarApp";
 import SeletorTema from "@/components/SeletorTema";
 import RegrasAprendidas from "@/components/RegrasAprendidas";
@@ -82,10 +82,10 @@ export default function Configuracoes() {
       {nuvemAtiva && (
         <Secao titulo="☁️ Sua conta">
           <p className="text-sm">
-            Conectada como <b>{emailLogado()}</b>
+            Conectada como <b>{usuarioLogado() ?? emailLogado()}</b>
           </p>
           <p className="mt-1 text-xs text-suave">
-            Seus dados ficam guardados na nuvem: entre com o mesmo e-mail em qualquer aparelho.
+            Seus dados ficam guardados na nuvem: entre com a mesma conta em qualquer aparelho.
           </p>
           <CriarSenha />
           <button

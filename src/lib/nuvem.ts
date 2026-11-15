@@ -41,7 +41,14 @@ export function useEstadoNuvem() {
 }
 
 export function emailLogado() {
-  return sessao?.user.email ?? null;
+  const email = sessao?.user.email ?? null;
+  return email?.endsWith("@usuario.naxxo.com.br") ? null : email; // conta sem e-mail: o e-mail é inventado
+}
+
+/** O nome de usuário da conta (guardado pelo servidor em api/conta), ou null */
+export function usuarioLogado(): string | null {
+  const u = sessao?.user.app_metadata?.usuario;
+  return typeof u === "string" ? u : null;
 }
 
 // ---------- Enviar mudanças (cada caixinha, com um pequeno atraso para juntar várias) ----------
