@@ -64,6 +64,24 @@ export function gastosDoMes(mes: string, d: Dados): Gasto[] {
     for (const item of itensDaFatura(c, mes, d)) {
       const compra = d.compras.find((x) => x.id === item.compraId);
       const fixo = d.fixos.find((x) => x.id === item.fixoId);
+      // Pix no crédito: o gasto já conta pelo Pix que saiu da conta; daqui só os juros (o que passou do valor do Pix)
+      if (compra?.pixCreditoId) {
+        const pix = d.lancamentos.find((l) => l.id === compra.pixCreditoId);
+        const juros = pix && compra.valorTotal > pix.valor ? item.valor * (1 - pix.valor / compra.valorTotal) : 0;
+        if (juros >= 0.01)
+          gastos.push({
+            chave: `fatura:${item.chave}`,
+            categoria: "Dívidas e juros",
+            valor: Math.round(juros * 100) / 100,
+            descricao: `Juros do Pix no crédito (${item.descricao})`,
+            data: compra.data,
+            onde: `💳 ${c.nome} · ${item.detalhe}`,
+            previsto: false,
+            icone: iconeDaCategoria("saida", "Dívidas e juros"),
+            compra,
+          });
+        continue;
+      }
       const categoria = compra?.categoria ?? categoriaDoFixo(fixo);
       gastos.push({
         chave: `fatura:${item.chave}`,

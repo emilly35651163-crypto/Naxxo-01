@@ -70,9 +70,27 @@ export function classificarPelaDescricao(
 ): { categoria: string; subcategoria?: string; certo: boolean } {
   const achou = procurarNoBanco(descricao, tipo);
   if (achou) return { ...achou, certo: true };
-  // Sem palavra: a melhor aposta (Pix recebido costuma ser de pessoas), mas fica para revisar
+  // Pix/TED entre pessoas: já fica certo ("Recebido de pessoas" / "Enviado para pessoas"); a pessoa edita e comenta se quiser.
+  // Pix para uma empresa que nenhuma palavra reconheceu fica para revisar.
   const t = semAcento(descricao);
-  return { categoria: tipo === "entrada" && /pix|ted|transf/.test(t) ? "Recebido de pessoas" : "Outros", certo: false };
+  if (/\bpix\b|\bted\b|\bdoc\b|transf/.test(t) && quemE(descricao) === "pessoa")
+    return { categoria: tipo === "entrada" ? "Recebido de pessoas" : "Enviado para pessoas", certo: true };
+  return { categoria: "Outros", certo: false };
+}
+
+const CNPJ = /\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/;
+/** MEI: o nome da empresa é o número dela + o nome da pessoa ("67.316.543 MURILO SIMOES DANTAS"): conta como pessoa */
+const MEI = /(^|[\s-])\d{2}\.\d{3}\.\d{3}\s+[a-z]/;
+const PALAVRAS_DE_EMPRESA =
+  /\b(ltda|s ?\/ ?a|s\.a|s ?\/ ?s|eireli|epp|comercio|servicos|pagamentos|tecnologia|participacoes|engenharia|industria|alimentos|restaurante|diretoria|secretaria|prefeitura|governo|ministerio|universidade|faculdade|associacao|instituto|fundacao|igreja|clube|gremio|condominio|banco|bco|loja|lojas)\b/;
+
+/** Quem está do outro lado de um Pix: uma pessoa (CPF, ou MEI) ou uma empresa (CNPJ, LTDA, S/A, órgão…)? */
+export function quemE(descricao: string): "pessoa" | "empresa" {
+  // Só o trecho do nome: o banco de quem recebeu ("PAGSEGURO INTERNET IP S.A.") não conta
+  const t = semAcento(descricao).replace(/\s+-\s+[•*]{3}.*$/, "");
+  if (CNPJ.test(t) && !MEI.test(t)) return "empresa";
+  const semDoc = t.replace(/\s+-\s+\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}.*$/, "");
+  return PALAVRAS_DE_EMPRESA.test(semDoc) ? "empresa" : "pessoa";
 }
 
 /** Os campos de categoria de uma linha do extrato (sem "Outros": o incerto vai para revisar) */

@@ -46,6 +46,7 @@ export type Lancamento = {
   revisar?: boolean; // o app não teve certeza da categoria: aparece em "Para revisar"
   semBanco?: boolean; // lançado à mão e não veio no extrato: a pessoa disse "manter" (não pergunta mais)
   vtJuntado?: boolean; // salário em que o vale-transporte (antes separado) já foi somado
+  comentario?: string; // o que a pessoa quiser anotar (ex.: "dividi com a Julia")
 };
 
 /** As partes de uma renda que caem em datas diferentes. */
@@ -184,6 +185,9 @@ export type CompraCartao = {
   importado?: boolean; // criada pela importação do extrato
   descricaoBanco?: string; // como veio escrito no extrato
   revisar?: boolean; // categoria incerta: aparece em "Para revisar"
+  /** Pix no crédito: esta compra no cartão pagou um Pix que já está na conta (id da entrada "Pix no crédito").
+   * O gasto conta uma vez só (o Pix); daqui só contam os juros. A fatura continua com o valor inteiro. */
+  pixCreditoId?: string;
 };
 
 export type PagamentoFatura = {
@@ -332,6 +336,7 @@ export const CATEGORIAS: Record<Tipo, CategoriaFixa[]> = {
       icone: "💸",
       subs: ["Empréstimo", "Parcelamento de fatura", "Juros", "Multa por atraso", "Cheque especial"],
     },
+    { nome: "Enviado para pessoas", icone: "🤝", subs: ["Família", "Amigos", "Divisão de conta", "Pagamento a alguém"] },
     { nome: "Doações e ajuda", icone: "🤲", subs: ["Família", "Igreja / dízimo", "Doação", "Vaquinha"] },
     { nome: "Seguros", icone: "🛟", subs: ["Vida", "Outros seguros"] },
     { nome: "Saque", icone: "💵", subs: ["Dinheiro em espécie"] },

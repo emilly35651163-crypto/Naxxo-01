@@ -109,6 +109,7 @@ export default function FormLancamento({
     lancamento ? valorParaCampo(lancamento.valor) : inicial ? valorParaCampo(inicial.valor) : "",
   );
   const [descricao, setDescricao] = useState(lancamento?.descricao ?? inicial?.descricao ?? "");
+  const [comentario, setComentario] = useState(lancamento?.comentario ?? "");
   const [categoria, setCategoria] = useState(
     lancamento?.categoria ?? inicial?.categoria ?? categoriasDe("saida", personalizadas)[0].nome,
   );
@@ -260,6 +261,7 @@ export default function FormLancamento({
         pago: futuro ? false : pago,
         contaId,
         ...ligacao,
+        comentario: comentario.trim() || undefined,
         revisar: undefined, // a pessoa conferiu
       });
       avisarSalvo(repete !== "nao" ? "🔁 Salvo: as próximas vezes ficam previstas" : "Alterações salvas ✓", data.slice(0, 7));
@@ -366,6 +368,7 @@ export default function FormLancamento({
       data,
       pago: futuro ? false : pago,
       contaId,
+      comentario: comentario.trim() || undefined,
     });
     avisarSalvo(futuro || !pago ? `📌 Previsto para ${formatarData(data)}` : "Salvo ✓", data.slice(0, 7));
     onFechar();
@@ -473,6 +476,17 @@ export default function FormLancamento({
                 value={descricao}
                 onChange={(e) => setDescricao(e.target.value)}
                 placeholder={entrada ? "Ex.: salário, freela, venda" : "Ex.: farmácia, presente, conta de luz"}
+                className="campo"
+              />
+            </Campo>
+          )}
+
+          {!transferencia && (
+            <Campo rotulo="Comentário (opcional)">
+              <input
+                value={comentario}
+                onChange={(e) => setComentario(e.target.value)}
+                placeholder="Ex.: dividi a conta com a Julia, presente da mãe…"
                 className="campo"
               />
             </Campo>

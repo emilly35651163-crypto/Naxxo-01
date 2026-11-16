@@ -1,8 +1,17 @@
 // Reconhecimentos certeiros (docs/NOVO-SISTEMA.md, etapa 3): o que dá para saber sem dúvida, depois de importar.
 // Transferência entre minhas contas, Pix para mim mesma e Pix no crédito não são gasto nem ganho.
 
-import { atualizarLancamento, lerLancamentos, lerPerfil, salvarPerfil, virarTransferencia, type Lancamento } from "./store";
-import { classificarPelaDescricao } from "./extrato";
+import {
+  atualizarCompra,
+  atualizarLancamento,
+  lerCompras,
+  lerLancamentos,
+  lerPerfil,
+  salvarPerfil,
+  virarTransferencia,
+  type Lancamento,
+} from "./store";
+import { classificarPelaDescricao, quemE } from "./extrato";
 
 const semAcento = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 /** Só letras, separadas por um espaço (para comparar nomes palavra por palavra) */
@@ -55,6 +64,58 @@ function ehParaMim(l: Lancamento, partesDoNome: string[], meusNomes: string[], s
   if (partesDoNome.length === 0) return false;
   if (soPrimeiro) return texto.includes(` ${partesDoNome[0]} `);
   return partesDoNome.length >= 2 && partesDoNome.every((p) => texto.includes(` ${p} `));
+}
+
+/**
+ * Pix no crédito, as três pontas juntas: a entrada na conta (dinheiro do cartão), o Pix que saiu (o gasto de verdade)
+ * e a compra na fatura do cartão. A compra fica ligada à entrada: o gasto conta uma vez só (o Pix) e, da fatura,
+ * só os juros (o que passou do valor do Pix). Mesmo banco, até 3 dias, valor da fatura entre o do Pix e 60% a mais.
+ */
+function ligarPixNoCredito() {
+  const entradas = lerLancamentos().filter((l) => l.transferenciaId?.startsWith("credito-"));
+  const usadas = new Set(lerCompras().map((c) => c.pixCreditoId));
+  let ligou = 0;
+  for (const c of lerCompras()) {
+    if (c.pixCreditoId || !/\bpix\b/.test(semAcento(`${c.descricao} ${c.descricaoBanco ?? ""}`))) continue;
+    const e = entradas
+      .filter(
+        (e) =>
+          !usadas.has(e.id) &&
+          e.contaId === c.cartaoId &&
+          c.valorTotal >= e.valor - 0.01 &&
+          c.valorTotal <= e.valor * 1.6 &&
+          diasEntre(e.data, c.data) <= 3,
+      )
+      .sort((a, b) => Math.abs(a.valor - c.valorTotal) - Math.abs(b.valor - c.valorTotal))[0];
+    if (!e) continue;
+    usadas.add(e.id);
+    atualizarCompra(c.id, { pixCreditoId: e.id, revisar: undefined });
+    ligou++;
+  }
+  return ligou;
+}
+
+/**
+ * Dinheiro de uma EMPRESA (CNPJ, LTDA, S/A…; MEI conta como pessoa) que cai em 2 meses ou mais: é salário
+ * (ex.: o estágio). Só mexe no que ainda está como "Outros" ou "Recebido de pessoas" (o que a pessoa escolheu fica).
+ */
+function salarioDeEmpresas() {
+  const CNPJ = /\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/;
+  const pagador = (t: string) => CNPJ.exec(t)?.[0] ?? soLetras(t).trim();
+  const porPagador = new Map<string, Lancamento[]>();
+  for (const l of lerLancamentos()) {
+    if (!l.importado || l.tipo !== "entrada" || l.transferenciaId || l.fonteId || !l.descricaoBanco || l.valor < 100) continue;
+    if (!["Outros", "Recebido de pessoas"].includes(l.categoria) || quemE(l.descricaoBanco) !== "empresa") continue;
+    const k = pagador(l.descricaoBanco);
+    porPagador.set(k, [...(porPagador.get(k) ?? []), l]);
+  }
+  let achou = 0;
+  for (const ls of porPagador.values()) {
+    if (new Set(ls.map((l) => l.data.slice(0, 7))).size < 2) continue;
+    for (const l of ls) atualizarLancamento(l.id, { categoria: "Salário", subcategoria: "Salário", revisar: undefined });
+    achou += ls.length;
+  }
+  return achou;
 }
 
 /**
@@ -144,7 +205,9 @@ export function reconhecerTransferencias() {
     achou++;
   }
 
+  achou += ligarPixNoCredito();
   achou += reclassificarPendentes();
+  achou += salarioDeEmpresas();
 
   const aprendidos = [...meusNomes].sort();
   if (aprendidos.join("|") !== [...(perfil.meusNomes ?? [])].sort().join("|"))
